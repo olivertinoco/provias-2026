@@ -64,7 +64,7 @@ select @pNumeroPagina pNumeroPagina, @pDimensionPagina pDimensionPagina into #tm
     (@pBusquedaGeneralfText = '' or not t1.[key] is null or not t2.[key] is null)
 )
 select
-    t.nroOrd,
+    row_number()over(order by t.nroOrd) nroOrd,
     t.IdExpediente,
     t.IdExpedienteDocumento,
     tt.IdExpedienteDocumentoOrigen,
@@ -106,16 +106,17 @@ outer apply(select*from General.Cargo g where g.IdCargo = t.IdCargoCreador)g
 where t.IdExpedienteDocumento = tt.IdExpedienteDocumento and tt.EstadoAuditoria = 1 and tt.EsCabecera = 1
 order by t.nroOrd
 
-select @iRegistroTotal= tt.iPageCount, @iPaginaRegInicio = tt.iStartRow, @iPaginaRegFinal = tt.iEndRow
-from(select count(1) cta, pNumeroPagina, pDimensionPagina
-from #tmp001_paginacion, #tmp001_salidaDatos group by pNumeroPagina, pDimensionPagina)t
-cross apply General.fnObtenerPaginacion02(pDimensionPagina, pNumeroPagina, cta)tt
+select @iRegistroTotal = count(1) from #tmp001_salidaDatos
+
+SELECT @iPaginaRegInicio = c.iStartRow, @iPaginaRegFinal = c.iEndrow
+FROM General.fnObtenerPaginacion(@pDimensionPagina, @pNumeroPagina, @iRegistroTotal) c
 
 select
     t.IdExpediente,
     t.ExpedienteConfidencial,
     convert(varchar, isnull(t.FechaActualizacionAuditoria, t.FechaCreacionAuditoria), 103) NTFechaExpediente,
     convert(varchar, isnull(t.FechaActualizacionAuditoria, t.FechaCreacionAuditoria), 108) HoraExpediente,
+    t.IdCatalogoTipoPrioridad,
     t.CatalogoTipoPrioridad,
     t.CatalogoTipoTramite,
     concat(isnull(t.RazonSocialNombreRemitente, t.NombreCompletoCreador), ': ',

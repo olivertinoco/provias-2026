@@ -1,4 +1,11 @@
 
+alter procedure dbo.prueba_23_24_2026
+as
+select concat(object_schema_name(@@procid),'.', object_name(@@procid)) nombreSP
+go
+
+
+
 if exists(select 1 from sys.sysobjects where id=object_id('tramite.udf_funParaAnularMesaParte','if'))
 drop function tramite.udf_funParaAnularMesaParte
 go
@@ -49,7 +56,6 @@ select cadena =
 go
 
 
-select*from General.fnObtenerPaginacion02(10,1,866)
 
 go
 alter FUNCTION General.fnObtenerPaginacion02
@@ -90,3 +96,4 @@ RETURN
              END * @piPageSize)
 );
 GO
+-- select*from General.fnObtenerPaginacion02(10,1,866)
