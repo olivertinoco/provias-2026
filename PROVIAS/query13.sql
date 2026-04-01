@@ -1,6 +1,6 @@
 declare @IdAreaPadre int = 74
 
-
+PARA MENUS RECURSIVOS PROBAR
 
 
 ;WITH Areas AS

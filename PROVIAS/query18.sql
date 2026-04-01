@@ -16,7 +16,7 @@ declare
 
 select @pIdArea pIdArea, @pIdUsuarioAuditoria pIdUsuarioAuditoria, @pBusquedaGeneral pBusquedaGeneral into #tmp001_datos
 
-select*from #tmp001_datos
+-- select*from #tmp001_datos
 
 
 
@@ -37,6 +37,14 @@ select*from #tmp001_datos
 -- and p.object_id = OBJECT_ID(@procedures)
 -- ORDER BY p.parameter_id
 
+
+
+
+select distinct concat(esquema, '.', store)
+from(select object_schema_name(object_id) esquema, object_name(object_id) store
+FROM sys.parameters WHERE name in ('@pRutaArchivoDocumentoAdjunto'))t where esquema = 'tramite'
+
+return
 
 select distinct concat(esquema, '.', store)
 from(select object_schema_name(object_id) esquema, object_name(object_id) store

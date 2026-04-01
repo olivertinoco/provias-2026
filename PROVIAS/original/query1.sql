@@ -1,25 +1,21 @@
--- CREATE PROCEDURE [Tramite].[paListarExpedienteMesaParteDespachadosV1]
-declare
-    @pIdArea int =116,
-    @pIdUsuarioAuditoria int=56784,
-    @pCampoOrdenado varchar(50) = null,
-    @pTipoOrdenacion varchar(4) = null,
-    @pNumeroPagina INT =1,
-    @pDimensionPagina  INT =10,
-    @pBusquedaGeneral varchar(100)='000228'
 
-    set statistics xml on
-    set statistics io on
-    set statistics time on
-
-
-    Declare @pBusquedaGeneralfText Varchar(400), @pBusquedaGeneralfTextLike Bit, @iRegistroTotal Int, @iPaginaRegInicio Int, @iPaginaRegFinal Int
+alter PROCEDURE [Tramite].[paListarExpedienteMesaParteDespachadosV1]
+    @pIdArea int,
+    @pIdUsuarioAuditoria int,
+    @pCampoOrdenado varchar(50),
+    @pTipoOrdenacion varchar(4),
+    @pNumeroPagina INT,
+    @pDimensionPagina  INT,
+    @pBusquedaGeneral varchar(100)
+AS
+	BEGIN TRY
+		Declare @pBusquedaGeneralfText Varchar(400), @pBusquedaGeneralfTextLike Bit, @iRegistroTotal Int, @iPaginaRegInicio Int, @iPaginaRegFinal Int
 		--@vIdPeriodoInicial Int, @vIdPeriodoFinal Int, @vFechaActual Date = GetDate()
 		--SET LANGUAGE SPANISH;
-          SET @pBusquedaGeneral = RTrim(LTrim(@pBusquedaGeneral))
+        SET @pBusquedaGeneral = RTrim(LTrim(@pBusquedaGeneral))
 		--Variable busqueda Texto completo FullText
 		Execute General.fnFullTextPrefijoVal @pBusquedaGeneral, 'And', @pBusquedaGeneralfText Output, @pBusquedaGeneralfTextLike Output
-          Create Table #vTablaExpediente(IdExpediente BigInt, IdExpedienteDocumento BigInt, eNroOrden Int)
+        Create Table #vTablaExpediente(IdExpediente BigInt, IdExpedienteDocumento BigInt, eNroOrden Int)
 
 		IF Isnull(@pBusquedaGeneral, '') <> ''
 			BEGIN
@@ -48,6 +44,7 @@ declare
 								CONTAINS(E.NombreExpediente, @pBusquedaGeneralfText) OR
 								CONTAINS(E.NombreCompletoCreador, @pBusquedaGeneralfText) OR
 								CONTAINS(ED.NumeroDocumento, @pBusquedaGeneralfText)
+								-- CONTAINS(PD.NombreCompleto, @pBusquedaGeneralfText)
 							)
 						ORDER BY E.IdExpediente Desc
 					) SE
@@ -86,30 +83,30 @@ declare
 			FROM General.fnObtenerPaginacion(@pDimensionPagina, @pNumeroPagina, @iRegistroTotal) c
 		END
 
-          SELECT
-              E.IdExpediente,
-              E.ExpedienteConfidencial,
+        SELECT
+            E.IdExpediente,
+            E.ExpedienteConfidencial,
 			CASE WHEN COALESCE(ED.CorrelativoVinculado,0)=0 THEN E.NTFechaExpediente
 			ELSE CONVERT(VARCHAR(10),ISNULl(ED.FechaActualizacionAuditoria,ED.FechaCreacionAuditoria),103) END NTFechaExpediente,
 			CASE WHEN COALESCE(ED.CorrelativoVinculado,0)=0 THEN E.HoraExpediente
 			ELSE CONVERT(VARCHAR(5),ISNULl(ED.FechaActualizacionAuditoria,ED.FechaCreacionAuditoria),108) END HoraExpediente,
-              E.IdCatalogoTipoPrioridad,
-              CTP.Descripcion CatalogoTipoPrioridad,
-              COALESCE(CTT.Descripcion,'') CatalogoTipoTramite,
+            E.IdCatalogoTipoPrioridad,
+            CTP.Descripcion CatalogoTipoPrioridad,
+            COALESCE(CTT.Descripcion,'') CatalogoTipoTramite,
 			case when COALESCE(E.RazonSocialNombreRemitente,'')='' then COALESCE(NombreCompletoCreador,'')
 			else  COALESCE(E.RazonSocialNombreRemitente,'') END +': '+CASE WHEN COALESCE(E.AsuntoExpediente,'')=''
 			THEN 'SIN ASUNTO' ELSE E.AsuntoExpediente END AsuntoExpediente,
-              E.NumeroFoliosExpediente,
-              COALESCE(E.ObservacionesExpediente,'') ObservacionesExpediente,
+            E.NumeroFoliosExpediente,
+            COALESCE(E.ObservacionesExpediente,'') ObservacionesExpediente,
 			Tramite.funParaAnularMesaParte(E.IdExpediente)  ParaAnular,
-              COALESCE(EMD.NombreEmpresa,'EXTERNO') NombreEmpresaCreador,
-              COALESCE(AD.NombreArea,'') NombreAreaCreador,
-              COALESCE(CD.NombreCargo,'') NombreCargoCreador,
+            COALESCE(EMD.NombreEmpresa,'EXTERNO') NombreEmpresaCreador,
+            COALESCE(AD.NombreArea,'') NombreAreaCreador,
+            COALESCE(CD.NombreCargo,'') NombreCargoCreador,
 			case when COALESCE(E.RazonSocialNombreRemitente,'')='' then COALESCE(NombreCompletoCreador,'')
 			else  COALESCE(E.RazonSocialNombreRemitente,'') end NombrePersonaCreador,
-              CONCAT(E.NombreExpediente,CASE WHEN COALESCE(ED.CorrelativoVinculado,0)=0 THEN ''
-              ELSE '-' +CONVERT(VARCHAR,ED.CorrelativoVinculado) END) NombreExpediente,
-              ED.IdExpedienteDocumento,EDO.IdExpedienteDocumentoOrigen,CONCAT(C.Descripcion,' ', ED.NumeroDocumento) NumeroDocumento,
+            CONCAT(E.NombreExpediente,CASE WHEN COALESCE(ED.CorrelativoVinculado,0)=0 THEN ''
+            ELSE '-' +CONVERT(VARCHAR,ED.CorrelativoVinculado) END) NombreExpediente,
+            ED.IdExpedienteDocumento,EDO.IdExpedienteDocumentoOrigen,CONCAT(C.Descripcion,' ', ED.NumeroDocumento) NumeroDocumento,
 			E.FgTramiteVirtual,
 			ED.FechaEnvioDocumento
 		FROM
@@ -128,7 +125,12 @@ declare
 		ORDER BY EE.eNroOrden ASC
 
 		SELECT @iRegistroTotal
+    END TRY
+    BEGIN CATCH
+		DECLARE @ERROR_NUMBER INT, @ERROR_SEVERITY INT,@ERROR_STATE INT,@ERROR_LINE INT,@ERROR_PROCEDURE VARCHAR(MAX) ,@ERROR_MESSAGE VARCHAR(MAX)
+		SELECT @ERROR_NUMBER=ERROR_NUMBER() , @ERROR_SEVERITY=ERROR_SEVERITY() , @ERROR_STATE=ERROR_STATE() , @ERROR_PROCEDURE='Tramite.paListarExpedienteMesaParteDespachadosV1',@ERROR_LINE=ERROR_LINE(),@ERROR_MESSAGE=ERROR_MESSAGE()
+		EXEC Seguridad.paGuardarErroresEnLog @ERROR_NUMBER , @ERROR_SEVERITY , @ERROR_STATE ,  @ERROR_PROCEDURE,@ERROR_LINE,@ERROR_MESSAGE
+		SELECT ERROR_MESSAGE()
+	END CATCH
 
-set statistics xml off
-set statistics io off
-set statistics time off
+go

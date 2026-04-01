@@ -1,43 +1,44 @@
-if exists(select 1 from sys.sysobjects where id = object_id('[Tramite].[paListarExpedientePendienteEspecialistaPorRecibir_new]','p'))
-drop procedure [Tramite].[paListarExpedientePendienteEspecialistaPorRecibir_new]
-go
-CREATE PROCEDURE [Tramite].[paListarExpedientePendienteEspecialistaPorRecibir_new]
-    @pConFiltroFecha bit,
-	@pFechaInicio varchar(10),
-	@pFechaFin varchar(10),
-	@pConFiltroFechaMovimiento bit,
-	@pFechaInicioMovimiento varchar(10),
-	@pFechaFinMovimiento varchar(10),
-	@pIdPersona int,
-	@pIdEmpleadoPerfil int,
-	@pIdCatalogoSituacionMovimientoDestino INT,
-	@pTipoSituacionMovimiento int,
-	@pIdAreaOrigen int,
-    @pIdAreaDestino int,
-    @pIdPeriodo int,
-    @pIdCatalogoTipoPrioridad int,
-    @pIdCatalogoTipoTramite int,
-    @pIdCatalogoTipoDocumento int,
-    @pNumeroExpediente varchar(100),
-    @pNumeroDocumento varchar(100),
-	@pPersonaDesde varchar(100),
-	@pPersonaPara varchar(100),
-	@pIdTipoIngreso int,
-	@pFechaDocumento  varchar(100),
-	@pEmisorExpediente varchar(100),
-	@pAsuntoExpediente  varchar(100),
-	@pIdUsuarioAuditoria int,
-	@pCampoOrdenado varchar(50),
-	@pTipoOrdenacion varchar(4),
-	@pNumeroPagina INT,
-	@pDimensionPagina  INT,
-	@pBusquedaGeneral varchar(100),
-	@pFlgBusqueda INT
-As
-begin
-begin try
+-- CREATE PROCEDURE [Tramite].[paListarExpedientePendienteEspecialistaPorRecibir]
+declare
+    @pConFiltroFecha bit = 0,
+	@pFechaInicio varchar(10) = '24/03/2026',
+	@pFechaFin varchar(10) = '24/03/2026',
+	@pConFiltroFechaMovimiento bit = 0,
+	@pFechaInicioMovimiento varchar(10) = '24/03/2026',
+	@pFechaFinMovimiento varchar(10) = '24/03/2026',
+	@pIdPersona int= 845,
+	@pIdEmpleadoPerfil int= 2051,
+	@pIdCatalogoSituacionMovimientoDestino INT=4,
+	@pTipoSituacionMovimiento int=4,
+	@pIdAreaOrigen int=0,
+    @pIdAreaDestino int=0,
+    @pIdPeriodo int = 2026,
+    @pIdCatalogoTipoPrioridad int=0,
+    @pIdCatalogoTipoTramite int=0,
+    @pIdCatalogoTipoDocumento int=0,
+    @pNumeroExpediente varchar(100)='',
+    @pNumeroDocumento varchar(100)='',
+	@pPersonaDesde varchar(100)='',
+	@pPersonaPara varchar(100)='',
+	@pIdTipoIngreso int = 0,
+	@pFechaDocumento  varchar(100)='',
+	@pEmisorExpediente varchar(100)='',
+	@pAsuntoExpediente  varchar(100)='',
+	@pIdUsuarioAuditoria int = 845,
+	@pCampoOrdenado varchar(50)=null,
+	@pTipoOrdenacion varchar(4)=null,
+	@pNumeroPagina INT=1,
+	@pDimensionPagina  INT=10,
+	@pBusquedaGeneral varchar(100)=null,
+	@pFlgBusqueda INT=0
+
 set tran isolation level read uncommitted
-set nocount on
+set nocount off
+set language spanish
+-- set statistics xml on
+-- set statistics io on
+-- set statistics time on
+
 
 select
     @pConFiltroFecha pConFiltroFecha,
@@ -146,7 +147,7 @@ select top 1 with ties
         where aux.IdExpediente = t1.IdExpediente
         order by aux.IdExpedienteDocumento
     )aux
-    where t1.estadoAuditoria = 1 and t1.ExpedienteAnulado = 0 and
+    where isnull(t1.ExpedienteAnulado,0) = 0 and t1.estadoAuditoria = 1 and
     t1.NumeroExpediente = isnull(pp.pBusquedaGeneral, t1.NumeroExpediente)
     order by row_number()over(partition by t1.IdExpediente order by t4.fechaCreacionAuditoria desc)
 
@@ -245,43 +246,41 @@ outer apply(select sum(case when
 outer apply(select max(case when
     t.IdCatalogoSituacionMovimientoDestino = pp.pIdCatalogoSituacionMovimientoDestino and
     t.FechaDestinoRecepciona = '' and
-    t.IdEmpresaDestino = pp.vIdEmpresa and
     t.IdAreaDestino = pp.vIdArea and
+    t.IdPersonaDestino = pp.pIdPersona and
     t.IdCargoDestino = pp.vIdCargo and
-    t.IdPersonaDestino = pp.pIdPersona then iif(dia.diasPass < 0 , 0, dia.diasPass) else 0 end
+    t.IdEmpresaDestino = pp.vIdEmpresa then iif(dia.diasPass < 0 , 0, dia.diasPass) else 0 end
     )over(partition by t.IdExpediente) DiasPendiente
 )dp
 outer apply(select concat(max(case when
     t.IdCatalogoSituacionMovimientoDestino in (4,5) and
-    isnull(t.IdempresaOrigen, 0) = 0 and
     t.IdAreaDestino = pp.vIdArea and
+    t.IdPersonaDestino = pp.pIdPersona and
     t.IdCargoDestino = pp.vIdCargo and
-    t.IdPersonaDestino = pp.pIdPersona then t.NombreCompletoEmisor else a.NombreArea end
+    isnull(t.IdempresaOrigen, 0) = 0 then t.NombreCompletoEmisor else a.NombreArea end
     )over(partition by t.IdExpediente), '; ') NombrePersonaOrigen
 )np
 outer apply(select max(case when
     t.IdCatalogoSituacionMovimientoDestino = pp.pIdCatalogoSituacionMovimientoDestino and
     t.IdAreaDestino = pp.vIdArea and
-    t.IdCargoDestino = pp.vIdCargo and
-    t.IdPersonaDestino = pp.pIdPersona then t.IdExpedienteDocumento end
+    t.IdPersonaDestino = pp.pIdPersona and
+    t.IdCargoDestino = pp.vIdCargo then t.IdExpedienteDocumento end
     )over(partition by t.IdExpediente) IdExpedienteDocumento
 )ied
 outer apply(select max(case when
     t.IdCatalogoSituacionMovimientoDestino = pp.pIdCatalogoSituacionMovimientoDestino and
     t.IdAreaDestino = pp.vIdArea and
-    t.IdCargoDestino = pp.vIdCargo and
-    t.IdPersonaDestino = pp.pIdPersona then
+    t.IdPersonaDestino = pp.pIdPersona and
+    t.IdCargoDestino = pp.vIdCargo then
         case when t.FgEnEsperaFirmaDigital = 1 and ef.doc = 0 then
             concat('<label style="font-size:8px">',
-            case t.Correlativo when 0 then concat(c4.descripcion, ' ', t.NumeroDocumento) else t.NumeroDocumento end,
-            '</label>')
+            case t.Correlativo when 0 then concat(c4.descripcion, ' ', t.NumeroDocumento) else t.NumeroDocumento end, '</label>')
         else
             concat('<button type="button" data-toggle="tooltip" title="',
             t.MotivoArchivado, '" class="btn ui blue label" onclick="MostrarDocumentoPdfExp(''',
             t.RutaArchivoDocumento, ''',', t.IdExpedienteDocumento,
             ')"><i style="font-size:16px;" class="fa fa-file-text"></i></button><label style="font-size:8px">',
-            case t.Correlativo when 0 then concat(c4.descripcion, ' ', t.NumeroDocumento) else t.NumeroDocumento end,
-            '</label>')
+            case t.Correlativo when 0 then concat(c4.descripcion, ' ', t.NumeroDocumento) else t.NumeroDocumento end, '</label>')
         end
     end)over(partition by t.IdExpediente) NumeroDocumento
 )nd
@@ -322,13 +321,6 @@ end else begin
 	select 0
 end
 
-END TRY
-BEGIN CATCH
-		DECLARE @ERROR_NUMBER INT, @ERROR_SEVERITY INT,@ERROR_STATE INT,@ERROR_LINE INT,@ERROR_PROCEDURE VARCHAR(MAX)	,@ERROR_MESSAGE VARCHAR(MAX)
-		SELECT @ERROR_NUMBER=ERROR_NUMBER() , @ERROR_SEVERITY=ERROR_SEVERITY() , @ERROR_STATE=ERROR_STATE() , @ERROR_PROCEDURE='Tramite.paListarExpedientePendienteEspecialistaPorRecibir',@ERROR_LINE=ERROR_LINE(),@ERROR_MESSAGE=ERROR_MESSAGE()
-		EXEC Seguridad.paGuardarErroresEnTablaLog @ERROR_NUMBER , @ERROR_SEVERITY , @ERROR_STATE ,  @ERROR_PROCEDURE,@ERROR_LINE,@ERROR_MESSAGE, @pIdUsuarioAuditoria
-END CATCH
-END
-go
-
-select concat(object_schema_name(object_id), '.', object_name(object_id)) sp, create_date from sys.procedures order by create_date desc
+-- set statistics xml off
+-- set statistics io off
+-- set statistics time off

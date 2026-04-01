@@ -28,7 +28,8 @@ Declare @sp varchar(1000) =
 -- 'General.SplitFilas'
 -- 'General.fnFullTextBusCarEspecial'
 -- 'General.fnObtenerPaginacion'
-'Tramite.paListarExpedientePendienteEspecialistaPorRecibir'
+'tramite.paListarExpedienteMesaParteDespachadosV1_new'
+-- 'Tramite.paListarExpedienteMesaParteDespachadosVirtualesV1'
 
 select text from sys.syscomments where id = object_id(@sp)
 return

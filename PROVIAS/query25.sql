@@ -1,23 +1,24 @@
-if exists(select 1 from sys.sysobjects where id=object_id('Tramite.paListarExpedienteMesaParteDespachadosV1_new','p'))
-drop procedure [Tramite].[paListarExpedienteMesaParteDespachadosV1_new]
-go
-create PROCEDURE [Tramite].[paListarExpedienteMesaParteDespachadosV1_new]
-    @pIdArea int,
-    @pIdUsuarioAuditoria int,
-    @pCampoOrdenado varchar(50),
-    @pTipoOrdenacion varchar(4),
-    @pNumeroPagina INT,
-    @pDimensionPagina  INT,
-    @pBusquedaGeneral varchar(100)
-as
-begin
-	BEGIN TRY
+-- CREATE PROCEDURE [Tramite].[paListarExpedienteMesaParteDespachadosV1]
+declare
+    @pIdArea int =116,
+    @pIdUsuarioAuditoria int=642,
+    @pCampoOrdenado varchar(50) = null,
+    @pTipoOrdenacion varchar(4) = null,
+    @pNumeroPagina INT =1,
+    @pDimensionPagina  INT =10,
+    @pBusquedaGeneral varchar(100)= '000228'
+
+
+-- set statistics xml on
+-- set statistics io on
+-- set statistics time on
+
 	set nocount on
 	set tran isolation level read uncommitted
 
 		Declare
 		@pBusquedaGeneralfText Varchar(400), @pBusquedaGeneralfTextLike Bit, @iRegistroTotal Int,
-		@iPaginaRegInicio Int, @iPaginaRegFinal Int, @anno int = year(getdate())
+		@iPaginaRegInicio Int, @iPaginaRegFinal Int ,@anno int = year(getdate())
 
         select @pBusquedaGeneral = RTrim(LTrim(@pBusquedaGeneral))
         Create Table #vTablaExpediente(IdExpediente BigInt, IdExpedienteDocumento BigInt, eNroOrden Int)
@@ -144,14 +145,10 @@ begin
 
 		SELECT @iRegistroTotal
 
-    END TRY
-    BEGIN CATCH
-		DECLARE @ERROR_NUMBER INT, @ERROR_SEVERITY INT,@ERROR_STATE INT,@ERROR_LINE INT,@ERROR_PROCEDURE VARCHAR(MAX) ,@ERROR_MESSAGE VARCHAR(MAX)
-		SELECT @ERROR_NUMBER=ERROR_NUMBER() , @ERROR_SEVERITY=ERROR_SEVERITY() , @ERROR_STATE=ERROR_STATE() , @ERROR_PROCEDURE='Tramite.paListarExpedienteMesaParteDespachadosV1',@ERROR_LINE=ERROR_LINE(),@ERROR_MESSAGE=ERROR_MESSAGE()
-		EXEC Seguridad.paGuardarErroresEnLog @ERROR_NUMBER , @ERROR_SEVERITY , @ERROR_STATE ,  @ERROR_PROCEDURE,@ERROR_LINE,@ERROR_MESSAGE
-		SELECT ERROR_MESSAGE()
-	END CATCH
-end
-go
 
-select concat(object_schema_name(object_id), '.', object_name(object_id)) sp, create_date from sys.procedures order by create_date desc
+set statistics xml off
+set statistics io off
+set statistics time off
+
+
+-- select concat(object_schema_name(object_id), '.', object_name(object_id)) sp, create_date from sys.procedures order by create_date desc

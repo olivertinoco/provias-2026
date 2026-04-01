@@ -1,24 +1,26 @@
 -- CREATE PROCEDURE [Tramite].[paListarExpedienteMesaParteDespachadosV1]
 declare
     @pIdArea int =116,
-    @pIdUsuarioAuditoria int=56784,
+    @pIdUsuarioAuditoria int=642,
     @pCampoOrdenado varchar(50) = null,
     @pTipoOrdenacion varchar(4) = null,
     @pNumeroPagina INT =1,
     @pDimensionPagina  INT =10,
-    @pBusquedaGeneral varchar(100)=
-    '000228'
--- ''
+    @pBusquedaGeneral varchar(100)= '000228'
+
+
+-- set statistics xml on
+-- set statistics io on
+-- set statistics time on
 
 set tran isolation level read uncommitted
 set language english
 
-select @pBusquedaGeneral = cadena from tramite.udf_sanitizar(@pBusquedaGeneral)
+select @pBusquedaGeneral = isnull(@pBusquedaGeneral, '')
+select @pBusquedaGeneral = cadena from tramite.fnUtilitario_sanitizar(@pBusquedaGeneral)
 Declare @pBusquedaGeneralfText Varchar(400)  = case @pBusquedaGeneral when '' then '' else  concat('"',@pBusquedaGeneral,'*"') end
 declare @pBusquedaGeneralfText2 varchar(400) = case @pBusquedaGeneral when '' then 'x59dxyr12' else @pBusquedaGeneralfText end
 Declare @iRegistroTotal Int, @iPaginaRegInicio Int, @iPaginaRegFinal Int
-
-select @pNumeroPagina pNumeroPagina, @pDimensionPagina pDimensionPagina into #tmp001_paginacion
 
 ;with tmp001_text_expediente as(
     select [key]
@@ -28,9 +30,12 @@ select @pNumeroPagina pNumeroPagina, @pDimensionPagina pDimensionPagina into #tm
     select [key]
     from containstable(tramite.ExpedienteDocumento, (NumeroDocumento), @pBusquedaGeneralfText2)
 )
+,tmp001_catalogo as(
+    select*from Tramite.Catalogo
+)
 ,tmp001_datos as(
-    select top 5000
-    row_number()over(order by t.FechaCreacionAuditoria desc) nroOrd,
+    select top 1 with ties *
+    from(select top 5000
     t.IdExpediente,
     tt.IdExpedienteDocumento,
     tt.IdCatalogoTipoDocumento,
@@ -54,15 +59,19 @@ select @pNumeroPagina pNumeroPagina, @pDimensionPagina pDimensionPagina into #tm
     t.ObservacionesExpediente,
     t.AsuntoExpediente
     from tramite.Expediente t
-    cross apply(select*from tramite.ExpedienteDocumento tt where tt.IdExpediente = t.IdExpediente)tt
+    cross apply(select*from tramite.ExpedienteDocumento tt
+        where tt.IdExpediente = t.IdExpediente and tt.EstadoAuditoria = 1 and tt.IdEmpresaEmisor = 0)tt
     left join tmp001_text_expediente t1 on t1.[key] = t.IdExpediente
     left join tmp001_text_expediente_documento t2 on t2.[key] = tt.IdExpedienteDocumento
-    where t.IdCatalogoSituacionExpediente = 63 and
-    t.ExpedienteAnulado = 0 and t.EstadoAuditoria = 1  and tt.IdEmpresaEmisor = 0 and tt.EstadoAuditoria = 1 and
+    where t.IdCatalogoSituacionExpediente = 63 and t.ExpedienteAnulado = 0 and t.EstadoAuditoria = 1 and
     (@pBusquedaGeneralfText = '' or not t1.[key] is null or not t2.[key] is null)
+    order by tt.IdExpediente desc)t
+    order by row_number()over(partition by t.IdExpediente order by t.FechaCreacionAuditoria desc)
 )
 select
-    row_number()over(order by t.nroOrd) nroOrd,
+    row_number()over(order by t.FechaCreacionAuditoria desc) nroOrd, *
+    into #tmp001_salidaDatos
+    from(select top 1 with ties
     t.IdExpediente,
     t.IdExpedienteDocumento,
     tt.IdExpedienteDocumentoOrigen,
@@ -85,33 +94,31 @@ select
     nullif(ltrim(rtrim(t.RazonSocialNombreRemitente)),'') RazonSocialNombreRemitente,
     isnull(t.NombreCompletoCreador, '') NombreCompletoCreador,
     e.NombreEmpresa,
-    max(case ctg.pos when 1 then concat(c.descripcion, ' ', t.NumeroDocumento) end)over(partition by t.nroOrd) NumeroDocumento,
-    max(case ctg.pos when 2 then c.descripcion end)over(partition by t.nroOrd) CatalogoTipoPrioridad,
-    max(case ctg.pos when 3 then c.descripcion end)over(partition by t.nroOrd) CatalogoTipoTramite,
+    concat(c1.descripcion, ' ', t.NumeroDocumento) NumeroDocumento,
+    c2.descripcion CatalogoTipoPrioridad,
+    c3.descripcion CatalogoTipoTramite,
     g.NombreCargo,
     a.NombreArea,
     t.ObservacionesExpediente,
     nullif(ltrim(rtrim(t.AsuntoExpediente)), '') AsuntoExpediente
-into #tmp001_salidaDatos
 from tmp001_datos t
 cross apply Tramite.ExpedienteDocumentoOrigen tt
-cross apply(values(1, t.IdCatalogoTipoDocumento),(2, t.IdCatalogoTipoPrioridad),(3, t.IdCatalogoTipoTramite))ctg(pos, idCat)
-cross apply tramite.udf_funParaAnularMesaParte(tt.IdExpedienteDocumentoOrigen)anula
-outer apply(select*from Tramite.Catalogo c where not ctg.idCat is null and c.IdCatalogo = ctg.idCat)c
+cross apply tramite.fnExpediente_AnularMesaParte(tt.IdExpedienteDocumentoOrigen)anula
+cross apply(select*from tmp001_catalogo c where c.IdCatalogo = t.IdCatalogoTipoDocumento)c1
+cross apply(select*from tmp001_catalogo c where c.IdCatalogo = t.IdCatalogoTipoPrioridad)c2
+outer apply(select*from tmp001_catalogo c where c.IdCatalogo = t.IdCatalogoTipoTramite)c3
 outer apply(select*from(values(1,'PROVIAS'),(2,'PROVIAS'))e(IdEmpresa,NombreEmpresa) where e.IdEmpresa = t.IdEmpresaCreador)e
 outer apply(select*from General.Area a where a.IdArea = t.IdAreaCreador)a
 outer apply(select*from General.Cargo g where g.IdCargo = t.IdCargoCreador)g
 where t.IdExpedienteDocumento = tt.IdExpedienteDocumento and tt.EstadoAuditoria = 1 and tt.EsCabecera = 1
-order by t.nroOrd
+order by row_number()over(partition by t.IdExpediente order by tt.FechaCreacionAuditoria desc))t
+order by t.FechaCreacionAuditoria desc
 
 select @iRegistroTotal = count(1) from #tmp001_salidaDatos
-
-SELECT @iPaginaRegInicio = c.iStartRow, @iPaginaRegFinal = c.iEndrow
-FROM General.fnObtenerPaginacion(@pDimensionPagina, @pNumeroPagina, @iRegistroTotal) c
-
+select @iPaginaRegInicio = c.iStartRow, @iPaginaRegFinal = c.iEndrow
+from General.fnObtenerPaginacion(@pDimensionPagina, @pNumeroPagina, @iRegistroTotal) c
 
 select
-    t.nroOrd,
     t.IdExpediente,
     t.ExpedienteConfidencial,
     convert(varchar, isnull(t.FechaActualizacionAuditoria, t.FechaCreacionAuditoria), 103) NTFechaExpediente,
@@ -141,11 +148,6 @@ order by t.nroOrd
 select @iRegistroTotal
 
 
-
---    END TRY
---    BEGIN CATCH
-	-- 	DECLARE @ERROR_NUMBER INT, @ERROR_SEVERITY INT,@ERROR_STATE INT,@ERROR_LINE INT,@ERROR_PROCEDURE VARCHAR(MAX) ,@ERROR_MESSAGE VARCHAR(MAX)
-	-- 	SELECT @ERROR_NUMBER=ERROR_NUMBER() , @ERROR_SEVERITY=ERROR_SEVERITY() , @ERROR_STATE=ERROR_STATE() , @ERROR_PROCEDURE='Tramite.paListarExpedienteMesaParteDespachadosV1',@ERROR_LINE=ERROR_LINE(),@ERROR_MESSAGE=ERROR_MESSAGE()
-	-- 	EXEC Seguridad.paGuardarErroresEnLog @ERROR_NUMBER , @ERROR_SEVERITY , @ERROR_STATE ,  @ERROR_PROCEDURE,@ERROR_LINE,@ERROR_MESSAGE
-	-- 	SELECT ERROR_MESSAGE()
-	-- END CATCH
+-- set statistics xml off
+-- set statistics io off
+-- set statistics time off
