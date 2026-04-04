@@ -59,13 +59,10 @@ create table #tmp001_expediente (
 	NumeroExpediente int,
 	IdExpedienteSeguimiento int,
 	NumeroExpedienteExterno varchar(100),
-    FechaOrigen varchar(10),
 	FechaMovimiento datetime
 )
 create table #tmp001_matriz(
     IdExpediente int primary key,
-    NumeroExpedienteExterno varchar(100),
-    FechaOrigen varchar(10),
     FechaMovimiento datetime
 )
 declare @anno int = year(getdate()), @vIdCargo int = 0, @vIdArea int = 0, @vIdEmpresa int = 2
@@ -82,7 +79,7 @@ if @pIdPersona > 0 and (try_convert(int, @pBusquedaGeneral) is not null or @pBus
     )
     insert into #tmp001_matriz
     select top 1 with ties
-        t1.IdExpediente, t1.NumeroExpedienteExterno, t3.FechaOrigen, t4.fechaCreacionAuditoria
+        t1.IdExpediente, t4.fechaCreacionAuditoria
     from tramite.Expediente t1
     inner join tramite.ExpedienteDocumento t2
         on t2.idExpediente = t1.idExpediente and t2.EstadoAuditoria = 1 and t2.FgEnEsperaFirmaDigital = 0
@@ -124,8 +121,7 @@ if @pIdPersona > 0 and (try_convert(int, @pBusquedaGeneral) is not null or @pBus
         isnull(t.NombreCompletoCreador, pe.NombreCompleto) NombreCompletoCreador,
         t.NumeroExpediente,
         isnull(es.IdExpedienteSeguimiento, 0) IdExpedienteSeguimiento,
-        m.NumeroExpedienteExterno,
-        m.FechaOrigen,
+        t.NumeroExpedienteExterno,
         m.FechaMovimiento
     from  tramite.Expediente t
     cross apply(select*from  #tmp001_matriz m  where m.idExpediente = t.idExpediente)m
@@ -148,13 +144,6 @@ if @pIdPersona > 0 and (try_convert(int, @pBusquedaGeneral) is not null or @pBus
 	FETCH NEXT @pDimensionPagina ROWS ONLY
 
 
-
-;with tmp001_expedienteEnlazado as(
-    select*from tramite.ExpedienteEnlazado where EstadoAuditoria = 1
-)
-,tmp001_seguridadUsuario as(
-    select*from Seguridad.Usuario where EstadoAuditoria = 1 and Bloqueado = 0
-)
 select top 1 with ties
     convert(bit,case when pa1.cant>0 then 0 when pa2.cant>0 then 1 else 0 end) EsParaAnular,
     isnull(dp.DiasPendiente, 0) DiasPendiente,
@@ -186,23 +175,24 @@ select top 1 with ties
     t.IdExpedienteSeguimiento,
     t.FechaMovimiento
 from #tmp001_expediente t
-cross apply(select*from tramite.ExpedienteDocumento t2 where t2.IdExpediente = t.IdExpediente and t2.EstadoAuditoria = 1)t2
-cross apply(select*from tramite.ExpedienteDocumentoOrigen t3 where t3.idExpedienteDocumento = t2.idExpedienteDocumento and t3.estadoAuditoria = 1)t3
-cross apply(select*from tramite.ExpedienteDocumentoOrigenDestino t4 where t4.idExpedienteDocumentoOrigen = t3.idExpedienteDocumentoOrigen and t4.estadoAuditoria = 1)t4
-cross apply(select datediff(day, cast(t.FechaOrigen as date), getdate()) diasPass)dia
+inner join tramite.ExpedienteDocumento t2 on t2.IdExpediente = t.IdExpediente and t2.EstadoAuditoria = 1
+inner join tramite.ExpedienteDocumentoOrigen t3 on t3.idExpedienteDocumento = t2.idExpedienteDocumento and t3.estadoAuditoria = 1
+inner join tramite.ExpedienteDocumentoOrigenDestino t4
+    on t4.idExpedienteDocumentoOrigen = t3.idExpedienteDocumentoOrigen and t4.estadoAuditoria = 1
+cross apply(select datediff(day, cast(t3.FechaOrigen as date), getdate()) diasPass)dia
+left join tramite.catalogo c3 on c3.IdCatalogo = t2.IdCatalogoTipoOrigen
+left join tramite.catalogo c4 on c4.IdCatalogo = t2.IdCatalogoTipoDocumento
+left join General.Persona pe on pe.IdPersona = t.IdPersonaCreador
 outer apply(select max(1)over(partition by t.IdExpediente) doc from Tramite.ExpedienteDocumentoFirmante ef
     where ef.IdExpedienteDocumento = t2.IdExpedienteDocumento and ef.IdPersona = @pIdPersona and ef.EstadoAuditoria = 1)ef
 outer apply(select distinct concat('<div style="margin: 2px;padding: 2px;" class="ui blue label">',
     t.NombreExpediente, '</div> ')ExEnlazadoPri
-    from tmp001_expedienteEnlazado ee where ee.IdExpedienteSecundario = t.IdExpediente)enp
+    from tramite.ExpedienteEnlazado ee where ee.IdExpedienteSecundario = t.IdExpediente and ee.EstadoAuditoria = 1)enp
 outer apply(select distinct concat('<div style="margin: 2px;padding: 2px;" class="ui blue label">',
     t.NombreExpediente, '</div> ')ExEnlazadoSec
-    from tmp001_expedienteEnlazado ee where ee.IdExpediente = t.IdExpediente)ens
+    from tramite.ExpedienteEnlazado ee where ee.IdExpediente = t.IdExpediente and ee.EstadoAuditoria = 1)ens
 outer apply(select distinct t.IdExpediente, count(1)over(partition by ee.IdExpediente) cantEnlaces
-    from tmp001_expedienteEnlazado ee where ee.IdExpedienteSecundario = t.IdExpediente)ee
-outer apply(select*from tramite.catalogo c3 where c3.IdCatalogo = t2.IdCatalogoTipoOrigen)c3
-outer apply(select*from tramite.catalogo c4 where c4.IdCatalogo = t2.IdCatalogoTipoDocumento)c4
-outer apply(select*from General.Persona pe where pe.IdPersona = t.IdPersonaCreador)pe
+    from tramite.ExpedienteEnlazado ee where ee.IdExpedienteSecundario = t.IdExpediente and ee.EstadoAuditoria = 1)ee
 outer apply(select max(IdExpedienteSeguimiento)over(partition by t.IdExpediente) IdExpedienteSeguimiento
     from Tramite.ExpedienteSeguimiento es
     where es.IdExpediente = t.IdExpediente and
@@ -214,8 +204,8 @@ outer apply(select max(IdExpedienteSeguimiento)over(partition by t.IdExpediente)
 )es
 outer apply(select max(a.NombreArea)over(partition by t.IdExpediente) NombreArea from General.Area a where a.IdArea = t3.IdAreaOrigen)a
 outer apply(select max(rfp.RutaArchivoFoto)over(partition by t.IdExpediente) RutaArchivoFoto
-    from tmp001_seguridadUsuario rfp
-    where rfp.IdPersona = pe.IdPersona and isnull(rfp.RutaArchivoFoto, '') != '')rfp
+    from Seguridad.Usuario rfp
+    where rfp.IdPersona = pe.IdPersona and isnull(rfp.RutaArchivoFoto, '') != '' and rfp.EstadoAuditoria = 1 and rfp.Bloqueado = 0)rfp
 outer apply(select sum(case when
     t4.EsInicial = 1 and
     t3.EsVinculado = 0 and
@@ -282,41 +272,40 @@ outer apply(select max(case when
 )nd
 order by row_number()over(partition by t.idExpediente order by t.FechaMovimiento desc)
 
-END
 
--- select count(1) from #tmp001_matriz
+select count(1) from #tmp001_matriz
 
--- end else begin
---     select
--- 		 0 EsParaAnular,
--- 		 0 DiasPendiente,
--- 		'' NombrePersonaOrigen,
--- 		'' NumeroDocumento,
--- 		0 IdExpedienteDocumento,
--- 		'' NombreExpedientesEnlazados,
--- 		0 EsPrincipalEnlace,
--- 		'' CatalogoTipoOrigen,
--- 		0 IdExpediente,
--- 		'' ExpedienteConfidencial,
--- 		'' NTFechaExpediente,
--- 		'' HoraExpediente,
--- 		0 IdCatalogoTipoPrioridad,
--- 		'' CatalogoTipoPrioridad,
--- 		'' CatalogoTipoTramite,
--- 		'' ColorCatalogoTipoTramite,
--- 		'' Logueo,
--- 		'sinfotoH.jpg' RutaFotoPersona,
--- 		'' AsuntoExpediente,
--- 		0 NumeroFoliosExpediente,
--- 		'' ObservacionesExpediente,
--- 		'' Fecha,
--- 		'' NombreExpediente,
--- 		'' NombreCompletoCreador,
--- 		'' NumeroExpediente,
--- 		0 IdExpedienteSeguimiento,
--- 		'' FechaMovimiento
--- 	select 0
--- end
+end else begin
+    select
+		 0 EsParaAnular,
+		 0 DiasPendiente,
+		'' NombrePersonaOrigen,
+		'' NumeroDocumento,
+		0 IdExpedienteDocumento,
+		'' NombreExpedientesEnlazados,
+		0 EsPrincipalEnlace,
+		'' CatalogoTipoOrigen,
+		0 IdExpediente,
+		'' ExpedienteConfidencial,
+		'' NTFechaExpediente,
+		'' HoraExpediente,
+		0 IdCatalogoTipoPrioridad,
+		'' CatalogoTipoPrioridad,
+		'' CatalogoTipoTramite,
+		'' ColorCatalogoTipoTramite,
+		'' Logueo,
+		'sinfotoH.jpg' RutaFotoPersona,
+		'' AsuntoExpediente,
+		0 NumeroFoliosExpediente,
+		'' ObservacionesExpediente,
+		'' Fecha,
+		'' NombreExpediente,
+		'' NombreCompletoCreador,
+		'' NumeroExpediente,
+		0 IdExpedienteSeguimiento,
+		'' FechaMovimiento
+	select 0
+end
 
 END TRY
 BEGIN CATCH
