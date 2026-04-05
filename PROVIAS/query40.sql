@@ -16,6 +16,16 @@ Tramite.ExpedienteEnlazado|\
 Tramite.ExpedienteSeguimiento|\
 Tramite.NumeracionSeparada'
 
+create table #tmp001_space(
+name varchar(50) collate database_default,
+rows int,
+reserved varchar(20) collate database_default,
+data varchar(20) collate database_default,
+index_size varchar(20) collate database_default,
+unused varchar(20) collate database_default)
+
+
+
 select top 0
     cast(null as varchar(50)) tabla,
     cast(null as varchar(50)) name,
@@ -32,24 +42,40 @@ from dbo.udf_split(@tablas, default)
 for xml path, type).value('.','varchar(max)')
 insert into #tmp001_tablas exec(@tablas)
 
+-- select @tablas = (select ';insert into #tmp001_space exec sys.sp_spaceused ''', tabla, ''''
+-- from(select distinct tabla
+-- from #tmp001_tablas)t
+-- for xml path, type).value('.','varchar(max)')
+-- exec(@tablas)
+-- select*from #tmp001_space order by rows desc
 
-select concat('GO delete t from ', tabla,
-' t where year(t.FechaCreacionAuditoria) != year(getdate());')
-from #tmp001_tablas where column_id = 1
-order by tabla
+set nocount on
+
+-- NOTA: EXCLUIR DEL DELETE
+-- SUS CAMPOS FECHA DE AUDITORIA ESTAN EN NULL
+-- ================================================
+select count(1) from Tramite.ExpedienteDocumentoAdjuntoFirmante
+where isnull(FechaCreacionAuditoria, FechaActualizacionAuditoria) is null
+
+-- TABLA EXCLUIDA TEMPORALMENTE X SUS 36 MILLONES DE REGISTROS
+-- ===========================================================
+-- Tramite.ExpedienteDocumentoVisualizacion
+-- Tramite.ExpedienteDocumentoVisualizacion_Historico
+
+
+select @tablas = (select
+'select ''', tabla, ''', count(1) from ', tabla, ' where FechaCreacionAuditoria is null;'
+from(select distinct tabla
+from #tmp001_tablas)t
+for xml path, type).value('.','varchar(max)')
+select(@tablas)
+
+-- select concat('GO delete t from ', tabla,
+-- ' t where year(t.FechaCreacionAuditoria) != year(getdate());')
+-- from #tmp001_tablas where column_id = 1
+-- order by tabla
 
 
 -- select concat('GO insert into ', tabla, '_Historico  select*from ', tabla)
 -- from #tmp001_tablas where column_id = 1
 -- order by tabla
-
-
-
--- select concat(
--- case column_id when 1 then concat(');GO create table ', tabla, '_Historico (') end,
--- name,
--- concat(' ', rtrim(type)),
--- case column_id when 1 then ' not null primary key,' end,
--- case when collation_name is not null then concat(' (', max_length, '),') when column_id != 1 then ',' end)
--- from #tmp001_tablas
--- order by tabla, column_id
