@@ -153,5 +153,3 @@ begin
 	END CATCH
 end
 go
-
-select concat(object_schema_name(object_id), '.', object_name(object_id)) sp, create_date from sys.procedures order by create_date desc

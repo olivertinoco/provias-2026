@@ -1,16 +1,20 @@
--- OBSERVACIONES PARA que se corra antes que el query8
 
--- exec sys.sp_spaceused 'Tramite.ExpedienteBloqueadoPersonaVisualiza'
--- select*into Tramite.ExpedienteBloqueadoPersonaVisualiza_historico
--- from Tramite.ExpedienteBloqueadoPersonaVisualiza
--- delete Tramite.ExpedienteBloqueadoPersonaVisualiza
+DECLARE @anio INT = 2023;
+DECLARE @anioMax INT = YEAR(GETDATE()) - 1;
 
+WHILE @anio <= @anioMax
+BEGIN
+    WHILE 1 = 1
+    BEGIN
+        DELETE TOP (10000)
+        FROM Tramite.ExpedienteDocumentoVisualizacion
+        WHERE FechaCreacionAuditoria >= DATEFROMPARTS(@anio,1,1)
+          AND FechaCreacionAuditoria < DATEFROMPARTS(@anio+1,1,1);
 
--- select*into tramite.ExpedienteBloqueado_historico from tramite.ExpedienteBloqueado
+        IF @@ROWCOUNT = 0 BREAK;
 
--- delete tramite.ExpedienteBloqueado
+        WAITFOR DELAY '00:00:00.1';
+    END
 
-
-select*from tramite.ExpedienteBloqueado_historico
-select*from Tramite.ExpedienteBloqueadoHistorialResponsables_historico
-select*from Tramite.ExpedienteBloqueadoPersonaVisualiza_historico
+    SET @anio += 1;
+END

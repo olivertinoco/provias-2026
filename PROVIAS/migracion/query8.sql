@@ -70,7 +70,7 @@ END
 
 WHILE 1 = 1
 BEGIN
-    DELETE d
+    DELETE TOP (10000) d
     FROM Tramite.ExpedienteDevuelto d
     INNER JOIN Tramite.Expediente e
         ON d.IdExpediente = e.IdExpediente
@@ -83,7 +83,7 @@ END
 
 WHILE 1 = 1
 BEGIN
-    DELETE d
+    DELETE TOP (10000) d
     FROM Tramite.ExpedienteEnlazado d
     INNER JOIN Tramite.Expediente e
         ON d.IdExpediente = e.IdExpediente
@@ -96,7 +96,8 @@ END
 
 WHILE 1 = 1
 BEGIN
-    DELETE FROM Tramite.Expediente
+    DELETE TOP (10000)
+    FROM Tramite.Expediente
     WHERE FechaCreacionAuditoria < DATEFROMPARTS(YEAR(GETDATE()),1,1)
 
     IF @@ROWCOUNT = 0 BREAK
