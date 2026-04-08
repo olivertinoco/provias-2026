@@ -4,6 +4,39 @@ declare @procedures varchar(500)
 -- = 'Tramite.paListarExpedienteMesaParteDespachadosV1'
 -- = 'exec Tramite.paListarExpedientePendienteJefaturaPorRecibirFosCad'
 
+
+revisa tus actividades para tu segundo entregable: Actividades para el 2do entregable
+************************************************************************************
+Tramite.paListarExpedientePendienteEspecialistaCreados
+Tramite.paObtenerEstadosExpedientesEspecialista
+Tramite.paListarExpedientePendienteJefaturaPorRecibirConBusqueda
+Tramite.paListarExpedientePendienteJefaturaTodosConBusquedaFosCad
+Tramite.paListarExpedientePendienteEspecialistaPorRecibir
+
+Modificar todos los objetos de base de datos involucrados en el proceso de trámite documentario agregándole la columna: Período (Año)
+
+Crear el flujo de tablas temporales con rangos de tiempo para optimizar la vista de la paginación de las grillas del SGD
+
+
+
+set statistics xml on
+set statistics io on
+set statistics time on
+
+
+
+
+
+set statistics xml off
+set statistics io off
+set statistics time off
+
+
+-- select concat(object_schema_name(object_id), '.', object_name(object_id)) sp, create_date from sys.procedures order by create_date desc
+go
+
+
+
 SELECT
     p.parameter_id,
     replace(p.name, '@', '') AS parametro,

@@ -15,27 +15,25 @@
 -- and left(convert(varchar, t.FechaCreacionAuditoria, 23),7) = '2026-02'
 
 
-
 Declare @sp varchar(1000) =
 -- '[Tramite].[paListarPeriodoBusquedaExpediente]'
 -- '[Tramite].[paListarComboAreaPorAreaPadrePendientes]'
 -- '[Tramite].[paListarComboPersonaPorAreaPadrePendientes]'
 -- '[Tramite].[paListarExpedienteMesaParteDespachadosV1]' -- DURO 30 S
--- '[Tramite].[paListarExpedienteMesaParteDespachadosVirtualesV1]' -- DURO 5 S
+'[Tramite].[paListarExpedienteMesaParteDespachadosVirtualesV1]' -- DURO 5 S
 --  ///////////////////////////////////////////////////////////////////////////////////////////////////////
 -- 'Tramite.paListarExpedienteMesaParteDespachadosV1'
 -- 'General.fnFullTextPrefijoVal'
 -- 'General.SplitFilas'
 -- 'General.fnFullTextBusCarEspecial'
 -- 'General.fnObtenerPaginacion'
-'tramite.paListarExpedienteMesaParteDespachadosV1_new'
--- 'Tramite.paListarExpedienteMesaParteDespachadosVirtualesV1'
+-- 'tramite.paListarExpedienteMesaParteDespachadosV1_new'
+
 
 select text from sys.syscomments where id = object_id(@sp)
 return
 --CORREGIR URGENTE PARA EL PROXIMO PASE DEL MIÉRCOLES 18/03/2026
 -- ==============================================================
-
 exec Tramite.paListarExpedienteMesaParteDespachadosV1
 @pIdArea=116,
 @pIdUsuarioAuditoria=56784,
@@ -146,7 +144,7 @@ exec Tramite.paListarPendientesPorAreaV1
 @pBusquedaGeneral=NULL
 
 
-exec Tramite.paListarExpedienteMesaParteDespachadosVirtualesV1
+exec Tramite.paListarExpedienteMesaParteDespachadosVirtualesV1   -- //////////***//////////////////
 @pIdUsuarioAuditoria=56784,
 @pCampoOrdenado=NULL,
 @pTipoOrdenacion=NULL,
@@ -187,7 +185,7 @@ exec General.paListarComboAutocompleteMesaParte
 @pNombreCompleto='CO'
 
 
-exec Tramite.paListarDocumentoPendienteEspecialistaV1
+exec Tramite.paListarDocumentoPendienteEspecialistaV1  -- //////////***//////////////////
 @pIdExpediente=731839,
 @pIdEmpresa=2,
 @pIdArea=54,
@@ -204,7 +202,7 @@ exec Tramite.paListarDocumentoPendienteEspecialistaV1
 
 
 
-exec Tramite.paListarDocumentoPendienteJefaturaV1
+exec Tramite.paListarDocumentoPendienteJefaturaV1   -- //////////***//////////////////
 @pIdExpediente=731839,
 @pIdArea=67,
 @pIdUsuarioAuditoria=863,

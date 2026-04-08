@@ -125,20 +125,20 @@ begin
         )
         SELECT
             E.IdExpediente,
-            E.ExpedienteConfidencial,
+            isnull(E.ExpedienteConfidencial, 0) ExpedienteConfidencial,
 			CASE WHEN COALESCE(ED.CorrelativoVinculado,0)=0 THEN E.NTFechaExpediente
 			ELSE CONVERT(VARCHAR(10),ISNULl(ED.FechaActualizacionAuditoria,ED.FechaCreacionAuditoria),103) END NTFechaExpediente,
 			CASE WHEN COALESCE(ED.CorrelativoVinculado,0)=0 THEN E.HoraExpediente
 			ELSE CONVERT(VARCHAR(5),ISNULl(ED.FechaActualizacionAuditoria,ED.FechaCreacionAuditoria),108) END HoraExpediente,
-            E.IdCatalogoTipoPrioridad,
+            isnull(E.IdCatalogoTipoPrioridad, 0) IdCatalogoTipoPrioridad,
             CTP.Descripcion CatalogoTipoPrioridad,
             COALESCE(CTT.Descripcion,'') CatalogoTipoTramite,
 			case when COALESCE(E.RazonSocialNombreRemitente,'')='' then COALESCE(NombreCompletoCreador,'')
 			else  COALESCE(E.RazonSocialNombreRemitente,'') END +': '+CASE WHEN COALESCE(E.AsuntoExpediente,'')=''
 			THEN 'SIN ASUNTO' ELSE E.AsuntoExpediente END AsuntoExpediente,
-            E.NumeroFoliosExpediente,
+            isnull(E.NumeroFoliosExpediente, 0) NumeroFoliosExpediente,
             COALESCE(E.ObservacionesExpediente,'') ObservacionesExpediente,
-			case count(1)over(partition by E.IdExpediente) when 1 then anula.paraAnular else 0 end ParaAnular,
+			isnull(case count(1)over(partition by E.IdExpediente) when 1 then anula.paraAnular else 0 end, 0) ParaAnular,
             COALESCE(EMD.NombreEmpresa,'EXTERNO') NombreEmpresaCreador,
             COALESCE(AD.NombreArea,'') NombreAreaCreador,
             COALESCE(CD.NombreCargo,'') NombreCargoCreador,
@@ -146,7 +146,8 @@ begin
 			else  COALESCE(E.RazonSocialNombreRemitente,'') end NombrePersonaCreador,
             CONCAT(E.NombreExpediente,CASE WHEN COALESCE(ED.CorrelativoVinculado,0)=0 THEN ''
             ELSE '-' +CONVERT(VARCHAR,ED.CorrelativoVinculado) END) NombreExpediente,
-            ED.IdExpedienteDocumento,EDO.IdExpedienteDocumentoOrigen,CONCAT(C.Descripcion,' ', ED.NumeroDocumento) NumeroDocumento,
+            ED.IdExpedienteDocumento,EDO.IdExpedienteDocumentoOrigen,
+            CONCAT(C.Descripcion,' ', ED.NumeroDocumento) NumeroDocumento,
 			E.FgTramiteVirtual,
 			ED.FechaEnvioDocumento
 		FROM
@@ -340,7 +341,6 @@ if @pIdPersona > 0 and (try_convert(int, @pBusquedaGeneral) is not null or @pBus
 	OFFSET (@pNumeroPagina-1)*@pDimensionPagina ROWS
 	FETCH NEXT @pDimensionPagina ROWS ONLY
 
-
 select top 1 with ties
     convert(bit,case when pa1.cant>0 then 0 when pa2.cant>0 then 1 else 0 end) EsParaAnular,
     isnull(dp.DiasPendiente, 0) DiasPendiente,
@@ -355,7 +355,7 @@ select top 1 with ties
     t.ExpedienteConfidencial,
     t.NTFechaExpediente,
     t.HoraExpediente,
-    t.IdCatalogoTipoPrioridad,
+    isnull(t.IdCatalogoTipoPrioridad, 0) IdCatalogoTipoPrioridad,
     t.CatalogoTipoPrioridad,
     t.CatalogoTipoTramite,
     t.ColorCatalogoTipoTramite,
@@ -363,13 +363,13 @@ select top 1 with ties
     iif(isnull(rfp.RutaArchivoFoto, '') = '', case when isnull(pe.sexo, 0) = 0 then 'sinfotoH.jpg' else 'sinfotoM.jpg' end,
     rfp.RutaArchivoFoto) RutaFotoPersona,
     t.AsuntoExpediente,
-    t.NumeroFoliosExpediente,
+    isnull(t.NumeroFoliosExpediente, 0) NumeroFoliosExpediente,
     t.ObservacionesExpediente,
     t.Fecha,
     t.NombreExpediente,
     t.NombreCompletoCreador,
     t.NumeroExpediente,
-    t.IdExpedienteSeguimiento,
+    isnull(t.IdExpedienteSeguimiento, 0) IdExpedienteSeguimiento,
     t.FechaMovimiento
 from #tmp001_expediente t
 inner join tramite.ExpedienteDocumento t2 on t2.IdExpediente = t.IdExpediente and t2.EstadoAuditoria = 1

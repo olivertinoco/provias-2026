@@ -106,7 +106,8 @@ AS
 			else  COALESCE(E.RazonSocialNombreRemitente,'') end NombrePersonaCreador,
             CONCAT(E.NombreExpediente,CASE WHEN COALESCE(ED.CorrelativoVinculado,0)=0 THEN ''
             ELSE '-' +CONVERT(VARCHAR,ED.CorrelativoVinculado) END) NombreExpediente,
-            ED.IdExpedienteDocumento,EDO.IdExpedienteDocumentoOrigen,CONCAT(C.Descripcion,' ', ED.NumeroDocumento) NumeroDocumento,
+            ED.IdExpedienteDocumento,EDO.IdExpedienteDocumentoOrigen,
+            CONCAT(C.Descripcion,' ', ED.NumeroDocumento) NumeroDocumento,
 			E.FgTramiteVirtual,
 			ED.FechaEnvioDocumento
 		FROM
