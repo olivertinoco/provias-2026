@@ -1,0 +1,100 @@
+ESTRATEGIAS PARA EVITAR EXPANSION / EXPLOSION
+================================================
+no hay expansion masiva solo valida existencias
+
+FROM Expediente e
+WHERE EXISTS (
+    SELECT 1
+    FROM ExpedienteDocumento d
+    WHERE d.IdExpediente = e.IdExpediente
+      AND EXISTS (
+          SELECT 1
+          FROM ExpedienteDocumentoOrigen o
+          WHERE o.IdExpedienteDocumento = d.IdExpedienteDocumento
+            AND EXISTS (
+                SELECT 1
+                FROM ExpedienteDocumentoOrigenDestino t
+                WHERE t.IdExpedienteDocumentoOrigen = o.IdExpedienteDocumentoOrigen
+                  AND t.IdPersonaDestino = @persona
+            )
+      )
+)
+
+
+NOTA: empezar de la tabla mas selectiva:
+
+SELECT e.*
+FROM Expediente e
+WHERE EXISTS (
+    SELECT 1
+    FROM ExpedienteDocumentoOrigenDestino t
+    JOIN ExpedienteDocumentoOrigen o 
+        ON o.IdExpedienteDocumentoOrigen = t.IdExpedienteDocumentoOrigen
+    JOIN ExpedienteDocumento d 
+        ON d.IdExpedienteDocumento = o.IdExpedienteDocumento
+    WHERE t.IdPersonaDestino = @persona
+	AND d.IdExpediente = e.IdExpediente
+)
+
+
+COMBINACION (PRO) LA MEJOR
+======================================
+Filtro mas extraccion controlada... esto evita la expansion
+
+SELECT e.IdExpediente, t.IdPersonaDestino
+FROM Expediente e
+WHERE EXISTS (
+    SELECT 1
+    FROM ExpedienteDocumentoOrigenDestino t
+    JOIN ExpedienteDocumentoOrigen o 
+        ON o.IdExpedienteDocumentoOrigen = t.IdExpedienteDocumentoOrigen
+    JOIN ExpedienteDocumento d 
+        ON d.IdExpedienteDocumento = o.IdExpedienteDocumento
+    WHERE t.IdPersonaDestino = @persona
+	AND d.IdExpediente = e.IdExpediente
+)
+
+OUTER APPLY (
+    SELECT TOP 1 t.*
+    FROM ExpedienteDocumentoOrigenDestino t
+    JOIN ExpedienteDocumentoOrigen o 
+        ON o.IdExpedienteDocumentoOrigen = t.IdExpedienteDocumentoOrigen
+    JOIN ExpedienteDocumento d 
+        ON d.IdExpedienteDocumento = o.IdExpedienteDocumento
+    WHERE t.IdPersonaDestino = @persona
+      AND d.IdExpediente = e.IdExpediente
+    ORDER BY t.FechaCreacionAuditoria DESC
+) t
+
+
+procura:
+CREATE INDEX IX_Destino_Base
+ON ExpedienteDocumentoOrigenDestino
+(IdExpedienteDocumentoOrigen, FechaCreacionAuditoria DESC)
+INCLUDE (IdPersonaDestino, IdAreaDestino, IdCargoDestino);
+
+CREATE INDEX IX_Destino_Activo
+ON ExpedienteDocumentoOrigenDestino
+(IdExpedienteDocumentoOrigen, FechaCreacionAuditoria DESC)
+WHERE EstadoAuditoria = 1;
+
+
+
+OUTER APPLY (
+    SELECT TOP 1 
+        t.IdPersonaDestino,
+        t.FechaCreacionAuditoria
+    FROM ExpedienteDocumentoOrigenDestino t
+    WHERE t.IdPersonaDestino = @persona
+      AND EXISTS (
+          SELECT 1
+          FROM ExpedienteDocumentoOrigen o
+          JOIN ExpedienteDocumento d 
+              ON d.IdExpedienteDocumento = o.IdExpedienteDocumento
+          WHERE o.IdExpedienteDocumentoOrigen = t.IdExpedienteDocumentoOrigen
+            AND d.IdExpediente = e.IdExpediente
+      )
+    ORDER BY t.FechaCreacionAuditoria DESC
+) t
+
+
