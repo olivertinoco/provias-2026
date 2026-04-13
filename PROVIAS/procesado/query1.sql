@@ -1,7 +1,7 @@
-if exists(select 1 from sys.sysobjects where id=object_id('Tramite.paListarExpedienteMesaParteDespachadosV1_new','p'))
-drop procedure [Tramite].[paListarExpedienteMesaParteDespachadosV1_new]
+if exists(select 1 from sys.sysobjects where id=object_id('Tramite.paListarExpedienteMesaParteDespachadosV1','p'))
+drop procedure [Tramite].[paListarExpedienteMesaParteDespachadosV1]
 go
-create PROCEDURE [Tramite].[paListarExpedienteMesaParteDespachadosV1_new]
+create PROCEDURE [Tramite].[paListarExpedienteMesaParteDespachadosV1]
     @pIdArea int,
     @pIdUsuarioAuditoria int,
     @pCampoOrdenado varchar(50),
@@ -17,7 +17,7 @@ begin
 
 		Declare
 		@pBusquedaGeneralfText Varchar(400), @pBusquedaGeneralfTextLike Bit, @iRegistroTotal Int,
-		@iPaginaRegInicio Int, @iPaginaRegFinal Int, @anno int = year(getdate())
+		@iPaginaRegInicio Int, @iPaginaRegFinal Int
 
         select @pBusquedaGeneral = RTrim(LTrim(@pBusquedaGeneral))
         Create Table #vTablaExpediente(IdExpediente BigInt, IdExpedienteDocumento BigInt, eNroOrden Int)
@@ -42,7 +42,7 @@ begin
 							INNER JOIN Tramite.ExpedienteDocumento ED ON
 							ED.IdExpediente=E.IdExpediente AND ED.EstadoAuditoria=1 AND ED.IdEmpresaEmisor=0
 						WHERE
-							E.EstadoAuditoria=1 And E.ExpedienteAnulado=0 AND E.IdPeriodo = @anno and  E.IdCatalogoSituacionExpediente=63
+							E.EstadoAuditoria=1 And E.ExpedienteAnulado=0 AND E.IdCatalogoSituacionExpediente=63
 							And
 							(
     			                CONTAINS(E.AsuntoExpediente, @pBusquedaGeneralfText) OR
@@ -70,7 +70,7 @@ begin
 						INNER JOIN Tramite.ExpedienteDocumento ED  on
 						ED.IdExpediente=E.IdExpediente AND ED.EstadoAuditoria=1 AND ED.IdEmpresaEmisor=0
 					WHERE
-						E.EstadoAuditoria=1	And E.ExpedienteAnulado=0 AND E.IdPeriodo = @anno and E.IdCatalogoSituacionExpediente=63
+						E.EstadoAuditoria=1	And E.ExpedienteAnulado=0 AND E.IdCatalogoSituacionExpediente=63
 					ORDER BY E.IdExpediente Desc
 				) SE
 
@@ -86,20 +86,20 @@ begin
         )
         SELECT
             E.IdExpediente,
-            E.ExpedienteConfidencial,
+            isnull(E.ExpedienteConfidencial, 0) ExpedienteConfidencial,
 			CASE WHEN COALESCE(ED.CorrelativoVinculado,0)=0 THEN E.NTFechaExpediente
 			ELSE CONVERT(VARCHAR(10),ISNULl(ED.FechaActualizacionAuditoria,ED.FechaCreacionAuditoria),103) END NTFechaExpediente,
 			CASE WHEN COALESCE(ED.CorrelativoVinculado,0)=0 THEN E.HoraExpediente
 			ELSE CONVERT(VARCHAR(5),ISNULl(ED.FechaActualizacionAuditoria,ED.FechaCreacionAuditoria),108) END HoraExpediente,
-            E.IdCatalogoTipoPrioridad,
-            CTP.Descripcion CatalogoTipoPrioridad,
-            COALESCE(CTT.Descripcion,'') CatalogoTipoTramite,
+            isnull(E.IdCatalogoTipoPrioridad, 0) IdCatalogoTipoPrioridad,
+            isnull(CTP.Descripcion, '') CatalogoTipoPrioridad,
+            isnull(CTT.Descripcion,'') CatalogoTipoTramite,
 			case when COALESCE(E.RazonSocialNombreRemitente,'')='' then COALESCE(NombreCompletoCreador,'')
 			else  COALESCE(E.RazonSocialNombreRemitente,'') END +': '+CASE WHEN COALESCE(E.AsuntoExpediente,'')=''
 			THEN 'SIN ASUNTO' ELSE E.AsuntoExpediente END AsuntoExpediente,
-            E.NumeroFoliosExpediente,
+            isnull(E.NumeroFoliosExpediente, 0) NumeroFoliosExpediente,
             COALESCE(E.ObservacionesExpediente,'') ObservacionesExpediente,
-			case count(1)over(partition by E.IdExpediente) when 1 then anula.paraAnular else 0 end ParaAnular,
+			isnull(case count(1)over(partition by E.IdExpediente) when 1 then anula.paraAnular else 0 end,0) ParaAnular,
             COALESCE(EMD.NombreEmpresa,'EXTERNO') NombreEmpresaCreador,
             COALESCE(AD.NombreArea,'') NombreAreaCreador,
             COALESCE(CD.NombreCargo,'') NombreCargoCreador,
@@ -107,9 +107,11 @@ begin
 			else  COALESCE(E.RazonSocialNombreRemitente,'') end NombrePersonaCreador,
             CONCAT(E.NombreExpediente,CASE WHEN COALESCE(ED.CorrelativoVinculado,0)=0 THEN ''
             ELSE '-' +CONVERT(VARCHAR,ED.CorrelativoVinculado) END) NombreExpediente,
-            ED.IdExpedienteDocumento,EDO.IdExpedienteDocumentoOrigen,CONCAT(C.Descripcion,' ', ED.NumeroDocumento) NumeroDocumento,
-			E.FgTramiteVirtual,
-			ED.FechaEnvioDocumento
+            ED.IdExpedienteDocumento,
+            EDO.IdExpedienteDocumentoOrigen,
+            CONCAT(C.Descripcion,' ', ED.NumeroDocumento) NumeroDocumento,
+			isnull(E.FgTramiteVirtual,0) FgTramiteVirtual,
+			isnull(ED.FechaEnvioDocumento,'') FechaEnvioDocumento
 		FROM
 			#vTablaExpediente EE
 			inner join Tramite.Expediente E on E.IdExpediente=EE.IdExpediente

@@ -383,4 +383,3 @@ AS
 	 END CATCH
 
 go
-select concat(object_schema_name(object_id), '.', object_name(object_id)) sp, create_date, modify_date from sys.procedures order by 3 desc

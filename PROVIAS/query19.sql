@@ -1,153 +1,150 @@
--- CREATE PROCEDURE [Tramite].[paListarExpedienteMesaParteDespachadosV1]
+-- ORIGINAL:
+-- alter PROCEDURE [Tramite].[paListarExpedienteMesaParteDespachadosV1]
 declare
-    @pIdArea int =116,
-    @pIdUsuarioAuditoria int=642,
-    @pCampoOrdenado varchar(50) = null,
-    @pTipoOrdenacion varchar(4) = null,
-    @pNumeroPagina INT =1,
-    @pDimensionPagina  INT =10,
-    @pBusquedaGeneral varchar(100)= '000228'
-
-
--- set statistics xml on
--- set statistics io on
--- set statistics time on
-
-set tran isolation level read uncommitted
-set language english
-
-select @pBusquedaGeneral = isnull(@pBusquedaGeneral, '')
-select @pBusquedaGeneral = cadena from tramite.fnUtilitario_sanitizar(@pBusquedaGeneral)
-Declare @pBusquedaGeneralfText Varchar(400)  = case @pBusquedaGeneral when '' then '' else  concat('"',@pBusquedaGeneral,'*"') end
-declare @pBusquedaGeneralfText2 varchar(400) = case @pBusquedaGeneral when '' then 'x59dxyr12' else @pBusquedaGeneralfText end
-Declare @iRegistroTotal Int, @iPaginaRegInicio Int, @iPaginaRegFinal Int
-
-;with tmp001_text_expediente as(
-    select [key]
-    from containstable(tramite.Expediente, (AsuntoExpediente, NombreExpediente, NombreCompletoCreador), @pBusquedaGeneralfText2)
-)
-,tmp001_text_expediente_documento as(
-    select [key]
-    from containstable(tramite.ExpedienteDocumento, (NumeroDocumento), @pBusquedaGeneralfText2)
-)
-,tmp001_catalogo as(
-    select*from Tramite.Catalogo
-)
-,tmp001_datos as(
-    select top 1 with ties *
-    from(select top 5000
-    t.IdExpediente,
-    tt.IdExpedienteDocumento,
-    tt.IdCatalogoTipoDocumento,
-    t.IdEmpresaCreador,
-    t.IdAreaCreador,
-    t.IdCargoCreador,
-    t.IdPersonaCreador,
-    t.IdCatalogoTipoTramite,
-    t.IdCatalogoTipoPrioridad,
-    t.NumeroFoliosExpediente,
-    tt.CorrelativoVinculado,
-    t.ExpedienteConfidencial,
-    t.FgTramiteVirtual,
-    tt.FechaCreacionAuditoria,
-    tt.FechaActualizacionAuditoria,
-    tt.FechaEnvioDocumento,
-    t.NombreExpediente,
-    t.RazonSocialNombreRemitente,
-    t.NombreCompletoCreador,
-    tt.NumeroDocumento,
-    t.ObservacionesExpediente,
-    t.AsuntoExpediente
-    from tramite.Expediente t
-    cross apply(select*from tramite.ExpedienteDocumento tt
-        where tt.IdExpediente = t.IdExpediente and tt.EstadoAuditoria = 1 and tt.IdEmpresaEmisor = 0)tt
-    left join tmp001_text_expediente t1 on t1.[key] = t.IdExpediente
-    left join tmp001_text_expediente_documento t2 on t2.[key] = tt.IdExpedienteDocumento
-    where t.IdCatalogoSituacionExpediente = 63 and t.ExpedienteAnulado = 0 and t.EstadoAuditoria = 1 and
-    (@pBusquedaGeneralfText = '' or not t1.[key] is null or not t2.[key] is null)
-    order by tt.IdExpediente desc)t
-    order by row_number()over(partition by t.IdExpediente order by t.FechaCreacionAuditoria desc)
-)
-select
-    row_number()over(order by t.FechaCreacionAuditoria desc) nroOrd, *
-    into #tmp001_salidaDatos
-    from(select top 1 with ties
-    t.IdExpediente,
-    t.IdExpedienteDocumento,
-    tt.IdExpedienteDocumentoOrigen,
-    case count(1)over(partition by t.IdExpediente) when 1 then anula.paraAnular else 0 end ParaAnular,
-    t.IdCatalogoTipoDocumento,
-    t.IdEmpresaCreador,
-    t.IdAreaCreador,
-    t.IdCargoCreador,
-    t.IdPersonaCreador,
-    t.IdCatalogoTipoTramite,
-    t.IdCatalogoTipoPrioridad,
-    t.NumeroFoliosExpediente,
-    nullif(t.CorrelativoVinculado, 0) CorrelativoVinculado,
-    t.ExpedienteConfidencial,
-    t.FgTramiteVirtual,
-    t.FechaCreacionAuditoria,
-    t.FechaActualizacionAuditoria,
-    t.FechaEnvioDocumento,
-    t.NombreExpediente,
-    nullif(ltrim(rtrim(t.RazonSocialNombreRemitente)),'') RazonSocialNombreRemitente,
-    isnull(t.NombreCompletoCreador, '') NombreCompletoCreador,
-    e.NombreEmpresa,
-    concat(c1.descripcion, ' ', t.NumeroDocumento) NumeroDocumento,
-    c2.descripcion CatalogoTipoPrioridad,
-    c3.descripcion CatalogoTipoTramite,
-    g.NombreCargo,
-    a.NombreArea,
-    t.ObservacionesExpediente,
-    nullif(ltrim(rtrim(t.AsuntoExpediente)), '') AsuntoExpediente
-from tmp001_datos t
-cross apply Tramite.ExpedienteDocumentoOrigen tt
-cross apply tramite.fnExpediente_AnularMesaParte(tt.IdExpedienteDocumentoOrigen)anula
-cross apply(select*from tmp001_catalogo c where c.IdCatalogo = t.IdCatalogoTipoDocumento)c1
-cross apply(select*from tmp001_catalogo c where c.IdCatalogo = t.IdCatalogoTipoPrioridad)c2
-outer apply(select*from tmp001_catalogo c where c.IdCatalogo = t.IdCatalogoTipoTramite)c3
-outer apply(select*from(values(1,'PROVIAS'),(2,'PROVIAS'))e(IdEmpresa,NombreEmpresa) where e.IdEmpresa = t.IdEmpresaCreador)e
-outer apply(select*from General.Area a where a.IdArea = t.IdAreaCreador)a
-outer apply(select*from General.Cargo g where g.IdCargo = t.IdCargoCreador)g
-where t.IdExpedienteDocumento = tt.IdExpedienteDocumento and tt.EstadoAuditoria = 1 and tt.EsCabecera = 1
-order by row_number()over(partition by t.IdExpediente order by tt.FechaCreacionAuditoria desc))t
-order by t.FechaCreacionAuditoria desc
-
-select @iRegistroTotal = count(1) from #tmp001_salidaDatos
-select @iPaginaRegInicio = c.iStartRow, @iPaginaRegFinal = c.iEndrow
-from General.fnObtenerPaginacion(@pDimensionPagina, @pNumeroPagina, @iRegistroTotal) c
+    @pIdArea int,
+    @pIdUsuarioAuditoria int,
+    @pCampoOrdenado varchar(50),
+    @pTipoOrdenacion varchar(4),
+    @pNumeroPagina INT,
+    @pDimensionPagina  INT,
+    @pBusquedaGeneral varchar(100)
 
 select
-    t.IdExpediente,
-    t.ExpedienteConfidencial,
-    convert(varchar, isnull(t.FechaActualizacionAuditoria, t.FechaCreacionAuditoria), 103) NTFechaExpediente,
-    convert(varchar, isnull(t.FechaActualizacionAuditoria, t.FechaCreacionAuditoria), 108) HoraExpediente,
-    t.IdCatalogoTipoPrioridad,
-    t.CatalogoTipoPrioridad,
-    t.CatalogoTipoTramite,
-    concat(isnull(t.RazonSocialNombreRemitente, t.NombreCompletoCreador), ': ',
-    isnull(t.AsuntoExpediente, 'SIN ASUNTO')) AsuntoExpediente,
-    t.NumeroFoliosExpediente,
-    isnull(t.ObservacionesExpediente, '') ObservacionesExpediente,
-    t.ParaAnular,
-    isnull(t.NombreEmpresa,'EXTERNO') NombreEmpresaCreador,
-    isnull(t.NombreArea, '') NombreAreaCreador,
-    isnull(t.NombreCargo, '') NombreCargoCreador,
-    isnull(t.RazonSocialNombreRemitente, t.NombreCompletoCreador) NombrePersonaCreador,
-    concat(t.NombreExpediente, '-', t.CorrelativoVinculado) NombreExpediente,
-    t.IdExpedienteDocumento,
-    t.IdExpedienteDocumentoOrigen,
-    t.NumeroDocumento,
-    t.FgTramiteVirtual,
-    t.FechaEnvioDocumento
-from #tmp001_salidaDatos t
-where t.nroOrd between @iPaginaRegInicio and @iPaginaRegFinal
-order by t.nroOrd
-
-select @iRegistroTotal
+    @pIdArea=63,
+    @pIdUsuarioAuditoria=3812,
+    @pCampoOrdenado=NULL,
+    @pTipoOrdenacion=NULL,
+    @pNumeroPagina=1,
+    @pDimensionPagina=10,
+    @pBusquedaGeneral='VRAEM'
 
 
--- set statistics xml off
--- set statistics io off
--- set statistics time off
+-- AS
+-- 	BEGIN TRY
+		Declare @pBusquedaGeneralfText Varchar(400), @pBusquedaGeneralfTextLike Bit, @iRegistroTotal Int, @iPaginaRegInicio Int, @iPaginaRegFinal Int
+        SET @pBusquedaGeneral = RTrim(LTrim(@pBusquedaGeneral))
+
+		Execute General.fnFullTextPrefijoVal @pBusquedaGeneral, 'And', @pBusquedaGeneralfText Output, @pBusquedaGeneralfTextLike Output
+        Create Table #vTablaExpediente(IdExpediente BigInt, IdExpedienteDocumento BigInt, eNroOrden Int)
+
+		IF Isnull(@pBusquedaGeneral, '') <> ''
+			BEGIN
+				INSERT INTO #vTablaExpediente(IdExpediente, IdExpedienteDocumento, eNroOrden)
+				SELECT
+					SE.IdExpediente,
+					SE.IdExpedienteDocumento,
+					Row_Number() Over(Order By SE.FechaExpediente desc)
+				FROM
+					(
+						SELECT Top 5000
+							E.IdExpediente,
+							ED.IdExpedienteDocumento,
+							CONVERT(DATETIME, E.NTFechaExpediente +' '+ E.HoraExpediente) As FechaExpediente
+						FROM
+							Tramite.Expediente E With(NoLock)
+							INNER JOIN Tramite.ExpedienteDocumento ED With(NoLock) on
+							ED.IdExpediente=E.IdExpediente AND ED.EstadoAuditoria=E.EstadoAuditoria
+							AND ED.IdEmpresaEmisor=0 AND E.IdCatalogoSituacionExpediente=63
+						WHERE
+							E.EstadoAuditoria=1
+							And E.ExpedienteAnulado=0
+							And
+							(
+								CONTAINS(E.AsuntoExpediente, @pBusquedaGeneralfText) OR
+								CONTAINS(E.NombreExpediente, @pBusquedaGeneralfText) OR
+								CONTAINS(E.NombreCompletoCreador, @pBusquedaGeneralfText) OR
+								CONTAINS(ED.NumeroDocumento, @pBusquedaGeneralfText)
+							)
+						ORDER BY E.IdExpediente Desc
+					) SE
+				OPTION (MAXDOP 2)
+			END
+		ELSE
+			BEGIN
+				INSERT INTO #vTablaExpediente(IdExpediente, IdExpedienteDocumento, eNroOrden)
+				SELECT
+					SE.IdExpediente,
+					SE.IdExpedienteDocumento,
+					Row_Number() Over(Order By SE.FechaExpediente desc)
+				FROM
+					(
+						SELECT Top 5000
+							E.IdExpediente,
+							ED.IdExpedienteDocumento,
+							CONVERT(DATETIME, E.NTFechaExpediente +' '+ E.HoraExpediente) As FechaExpediente
+						FROM
+							Tramite.Expediente E With(NoLock)
+							INNER JOIN Tramite.ExpedienteDocumento ED With(NoLock) on
+							ED.IdExpediente=E.IdExpediente AND ED.EstadoAuditoria=E.EstadoAuditoria
+							AND ED.IdEmpresaEmisor=0 AND E.IdCatalogoSituacionExpediente=63
+							LEFT JOIN General.Persona PD ON E.IdPersonaCreador=PD.IdPersona
+						WHERE
+							E.EstadoAuditoria=1
+							And E.ExpedienteAnulado=0
+						ORDER BY E.IdExpediente Desc
+					) SE
+				OPTION (MAXDOP 2)
+			END
+
+		select*from #vTablaExpediente
+		return
+
+		BEGIN
+			Set @iRegistroTotal = (Select Count(1) From #vTablaExpediente)
+			SELECT @iPaginaRegInicio = c.iStartRow,
+				@iPaginaRegFinal = c.iEndrow
+			FROM General.fnObtenerPaginacion(@pDimensionPagina, @pNumeroPagina, @iRegistroTotal) c
+		END
+
+        SELECT
+            E.IdExpediente,
+            E.ExpedienteConfidencial,
+			CASE WHEN COALESCE(ED.CorrelativoVinculado,0)=0 THEN E.NTFechaExpediente
+			ELSE CONVERT(VARCHAR(10),ISNULl(ED.FechaActualizacionAuditoria,ED.FechaCreacionAuditoria),103) END NTFechaExpediente,
+			CASE WHEN COALESCE(ED.CorrelativoVinculado,0)=0 THEN E.HoraExpediente
+			ELSE CONVERT(VARCHAR(5),ISNULl(ED.FechaActualizacionAuditoria,ED.FechaCreacionAuditoria),108) END HoraExpediente,
+            E.IdCatalogoTipoPrioridad,
+            CTP.Descripcion CatalogoTipoPrioridad,
+            COALESCE(CTT.Descripcion,'') CatalogoTipoTramite,
+			case when COALESCE(E.RazonSocialNombreRemitente,'')='' then COALESCE(NombreCompletoCreador,'')
+			else  COALESCE(E.RazonSocialNombreRemitente,'') END +': '+CASE WHEN COALESCE(E.AsuntoExpediente,'')=''
+			THEN 'SIN ASUNTO' ELSE E.AsuntoExpediente END AsuntoExpediente,
+            E.NumeroFoliosExpediente,
+            COALESCE(E.ObservacionesExpediente,'') ObservacionesExpediente,
+			Tramite.funParaAnularMesaParte(E.IdExpediente)  ParaAnular,
+            COALESCE(EMD.NombreEmpresa,'EXTERNO') NombreEmpresaCreador,
+            COALESCE(AD.NombreArea,'') NombreAreaCreador,
+            COALESCE(CD.NombreCargo,'') NombreCargoCreador,
+			case when COALESCE(E.RazonSocialNombreRemitente,'')='' then COALESCE(NombreCompletoCreador,'')
+			else  COALESCE(E.RazonSocialNombreRemitente,'') end NombrePersonaCreador,
+            CONCAT(E.NombreExpediente,CASE WHEN COALESCE(ED.CorrelativoVinculado,0)=0 THEN ''
+            ELSE '-' +CONVERT(VARCHAR,ED.CorrelativoVinculado) END) NombreExpediente,
+            ED.IdExpedienteDocumento,EDO.IdExpedienteDocumentoOrigen,
+            CONCAT(C.Descripcion,' ', ED.NumeroDocumento) NumeroDocumento,
+			E.FgTramiteVirtual,
+			ED.FechaEnvioDocumento
+		FROM
+			#vTablaExpediente EE
+			INNER JOIN Tramite.Expediente E ON E.IdExpediente=EE.IdExpediente
+			INNER JOIN Tramite.ExpedienteDocumento ED on ED.IdExpediente=E.IdExpediente AND ED.IdExpedienteDocumento = EE.IdExpedienteDocumento
+			INNER JOIN Tramite.ExpedienteDocumentoOrigen EDO on EDO.IdExpedienteDocumento=ED.IdExpedienteDocumento AND EDO.EstadoAuditoria=1 AND EDO.EsCabecera=1 --and edo.IdAreaOrigenEnvia=@pIdArea
+			INNER JOIN Tramite.Catalogo C on C.IdCatalogo=ED.IdCatalogoTipoDocumento
+			INNER JOIN Tramite.Catalogo CTP ON CTP.IdCatalogo=E.IdCatalogoTipoPrioridad
+			LEFT JOIN General.Empresa EMD ON E.IdEmpresaCreador=EMD.IdEmpresa
+			LEFT JOIN General.Area AD ON E.IdAreaCreador= AD.IdArea
+			LEFT JOIN General.Cargo CD ON E.IdCargoCreador=CD.IdCargo
+			LEFT JOIN General.Persona PD ON E.IdPersonaCreador=PD.IdPersona
+			LEFT JOIN Tramite.Catalogo CTT ON CTT.IdCatalogo=E.IdCatalogoTipoTramite
+		WHERE EE.eNroOrden Between @iPaginaRegInicio And @iPaginaRegFinal
+		ORDER BY EE.eNroOrden ASC
+
+		SELECT @iRegistroTotal
+--     END TRY
+--     BEGIN CATCH
+-- 		DECLARE @ERROR_NUMBER INT, @ERROR_SEVERITY INT,@ERROR_STATE INT,@ERROR_LINE INT,@ERROR_PROCEDURE VARCHAR(MAX) ,@ERROR_MESSAGE VARCHAR(MAX)
+-- 		SELECT @ERROR_NUMBER=ERROR_NUMBER() , @ERROR_SEVERITY=ERROR_SEVERITY() , @ERROR_STATE=ERROR_STATE() , @ERROR_PROCEDURE='Tramite.paListarExpedienteMesaParteDespachadosV1',@ERROR_LINE=ERROR_LINE(),@ERROR_MESSAGE=ERROR_MESSAGE()
+-- 		EXEC Seguridad.paGuardarErroresEnLog @ERROR_NUMBER , @ERROR_SEVERITY , @ERROR_STATE ,  @ERROR_PROCEDURE,@ERROR_LINE,@ERROR_MESSAGE
+-- 		SELECT ERROR_MESSAGE()
+-- 	END CATCH
+
+-- go

@@ -1,113 +1,125 @@
+CREATE PROCEDURE Tramite.paListarExpedienteMesaParteDespachadosVirtualesV1
 
--- CREATE PROCEDURE [Tramite].[paListarExpedienteMesaParteDespachadosVirtualesV1]
-declare
-    @pIdUsuarioAuditoria int = 56784,
-	@pCampoOrdenado varchar(50)= null,
-	@pTipoOrdenacion varchar(4)= null,
-	@pNumeroPagina INT = 1,
-	@pDimensionPagina  INT = 10,
-	@pBusquedaGeneral varchar(100) =
-	-- null
-	'BONIFICA'
+	@pIdUsuarioAuditoria int,
+	@pCampoOrdenado varchar(50),
+	@pTipoOrdenacion varchar(4),
+	@pNumeroPagina INT,
+	@pDimensionPagina  INT,
+	@pBusquedaGeneral varchar(100)
+AS
+	BEGIN TRY
+		--set language 'spanish'
+		DECLARE @iRegistroTotal Int, @iPaginaRegInicio Int, @iPaginaRegFinal Int, @pBusquedaGeneralfText varchar(200), @pBusquedaGeneralfTextLike Bit
+		Create Table #vTablaExpediente (IdExpediente BigInt, FgEsObservado Bit, FgEnvioCorregido Bit, FechaEnvioDocumento DateTime, eNroOrden Int)
+		--
+		if Isnull(@pBusquedaGeneral, '') <> ''
+		Begin
 
-set tran isolation level read uncommitted
-set nocount on
-set language english
+			Execute General.fnFullTextPrefijoVal @pBusquedaGeneral, 'And', @pBusquedaGeneralfText Output, @pBusquedaGeneralfTextLike Output
 
+			INSERT INTO #vTablaExpediente(IdExpediente, FgEsObservado, FgEnvioCorregido, FechaEnvioDocumento, eNroOrden)
+			SELECT E.IdExpediente,
+				ED.FgEsObservado,
+				ED.FgEnvioCorregido,
+				ED.FechaEnvioDocumento,
+				Row_Number() Over(Order By ED.FechaEnvioDocumento desc)
+			FROM
+				(Tramite.Expediente E WITH (NOLOCK)
+				INNER JOIN Tramite.ExpedienteDocumento ED WITH (NOLOCK)
+				on ED.IdExpediente=E.IdExpediente AND ED.EstadoAuditoria=E.EstadoAuditoria AND E.IdCatalogoTipoMovimientoTramite=13
+				AND E.IdCatalogoSituacionExpediente =62 and E.FgTramiteVirtual=1  AND ED.IdExpedienteDocumento Is Not Null
+				and ED.FgDocumentoVirtualEnviado=1 AND ED.FgEsObservado = 0 and ED.FgEnvioCorregido = 0
+				INNER JOIN Tramite.ExpedienteDocumentoOrigen EDO WITH (NOLOCK)
+				on ED.IdExpedienteDocumento=EDO.IdExpedienteDocumento and EDO.EstadoAuditoria=E.EstadoAuditoria
+				)
+				LEFT JOIN Tramite.Catalogo CTT WITH (NOLOCK) ON CTT.IdCatalogo=E.IdCatalogoTipoTramite
+				LEFT JOIN Tramite.ExpedienteDocumentoOrigenDestino EDOD WITH (NOLOCK)
+				on EDO.IdExpedienteDocumentoOrigen=EDOD.IdExpedienteDocumentoOrigen and EDOD.EstadoAuditoria=E.EstadoAuditoria
+			WHERE E.EstadoAuditoria=1
+				AND E.ExpedienteAnulado=0
+				AND EDOD.IdExpedienteDocumentoOrigenDestino Is Null
+				AND (
+						CONTAINS(ED.AsuntoDocumento, @pBusquedaGeneralfText) OR
+						CONTAINS(ED.NumeroDocumento, @pBusquedaGeneralfText) OR
+						E.NumeroExpediente LIKE '%'+@pBusquedaGeneral +'%' OR
+						CTT.Descripcion LIKE '%'+@pBusquedaGeneral +'%' OR
+						CONTAINS(ED.NombreCompletoEmisor, @pBusquedaGeneralfText)
+					)
+			OPTION (MAXDOP 2)
+		End
+		Else
+		Begin
+			INSERT INTO #vTablaExpediente(IdExpediente, FgEsObservado, FgEnvioCorregido, FechaEnvioDocumento, eNroOrden)
+			SELECT E.IdExpediente,
+				ED.FgEsObservado,
+				ED.FgEnvioCorregido,
+				ED.FechaEnvioDocumento,
+				Row_Number() Over(Order By ED.FechaEnvioDocumento desc)
+			FROM
+				Tramite.Expediente E WITH (NOLOCK)
+				INNER JOIN Tramite.ExpedienteDocumento ED WITH (NOLOCK)
+				ON ED.IdExpediente=E.IdExpediente AND E.IdCatalogoTipoMovimientoTramite=13 AND E.IdCatalogoSituacionExpediente =62
+				and E.FgTramiteVirtual=1  AND ED.IdExpedienteDocumento Is Not Null and ED.FgDocumentoVirtualEnviado=1
+				AND ED.FgEsObservado = 0 AND ED.FgEnvioCorregido = 0
+				INNER JOIN Tramite.ExpedienteDocumentoOrigen EDO WITH (NOLOCK) ON ED.IdExpedienteDocumento=EDO.IdExpedienteDocumento
+				and EDO.EstadoAuditoria=E.EstadoAuditoria
+				LEFT JOIN Tramite.ExpedienteDocumentoOrigenDestino EDOD WITH (NOLOCK)
+				ON EDOD.IdExpedienteDocumentoOrigen = EDO.IdExpedienteDocumentoOrigen and EDOD.EstadoAuditoria=E.EstadoAuditoria
+			WHERE E.EstadoAuditoria=1
+				AND E.ExpedienteAnulado=0
+				AND EDOD.IdExpedienteDocumentoOrigenDestino Is Null
+			OPTION (MAXDOP 2)
+		End
 
+		--Calculando Paginación
+		Begin
+			Set @iRegistroTotal = (Select Count(1) From #vTablaExpediente)
+			--
+			SELECT @iPaginaRegInicio = c.iStartRow,
+				@iPaginaRegFinal = c.iEndrow
+			FROM General.fnObtenerPaginacion(@pDimensionPagina, @pNumeroPagina, @iRegistroTotal) c
+		End
 
+		SELECT
+			E.IdExpediente,
+			E.ExpedienteConfidencial,
+			E.NTFechaExpediente,
+			E.HoraExpediente,
+			E.IdCatalogoTipoPrioridad,
+			COALESCE(CTP.Descripcion,'') CatalogoTipoPrioridad,
+			COALESCE(CTT.Descripcion,'') CatalogoTipoTramite,
+			case when COALESCE(PD.NombreCompleto,'')='' then COALESCE(NombreCompletoCreador,'') else  COALESCE(PD.NombreCompleto,'') END +': '+CASE WHEN COALESCE(E.AsuntoExpediente,'')='' THEN 'SIN ASUNTO' ELSE E.AsuntoExpediente END AsuntoExpediente,
+			E.NumeroFoliosExpediente,
+			COALESCE(E.ObservacionesExpediente,'') ObservacionesExpediente,
+			COALESCE(EMD.NombreEmpresa,'EXTERNO') NombreEmpresaCreador,
+			COALESCE(AD.NombreArea,'') NombreAreaCreador,
+			COALESCE(CD.NombreCargo,'') NombreCargoCreador,
+			case when COALESCE(PD.NombreCompleto,'')='' then COALESCE(NombreCompletoCreador,'') else  COALESCE(PD.NombreCompleto,'') end NombrePersonaCreador,
+			E.NombreExpediente NombreExpediente,
+			COALESCE(EE.FgEsObservado,'false') FgParaEnvio,
+			COALESCE(EE.FgEsObservado,'false')FgEsObservado,
+			COALESCE(EE.FgEnvioCorregido,'false')FgEnvioCorregido,
+			coalesce(convert(varchar,EE.FechaEnvioDocumento,103),'')+' '+coalesce(convert(varchar,EE.FechaEnvioDocumento,108) ,'') FechaEnvioDocumento
+			--ee.eNroOrden
+		FROM
+			#vTablaExpediente EE
+			INNER JOIN Tramite.Expediente E WITH (NOLOCK) ON E.IdExpediente=EE.IdExpediente
+			LEFT JOIN Tramite.Catalogo CTP WITH (NOLOCK) ON CTP.IdCatalogo=E.IdCatalogoTipoPrioridad
+			LEFT JOIN General.Empresa EMD WITH (NOLOCK) ON E.IdEmpresaCreador=EMD.IdEmpresa
+			LEFT JOIN General.Area AD WITH (NOLOCK) ON E.IdAreaCreador= AD.IdArea
+			LEFT JOIN General.Cargo CD WITH (NOLOCK) ON E.IdCargoCreador=CD.IdCargo
+			LEFT JOIN General.Persona PD WITH (NOLOCK) ON E.IdPersonaCreador=PD.IdPersona
+			LEFT JOIN Tramite.Catalogo CTT WITH (NOLOCK) ON CTT.IdCatalogo=E.IdCatalogoTipoTramite
+		WHERE EE.eNroOrden Between @iPaginaRegInicio And @iPaginaRegFinal
+		ORDER BY EE.eNroOrden ASC
 
-    Declare @iRegistroTotal Int, @iPaginaRegInicio Int, @iPaginaRegFinal Int
-    Declare @pBusquedaGeneral_fulltext varchar(100) =(
-    select case isnull(@pBusquedaGeneral,'') when '' then 'xdgpdw84x' else concat('"', cadena, '*"') end
-    from tramite.fnUtilitario_sanitizar(@pBusquedaGeneral))
-
-    ;with tmp001_text_expediente_documento as(
-        select [key]
-        from containstable(tramite.ExpedienteDocumento, (AsuntoDocumento, NumeroDocumento, NombreCompletoEmisor), @pBusquedaGeneral_fulltext)
-    )
-    ,tmp001_expediente as(
-        select*from tramite.expediente
-        where EstadoAuditoria = 1 and ExpedienteAnulado = 0  and IdPeriodo = year(getdate()) and
-        IdCatalogoTipoMovimientoTramite = 13 and IdCatalogoSituacionExpediente = 62 and FgTramiteVirtual = 1
-    )
-    select row_number()over(order by FechaEnvioDocumento desc) eNroOrden, *
-        into #tmp001_matriz
-    from(select top 1 with ties
-        t1.IdExpediente,
-        t1.IdCatalogoTipoPrioridad,
-        t1.IdEmpresaCreador,
-        t1.IdAreaCreador,
-        t1.IdCargoCreador,
-        t1.IdPersonaCreador,
-        t1.IdCatalogoTipoTramite,
-        t1.NumeroFoliosExpediente,
-        t2.FgEsObservado,
-        t2.FgEnvioCorregido,
-        t1.ExpedienteConfidencial,
-        t2.FechaEnvioDocumento,
-        t1.fechaCreacionAuditoria,
-        t1.NombreExpediente,
-        t1.RazonSocialNombreRemitente,
-        t1.NombreCompletoCreador,
-        t1.ObservacionesExpediente,
-        t1.AsuntoExpediente
-    from tmp001_expediente t1
-    cross apply(select*from Tramite.ExpedienteDocumento t2
-        where t2.IdExpediente = t1.IdExpediente and t2.EstadoAuditoria = 1 and
-        t2.FgDocumentoVirtualEnviado = 1 and t2.FgEsObservado = 0 and t2.FgEnvioCorregido = 0)t2
-    cross apply(select*from Tramite.ExpedienteDocumentoOrigen t3
-        where t3.IdExpedienteDocumento = t2.IdExpedienteDocumento and t3.EstadoAuditoria = 1)t3
-    outer apply(select*from Tramite.ExpedienteDocumentoOrigenDestino t4
-        where t4.IdExpedienteDocumentoOrigen = t3.IdExpedienteDocumentoOrigen and t4.EstadoAuditoria = 1)t4
-    left join tmp001_text_expediente_documento tfexp on tfexp.[key] = t2.IdExpedienteDocumento
-    where t4.IdExpedienteDocumentoOrigenDestino is null and (isnull(@pBusquedaGeneral, '') = '' or not tfexp.[key] is null)
-    order by row_number()over(partition by t1.IdExpediente order by t2.FechaEnvioDocumento desc))ma
-
-    select @iRegistroTotal = count(1) from #tmp001_matriz
-    select @iPaginaRegInicio = c.iStartRow, @iPaginaRegFinal = c.iEndrow
-    from General.fnObtenerPaginacion(@pDimensionPagina, @pNumeroPagina, @iRegistroTotal)c
-
-    ;with tmp001_catalogo as(
-        select*from Tramite.Catalogo
-    )
-    select
-        t.IdExpediente,
-        t.ExpedienteConfidencial,
-        convert(varchar, t.fechaCreacionAuditoria, 103) NTFechaExpediente,
-        convert(char(5), t.fechaCreacionAuditoria, 108) HoraExpediente,
-        t.IdCatalogoTipoPrioridad,
-        isnull(c1.descripcion, '') CatalogoTipoPrioridad,
-        isnull(c2.descripcion, '') CatalogoTipoTramite,
-        concat(case isnull(t.RazonSocialNombreRemitente, '') when '' then isnull(t.NombreCompletoCreador, '') else t.RazonSocialNombreRemitente end,
-        ': ', case isnull(t.AsuntoExpediente, '') when '' then 'SIN ASUNTO' else t.AsuntoExpediente end) AsuntoExpediente,
-        t.NumeroFoliosExpediente,
-        isnull(t.ObservacionesExpediente, '') ObservacionesExpediente,
-        isnull(e.NombreEmpresa, 'EXTERNO') NombreEmpresaCreador,
-        isnull(a.NombreArea, '') NombreAreaCreador,
-        isnull(r.NombreCargo, '') NombreCargoCreador,
-        case isnull(t.RazonSocialNombreRemitente, '') when '' then isnull(t.NombreCompletoCreador, '')
-        else t.RazonSocialNombreRemitente end NombrePersonaCreador,
-        t.NombreExpediente,
-        isnull(t.FgEsObservado, 'false') FgParaEnvio,
-        isnull(t.FgEsObservado, 'false') FgEsObservado,
-        isnull(t.FgEnvioCorregido, 'false') FgEnvioCorregido,
-        concat(convert(varchar, t.FechaEnvioDocumento, 103), ' ', convert(char(5), t.FechaEnvioDocumento, 108)) FechaEnvioDocumento
-    from #tmp001_matriz t
-    outer apply(select*from tmp001_catalogo c1 where c1.IdCatalogo = t.IdCatalogoTipoPrioridad)c1
-    outer apply(select*from General.Empresa e where e.IdEmpresa = t.IdEmpresaCreador)e
-    outer apply(select*from General.Area a where a.IdArea = t.IdAreaCreador)a
-    outer apply(select*from General.Cargo r where r.IdCargo = t.IdCargoCreador)r
-    outer apply(select*from General.Persona p where p.IdPersona = t.IdPersonaCreador)p
-    outer apply(select*from tmp001_catalogo c2 where c2.IdCatalogo = t.IdCatalogoTipoTramite)c2
-    where t.eNroOrden Between @iPaginaRegInicio and @iPaginaRegFinal
-    order by t.eNroOrden
-
-    select @iRegistroTotal
-
-	-- END TRY
-	-- BEGIN CATCH
-	-- 		DECLARE @ERROR_NUMBER INT, @ERROR_SEVERITY INT,@ERROR_STATE INT,@ERROR_LINE INT,@ERROR_PROCEDURE VARCHAR(MAX)	,@ERROR_MESSAGE VARCHAR(MAX)
-	-- 		SELECT @ERROR_NUMBER=ERROR_NUMBER() , @ERROR_SEVERITY=ERROR_SEVERITY() , @ERROR_STATE=ERROR_STATE() , @ERROR_PROCEDURE='Tramite.paListarExpedienteMesaParteDespachadosVirtualesV1',@ERROR_LINE=ERROR_LINE(),@ERROR_MESSAGE=ERROR_MESSAGE()
-	-- 		EXEC Seguridad.paGuardarErroresEnLog @ERROR_NUMBER , @ERROR_SEVERITY , @ERROR_STATE ,  @ERROR_PROCEDURE,@ERROR_LINE,@ERROR_MESSAGE
-	--  END CATCH
+		--Total Registro
+		SELECT @iRegistroTotal
+		--
+		Drop Table #vTablaExpediente
+	END TRY
+	BEGIN CATCH
+			DECLARE @ERROR_NUMBER INT, @ERROR_SEVERITY INT,@ERROR_STATE INT,@ERROR_LINE INT,@ERROR_PROCEDURE VARCHAR(MAX)	,@ERROR_MESSAGE VARCHAR(MAX)
+			SELECT @ERROR_NUMBER=ERROR_NUMBER() , @ERROR_SEVERITY=ERROR_SEVERITY() , @ERROR_STATE=ERROR_STATE() , @ERROR_PROCEDURE='Tramite.paListarExpedienteMesaParteDespachadosVirtualesV1',@ERROR_LINE=ERROR_LINE(),@ERROR_MESSAGE=ERROR_MESSAGE()
+			EXEC Seguridad.paGuardarErroresEnLog @ERROR_NUMBER , @ERROR_SEVERITY , @ERROR_STATE ,  @ERROR_PROCEDURE,@ERROR_LINE,@ERROR_MESSAGE
+	 END CATCH

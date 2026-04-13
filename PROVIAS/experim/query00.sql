@@ -1,6 +1,7 @@
 -- select*from dbo.mastertable('Tramite.Expediente')
 -- select*from dbo.mastertable('Tramite.ExpedienteDocumento')
-
+use tempdb
+go
 
 if exists(select 1 from sys.sysobjects where id = object_id('mastertable','if'))
 drop function mastertable
