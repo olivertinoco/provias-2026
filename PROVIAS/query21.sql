@@ -16,6 +16,12 @@ SELECT
     @pDimensionPagina=10,
     @pBusquedaGeneral='ENTREGA'
 
+
+
+exec Tramite.paListarExpedienteMesaParteDespachadosVirtualesV1 56784, null, null, 1, 10, 'ENTREGA'
+exec Tramite.paListarExpedienteMesaParteDespachadosVirtualesV1_new 56784, null, null, 1, 10, 'ENTREGA'
+
+  return
     -- set statistics xml on
     -- set statistics io on
     -- set statistics time on

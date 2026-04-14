@@ -4,8 +4,9 @@
 Declare
 @tabla varchar(200), @aux varchar(max),
 @procedures varchar(1000) =
+-- 'tramite.paListarExpedienteMesaParteDespachadosVirtualesV1'
+-- 'tramite.paListarExpedientePendienteEspecialistaCreados_new'
 'tramite.paListarExpedientePendienteEspecialistaPorRecibir'
-
 
 
 
@@ -41,6 +42,10 @@ exec(@aux)
 -- ===========================================================
 select 'insert into '+ @tabla +' select '
 
+-- insert into dbo.paListarExpedienteMesaParteDespachadosVirtualesV1 select 56784, null, null, 1, 10, 'ENTREGA'
+-- insert into dbo.paListarExpedientePendienteEspecialistaCreados_new select 0, '13/04/2026','13/04/2026',0,'13/04/2026','13/04/2026',728,727, 116, 4,0,0,2026,0,0,0,'','','','',0,'','','',728,null,null,1,10,null,0
+
+-- insert into dbo.paListarExpedientePendienteEspecialistaPorRecibir select 0,'13/04/2026','13/04/2026',0,'13/04/2026','13/04/2026',590,588,4,4,0,0,2026,0,0,0,'','','','',0,'','','',590,NULL,NULL,1,100,NULL,0
 
 
 

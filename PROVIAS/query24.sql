@@ -7,8 +7,8 @@ declare
 	@pTipoOrdenacion varchar(4)= null,
 	@pNumeroPagina INT = 1,
 	@pDimensionPagina  INT = 10,
-	@pBusquedaGeneral varchar(100) =
-    'BONIFICA'
+	@pBusquedaGeneral varchar(100) ='ENTREGA'
+
 -- AS
 -- 	BEGIN TRY
 
@@ -56,6 +56,7 @@ declare
 						CONTAINS(ED.NombreCompletoEmisor, @pBusquedaGeneralfText)
 					)
 			 OPTION (MAXDOP 2)
+
 		End
 		Else
 		Begin
@@ -80,6 +81,7 @@ declare
 				AND EDOD.IdExpedienteDocumentoOrigenDestino Is Null
 			OPTION (MAXDOP 2)
 		End
+
 
 		--Calculando Paginación
 		Begin

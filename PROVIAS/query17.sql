@@ -1,8 +1,8 @@
--- if exists(select 1 from sys.sysobjects where id = object_id('[Tramite].[paListarExpedientePendienteEspecialistaPorRecibir]','p'))
--- drop procedure [Tramite].[paListarExpedientePendienteEspecialistaPorRecibir]
+-- if exists(select 1 from sys.sysobjects where id = object_id('[Tramite].[paListarExpedientePendienteEspecialistaPorRecibir_new]','p'))
+-- drop procedure [Tramite].[paListarExpedientePendienteEspecialistaPorRecibir_new]
 -- go
--- CREATE PROCEDURE [Tramite].[paListarExpedientePendienteEspecialistaPorRecibir]
-declare
+-- CREATE PROCEDURE [Tramite].[paListarExpedientePendienteEspecialistaPorRecibir_new]
+Declare
     @pConFiltroFecha bit,
 	@pFechaInicio varchar(10),
 	@pFechaFin varchar(10),
@@ -40,38 +40,75 @@ declare
 set tran isolation level read uncommitted
 set nocount on
 
-select
-    @pConFiltroFecha= 0,
-	@pFechaInicio= '10/04/2026',
-	@pFechaFin= '10/04/2026',
-	@pConFiltroFechaMovimiento= 0,
-	@pFechaInicioMovimiento= '10/04/2026',
-	@pFechaFinMovimiento= '10/04/2026',
-	@pIdPersona= 1059,
-	@pIdEmpleadoPerfil= 2259,
-	@pIdCatalogoSituacionMovimientoDestino= 4,
-	@pTipoSituacionMovimiento= 4,
-	@pIdAreaOrigen= 0,
-	@pIdAreaDestino= 0,
-	@pIdPeriodo= 2026,
-	@pIdCatalogoTipoPrioridad= 0,
-	@pIdCatalogoTipoTramite= 0,
-	@pIdCatalogoTipoDocumento= 0,
-	@pNumeroExpediente= '',
-	@pNumeroDocumento= '',
-	@pPersonaDesde= '',
-	@pPersonaPara= '',
-	@pIdTipoIngreso= 0,
-	@pFechaDocumento= '',
-	@pEmisorExpediente= '',
-	@pAsuntoExpediente= '',
-	@pIdUsuarioAuditoria= 1059,
-	@pCampoOrdenado= null,
-	@pTipoOrdenacion= null,
-	@pNumeroPagina= 1,
-	@pDimensionPagina= 10,
-	@pBusquedaGeneral= null,
-	@pFlgBusqueda= 0
+-- select
+--     @pConFiltroFecha= 0,
+-- 	@pFechaInicio= '14/04/2026',
+-- 	@pFechaFin= '14/04/2026',
+-- 	@pConFiltroFechaMovimiento= 0,
+-- 	@pFechaInicioMovimiento= '14/04/2026',
+-- 	@pFechaFinMovimiento= '14/04/2026',
+-- 	@pIdPersona= 728,
+-- 	@pIdEmpleadoPerfil= 727,
+-- 	@pIdCatalogoSituacionMovimientoDestino= 4,
+-- 	@pTipoSituacionMovimiento= 4,
+-- 	@pIdAreaOrigen= 0,
+-- 	@pIdAreaDestino= 0,
+-- 	@pIdPeriodo= 2026,
+-- 	@pIdCatalogoTipoPrioridad= 0,
+-- 	@pIdCatalogoTipoTramite= 0,
+-- 	@pIdCatalogoTipoDocumento= 0,
+-- 	@pNumeroExpediente= '',
+-- 	@pNumeroDocumento= '',
+-- 	@pPersonaDesde= '',
+-- 	@pPersonaPara= '',
+-- 	@pIdTipoIngreso= 0,
+-- 	@pFechaDocumento= '',
+-- 	@pEmisorExpediente= '',
+-- 	@pAsuntoExpediente= '',
+-- 	@pIdUsuarioAuditoria= 728,
+-- 	@pCampoOrdenado= null,
+-- 	@pTipoOrdenacion= null,
+-- 	@pNumeroPagina= 1,
+-- 	@pDimensionPagina= 10,
+-- 	@pBusquedaGeneral= null,
+-- 	@pFlgBusqueda= 0
+
+
+SELECT
+@pConFiltroFecha=0,
+@pFechaInicio='13/04/2026',
+@pFechaFin='13/04/2026',
+@pConFiltroFechaMovimiento=0,
+@pFechaInicioMovimiento='13/04/2026',
+@pFechaFinMovimiento='13/04/2026',
+@pIdPersona=590,
+@pIdEmpleadoPerfil=588,
+@pIdCatalogoSituacionMovimientoDestino=4,
+@pTipoSituacionMovimiento=4,
+@pIdAreaOrigen=0,
+@pIdAreaDestino=0,
+@pIdPeriodo=2026,
+@pIdCatalogoTipoPrioridad=0,
+@pIdCatalogoTipoTramite=0,
+@pIdCatalogoTipoDocumento=0,
+@pNumeroExpediente='',
+@pNumeroDocumento='',
+@pPersonaDesde='',
+@pPersonaPara='',
+@pIdTipoIngreso=0,
+@pFechaDocumento='',
+@pEmisorExpediente='',
+@pAsuntoExpediente='',
+@pIdUsuarioAuditoria=590,
+@pCampoOrdenado=NULL,
+@pTipoOrdenacion=NULL,
+@pNumeroPagina=1,
+@pDimensionPagina=100,
+@pBusquedaGeneral=NULL,
+@pFlgBusqueda=0
+
+
+
 
 create table #tmp001_expediente (
 	IdExpediente int,
@@ -100,6 +137,11 @@ create table #tmp001_matriz(
     IdExpediente int primary key,
     FechaMovimiento datetime
 )
+create table #tmp001_orden(
+    item int identity,
+    IdExpediente int
+)
+
 declare @vIdCargo int = 0, @vIdArea int = 0, @vIdEmpresa int = 2
 
 select @vIdArea = t.IdArea, @vIdCargo = t.IdCargo, @pBusquedaGeneral = nullif(rtrim(ltrim(@pBusquedaGeneral)),'')
@@ -132,15 +174,19 @@ if @pIdPersona > 0 and (try_convert(int, @pBusquedaGeneral) is not null or @pBus
             t1.NumeroExpediente = isnull(@pBusquedaGeneral, t1.NumeroExpediente)
     order by row_number()over(partition by t1.IdExpediente order by t4.fechaCreacionAuditoria desc)
 
-
-    select distinct min(tt.idExpedienteDocumento)over(partition by t.idExpediente) minExpDoc, t.idExpediente into #tmp001_catologoExp
-    from #tmp001_matriz t cross apply tramite.ExpedienteDocumento tt
-    where t.idExpediente = tt.idExpediente
-
-    select IdCatalogoTipoOrigen,  tt.idExpediente  into #tmp001_catologoTipoOrigen
-    from tramite.ExpedienteDocumento t cross apply #tmp001_catologoExp tt
-    where t.idExpedienteDocumento = tt.minExpDoc
-
+    SELECT
+        t.idExpediente,
+        x.IdCatalogoTipoOrigen
+    INTO #tmp001_catologoTipoOrigen
+    FROM #tmp001_matriz t
+    CROSS APPLY (
+        SELECT TOP 1
+            ed.idExpedienteDocumento,
+            ed.IdCatalogoTipoOrigen
+        FROM tramite.ExpedienteDocumento ed
+        WHERE ed.idExpediente = t.idExpediente
+        ORDER BY ed.idExpedienteDocumento ASC
+    ) x
 
     ;with tmp001_serieDocumental as(
         select*from(values(1,'E-'),(2,'I-'))sd(IdSerieDocumentalExpediente, AbreviaturaSerieDocumentalExpediente)
@@ -161,7 +207,7 @@ if @pIdPersona > 0 and (try_convert(int, @pBusquedaGeneral) is not null or @pBus
         t.NumeroFoliosExpediente,
         isnull(t.ObservacionesExpediente, '') ObservacionesExpediente,
         concat(convert(varchar, t.fechaCreacionAuditoria, 103), ' ', convert(char(5), t.fechaCreacionAuditoria, 108)) Fecha,
-        CONCAT(SD.AbreviaturaSerieDocumentalExpediente, RIGHT(CONCAT('000000', t.NumeroExpediente),6), '-', t.IdPeriodo) NombreExpediente,
+        CONCAT(SD.AbreviaturaSerieDocumentalExpediente, RIGHT(1000000 + t.NumeroExpediente,6), '-', t.IdPeriodo) NombreExpediente,
         isnull(t.NombreCompletoCreador, pe.NombreCompleto) NombreCompletoCreador,
         t.NumeroExpediente,
         isnull(es.IdExpedienteSeguimiento, 0) IdExpedienteSeguimiento,
@@ -169,11 +215,10 @@ if @pIdPersona > 0 and (try_convert(int, @pBusquedaGeneral) is not null or @pBus
         m.FechaMovimiento,
         tt.IdCatalogoTipoOrigen
     from  tramite.Expediente t
-    cross apply(select*from  #tmp001_matriz m  where m.idExpediente = t.idExpediente)m
-    cross apply(select*from Seguridad.Usuario su where su.IdUsuario = t.IdUsuarioCreacionAuditoria and
-        su.EstadoAuditoria = 1 and su.Bloqueado = 0)su
-    cross apply(select*from tmp001_serieDocumental sd where sd.IdSerieDocumentalExpediente = t.IdSerieDocumentalExpediente)sd
-    cross apply(select tt.*from #tmp001_catologoTipoOrigen tt where tt.idExpediente = t.idExpediente )tt
+    inner join  #tmp001_matriz m  on m.idExpediente = t.idExpediente
+    inner join Seguridad.Usuario su on su.IdUsuario = t.IdUsuarioCreacionAuditoria and su.EstadoAuditoria = 1
+    inner join tmp001_serieDocumental sd on sd.IdSerieDocumentalExpediente = t.IdSerieDocumentalExpediente
+    inner join #tmp001_catologoTipoOrigen tt on tt.idExpediente = t.idExpediente
     outer apply(select*from tramite.catalogo c1 where c1.IdCatalogo = t.IdCatalogoTipoPrioridad)c1
     outer apply(select*from Tramite.ExpedienteSeguimiento es
         where es.IdExpediente = t.IdExpediente and
@@ -189,9 +234,10 @@ if @pIdPersona > 0 and (try_convert(int, @pBusquedaGeneral) is not null or @pBus
 	OFFSET (@pNumeroPagina-1)*@pDimensionPagina ROWS
 	FETCH NEXT @pDimensionPagina ROWS ONLY
 
+	insert into #tmp001_orden
+    select distinct idExpediente from #tmp001_expediente order by idExpediente desc
 
-	select*from(
-    select top 1 with ties
+select
     isnull(convert(bit,case when pa1.cant>0 then 0 when pa2.cant>0 then 1 else 0 end),0) EsParaAnular,
     isnull(datediff(dd, convert(date, t3.FechaOrigen), getdate()), 0) DiasPendiente,
     concat(isnull(np.NombrePersonaOrigen,''), case isnull(np.NombrePersonaOrigen,'') when '' then '' else '; ' end)  NombrePersonaOrigen,
@@ -220,13 +266,16 @@ if @pIdPersona > 0 and (try_convert(int, @pBusquedaGeneral) is not null or @pBus
     t.NombreCompletoCreador,
     t.NumeroExpediente,
     isnull(t.IdExpedienteSeguimiento,0) IdExpedienteSeguimiento,
-    t.FechaMovimiento
+    isnull(t.FechaMovimiento,'') FechaMovimiento,
+    o.item
+into #tmp001_resultset
 from #tmp001_expediente t
+inner join #tmp001_orden o
+    on t.IdExpediente = o.IdExpediente
 inner join tramite.ExpedienteDocumento t2 on t2.IdExpediente = t.IdExpediente and t2.EstadoAuditoria = 1
 inner join tramite.ExpedienteDocumentoOrigen t3 on t3.idExpedienteDocumento = t2.idExpedienteDocumento and t3.estadoAuditoria = 1
 inner join tramite.ExpedienteDocumentoOrigenDestino t4
     on t4.idExpedienteDocumentoOrigen = t3.idExpedienteDocumentoOrigen and t4.estadoAuditoria = 1
-cross apply(select datediff(day, cast(t3.FechaOrigen as date), getdate()) diasPass)dia
 inner join tramite.catalogo c3 on c3.IdCatalogo = t.IdCatalogoTipoOrigen
 left join tramite.catalogo c4 on c4.IdCatalogo = t2.IdCatalogoTipoDocumento
 left join General.Persona pe on pe.IdPersona = t.IdPersonaCreador
@@ -275,15 +324,6 @@ outer apply(select sum(case when
     )over(partition by t.IdExpediente) cant
 )pa2
 outer apply(select max(case when
-    t4.IdCatalogoSituacionMovimientoDestino = @pIdCatalogoSituacionMovimientoDestino and
-    t4.FechaDestinoRecepciona = '' and
-    t4.IdEmpresaDestino = @vIdEmpresa and
-    t4.IdAreaDestino = @vIdArea and
-    t4.IdCargoDestino = @vIdCargo and
-    t4.IdPersonaDestino = @pIdPersona then iif(dia.diasPass < 0 , 0, dia.diasPass) else 0 end
-    )over(partition by t.IdExpediente) DiasPendiente
-)dp
-outer apply(select max(case when
     t4.IdCatalogoSituacionMovimientoDestino in (4,5) and
     isnull(t3.IdempresaOrigen, 0) = 0 and
     t4.IdAreaDestino = @vIdArea and
@@ -291,13 +331,6 @@ outer apply(select max(case when
     t4.IdPersonaDestino = @pIdPersona then t2.NombreCompletoEmisor else a.NombreArea end
     )over(partition by t.IdExpediente) NombrePersonaOrigen
 )np
-outer apply(select max(case when
-    t4.IdCatalogoSituacionMovimientoDestino = @pIdCatalogoSituacionMovimientoDestino and
-    t4.IdAreaDestino = @vIdArea and
-    t4.IdCargoDestino = @vIdCargo and
-    t4.IdPersonaDestino = @pIdPersona then t2.IdExpedienteDocumento end
-    )over(partition by t.IdExpediente) IdExpedienteDocumento
-)ied
 outer apply(select max(case when
     t4.IdCatalogoSituacionMovimientoDestino = @pIdCatalogoSituacionMovimientoDestino and
     t4.IdAreaDestino = @vIdArea and
@@ -317,8 +350,38 @@ outer apply(select max(case when
         end
     end)over(partition by t.IdExpediente) NumeroDocumento
 )nd
-order by row_number()over(partition by t.idExpediente order by t2.IdExpedienteDocumento desc, nd.NumeroDocumento desc)
-)t order by t.idExpediente desc
+
+select
+    EsParaAnular,
+    DiasPendiente,
+    NombrePersonaOrigen,
+    NumeroDocumento,
+    IdExpedienteDocumento,
+    NombreExpedientesEnlazados,
+    EsPrincipalEnlace,
+    CatalogoTipoOrigen,
+    IdExpediente,
+    ExpedienteConfidencial,
+    NTFechaExpediente,
+    HoraExpediente,
+    IdCatalogoTipoPrioridad,
+    CatalogoTipoPrioridad,
+    CatalogoTipoTramite,
+    ColorCatalogoTipoTramite,
+    Logueo,
+    RutaFotoPersona,
+    AsuntoExpediente,
+    NumeroFoliosExpediente,
+    ObservacionesExpediente,
+    Fecha,
+    NombreExpediente,
+    NombreCompletoCreador,
+    NumeroExpediente,
+    IdExpedienteSeguimiento,
+    FechaMovimiento
+from(select *, row_number()over(partition by item order by item, IdExpedienteDocumento desc, NumeroDocumento desc) nro
+from #tmp001_resultset)t where t.nro = 1 order by t.item
+
 
 select count(1) from #tmp001_matriz
 

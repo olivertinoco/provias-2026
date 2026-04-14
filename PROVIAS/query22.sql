@@ -63,7 +63,8 @@ set nocount on
                 WHERE EDOD.IdExpedienteDocumentoOrigen = EDO.IdExpedienteDocumentoOrigen AND EDOD.EstadoAuditoria = 1
             )
 		ORDER BY ED.FechaEnvioDocumento DESC
-	END
+
+	END ELSE
 	INSERT INTO #vTablaExpediente(IdExpediente, FgEsObservado, FgEnvioCorregido,FechaEnvioDocumento, FechaExpediente)
 	SELECT Top 5000
 		E.IdExpediente,
@@ -95,30 +96,30 @@ set nocount on
 
 
 	SELECT
-		E.IdExpediente,
-		E.ExpedienteConfidencial,
-		E.NTFechaExpediente,
-		E.HoraExpediente,
-		E.IdCatalogoTipoPrioridad,
-		COALESCE(CTP.Descripcion,'') CatalogoTipoPrioridad,
-		COALESCE(CTT.Descripcion,'') CatalogoTipoTramite,
-		case when COALESCE(PD.NombreCompleto,'')='' then COALESCE(NombreCompletoCreador,'')
-		else  COALESCE(PD.NombreCompleto,'') END +': '+
-		    CASE WHEN COALESCE(E.AsuntoExpediente,'')='' THEN 'SIN ASUNTO' ELSE E.AsuntoExpediente END AsuntoExpediente,
-		E.NumeroFoliosExpediente,
-		COALESCE(E.ObservacionesExpediente,'') ObservacionesExpediente,
-		COALESCE(EMD.NombreEmpresa,'EXTERNO') NombreEmpresaCreador,
-		COALESCE(AD.NombreArea,'') NombreAreaCreador,
-		COALESCE(CD.NombreCargo,'') NombreCargoCreador,
-		case when COALESCE(PD.NombreCompleto,'')='' then COALESCE(NombreCompletoCreador,'')
-		else  COALESCE(PD.NombreCompleto,'') end NombrePersonaCreador,
-		E.NombreExpediente NombreExpediente,
-		COALESCE(EE.FgEsObservado,'false') FgParaEnvio,
-		COALESCE(EE.FgEsObservado,'false')FgEsObservado,
-		COALESCE(EE.FgEnvioCorregido,'false')FgEnvioCorregido,
-		coalesce(convert(varchar,EE.FechaEnvioDocumento,103),'')+' '+
-		coalesce(convert(varchar,EE.FechaEnvioDocumento,108) ,'') FechaEnvioDocumento,
-		ISNULL(SU.Logueo, '') AS Logueo
+    	E.IdExpediente,
+    	isnull(E.ExpedienteConfidencial, 0) ExpedienteConfidencial,
+    	E.NTFechaExpediente,
+    	E.HoraExpediente,
+    	isnull(E.IdCatalogoTipoPrioridad, 0) IdCatalogoTipoPrioridad,
+    	COALESCE(CTP.Descripcion,'') CatalogoTipoPrioridad,
+    	COALESCE(CTT.Descripcion,'') CatalogoTipoTramite,
+    	case when COALESCE(PD.NombreCompleto,'')='' then COALESCE(NombreCompletoCreador,'')
+    	else  COALESCE(PD.NombreCompleto,'') END +': '+
+    	    CASE WHEN COALESCE(E.AsuntoExpediente,'')='' THEN 'SIN ASUNTO' ELSE E.AsuntoExpediente END AsuntoExpediente,
+    	isnull(E.NumeroFoliosExpediente, 0) NumeroFoliosExpediente,
+    	COALESCE(E.ObservacionesExpediente,'') ObservacionesExpediente,
+    	COALESCE(EMD.NombreEmpresa,'EXTERNO') NombreEmpresaCreador,
+    	COALESCE(AD.NombreArea,'') NombreAreaCreador,
+    	COALESCE(CD.NombreCargo,'') NombreCargoCreador,
+    	case when COALESCE(PD.NombreCompleto,'')='' then COALESCE(NombreCompletoCreador,'')
+    	else  COALESCE(PD.NombreCompleto,'') end NombrePersonaCreador,
+    	E.NombreExpediente NombreExpediente,
+    	COALESCE(EE.FgEsObservado,'false') FgParaEnvio,
+    	COALESCE(EE.FgEsObservado,'false')FgEsObservado,
+    	COALESCE(EE.FgEnvioCorregido,'false')FgEnvioCorregido,
+    	coalesce(convert(varchar,EE.FechaEnvioDocumento,103),'')+' '+
+    	coalesce(convert(varchar,EE.FechaEnvioDocumento,108) ,'') FechaEnvioDocumento,
+    	ISNULL(SU.Logueo, '') AS Logueo
 	FROM
 		#vTablaExpediente EE
 		INNER JOIN Tramite.Expediente E  ON E.IdExpediente=EE.IdExpediente

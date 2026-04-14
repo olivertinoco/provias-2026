@@ -20,7 +20,7 @@ Declare @sp varchar(1000) =
 -- '[Tramite].[paListarComboAreaPorAreaPadrePendientes]'
 -- '[Tramite].[paListarComboPersonaPorAreaPadrePendientes]'
 -- '[Tramite].[paListarExpedienteMesaParteDespachadosV1]' -- DURO 30 S
-'[Tramite].[paListarExpedienteMesaParteDespachadosV1]' -- DURO 5 S
+'[Seguridad].[funObtenerRutaFotoPorIdPersona]' -- DURO 5 S
 --  ///////////////////////////////////////////////////////////////////////////////////////////////////////
 -- 'Tramite.paListarExpedienteMesaParteDespachadosV1'
 -- 'General.fnFullTextPrefijoVal'

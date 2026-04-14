@@ -1,6 +1,6 @@
 -- NOTA: ME LO PASO PRODUCCION
 -- ===========================
-CREATE PROCEDURE Tramite.paListarExpedienteMesaParteDespachadosVirtualesV1
+ALTER PROCEDURE Tramite.paListarExpedienteMesaParteDespachadosVirtualesV1
  @pIdUsuarioAuditoria int,
  @pCampoOrdenado varchar(50),
  @pTipoOrdenacion varchar(4),
