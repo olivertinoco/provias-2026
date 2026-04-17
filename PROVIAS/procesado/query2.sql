@@ -166,6 +166,9 @@ if @pIdPersona > 0 and (try_convert(int, @pBusquedaGeneral) is not null or @pBus
 	insert into #tmp001_orden
     select distinct idExpediente from #tmp001_expediente order by idExpediente desc
 
+    -- select*from #tmp001_expediente
+
+
 select
     isnull(convert(bit,case when pa1.cant>0 then 0 when pa2.cant>0 then 1 else 0 end),0) EsParaAnular,
     isnull(datediff(dd, convert(date, t3.FechaOrigen), getdate()), 0) DiasPendiente,
@@ -280,38 +283,40 @@ outer apply(select max(case when
     end)over(partition by t.IdExpediente) NumeroDocumento
 )nd
 
-select
-    EsParaAnular,
-    DiasPendiente,
-    NombrePersonaOrigen,
-    NumeroDocumento,
-    IdExpedienteDocumento,
-    NombreExpedientesEnlazados,
-    EsPrincipalEnlace,
-    CatalogoTipoOrigen,
-    IdExpediente,
-    ExpedienteConfidencial,
-    NTFechaExpediente,
-    HoraExpediente,
-    IdCatalogoTipoPrioridad,
-    CatalogoTipoPrioridad,
-    CatalogoTipoTramite,
-    ColorCatalogoTipoTramite,
-    Logueo,
-    RutaFotoPersona,
-    AsuntoExpediente,
-    NumeroFoliosExpediente,
-    ObservacionesExpediente,
-    Fecha,
-    NombreExpediente,
-    NombreCompletoCreador,
-    NumeroExpediente,
-    IdExpedienteSeguimiento,
-    FechaMovimiento
-from(select *, row_number()over(partition by item order by item, IdExpedienteDocumento desc, NumeroDocumento desc) nro
-from #tmp001_resultset)t where t.nro = 1 order by t.item
+select*from #tmp001_resultset
 
-select count(1) from #tmp001_matriz
+-- select
+--     EsParaAnular,
+--     DiasPendiente,
+--     NombrePersonaOrigen,
+--     NumeroDocumento,
+--     IdExpedienteDocumento,
+--     NombreExpedientesEnlazados,
+--     EsPrincipalEnlace,
+--     CatalogoTipoOrigen,
+--     IdExpediente,
+--     ExpedienteConfidencial,
+--     NTFechaExpediente,
+--     HoraExpediente,
+--     IdCatalogoTipoPrioridad,
+--     CatalogoTipoPrioridad,
+--     CatalogoTipoTramite,
+--     ColorCatalogoTipoTramite,
+--     Logueo,
+--     RutaFotoPersona,
+--     AsuntoExpediente,
+--     NumeroFoliosExpediente,
+--     ObservacionesExpediente,
+--     Fecha,
+--     NombreExpediente,
+--     NombreCompletoCreador,
+--     NumeroExpediente,
+--     IdExpedienteSeguimiento,
+--     FechaMovimiento
+-- from(select *, row_number()over(partition by item order by item, IdExpedienteDocumento desc, NumeroDocumento desc) nro
+-- from #tmp001_resultset)t where t.nro = 1 order by t.item
+
+-- select count(1) from #tmp001_matriz
 
 end else begin
     select

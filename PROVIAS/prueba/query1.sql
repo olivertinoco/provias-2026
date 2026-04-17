@@ -8,7 +8,8 @@ tramite.expediente|\
 tramite.expedienteDocumento|\
 tramite.expedienteDocumentoOrigen|\
 tramite.ExpedienteDocumentoVisualizacion|\
-tramite.expedienteDocumentoOrigenDestino'
+tramite.expedienteDocumentoOrigenDestino|\
+General.Cargo'
 
 select top 0 cast(null as varchar(200)) collate database_default tabla into #tmp001_tabla
 select @tabla = concat('select*from(values(''', replace(@tabla,'|', '''),('''), '''))t(a)')
@@ -16,12 +17,12 @@ insert into #tmp001_tabla exec(@tabla)
 
 select*from #tmp001_tabla
 
-select distinct year(FechaCreacionAuditoria) from  Tramite.ExpedienteDocumentoVisualizacion
+-- select distinct year(FechaCreacionAuditoria) from  Tramite.ExpedienteDocumentoVisualizacion
 
--- set rowcount 10
--- select*from Tramite.ExpedienteDocumentoVisualizacion
+-- -- set rowcount 10
+-- -- select*from Tramite.ExpedienteDocumentoVisualizacion
 
-return
+-- return
 
 select concat(object_schema_name(t.object_id),'.',object_name(t.object_id)) tabla, tt.name, tt.column_id, tt.max_length
 from sys.fulltext_index_columns t, sys.columns tt, #tmp001_tabla pp

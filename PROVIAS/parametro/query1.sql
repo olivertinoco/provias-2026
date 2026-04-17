@@ -1,37 +1,5 @@
 
 -- CREATE PROCEDURE [Tramite].[paListarExpedientePendienteEspecialistaPorRecibir]
-DECLARE
-	@pConFiltroFecha bit,
-	@pFechaInicio varchar(10),
-	@pFechaFin varchar(10),
-	@pConFiltroFechaMovimiento bit,
-	@pFechaInicioMovimiento varchar(10),
-	@pFechaFinMovimiento varchar(10),
-	@pIdPersona int,
-	@pIdEmpleadoPerfil int,
-	@pIdCatalogoSituacionMovimientoDestino INT,
-	@pTipoSituacionMovimiento int,
-	@pIdAreaOrigen int,
-    @pIdAreaDestino int,
-    @pIdPeriodo int,
-    @pIdCatalogoTipoPrioridad int,
-    @pIdCatalogoTipoTramite int,
-    @pIdCatalogoTipoDocumento int,
-    @pNumeroExpediente varchar(100),
-    @pNumeroDocumento varchar(100),
-	@pPersonaDesde varchar(100),
-	@pPersonaPara varchar(100),
-	@pIdTipoIngreso int,
-	@pFechaDocumento  varchar(100),
-	@pEmisorExpediente varchar(100),
-	@pAsuntoExpediente  varchar(100),
-	@pIdUsuarioAuditoria int,
-	@pCampoOrdenado varchar(50),
-	@pTipoOrdenacion varchar(4),
-	@pNumeroPagina INT,
-	@pDimensionPagina  INT,
-	@pBusquedaGeneral varchar(100),
-	@pFlgBusqueda INT
 
 SELECT
 @pConFiltroFecha=0,
@@ -98,3 +66,51 @@ select
 	@pDimensionPagina= 10,
 	@pBusquedaGeneral= null,
 	@pFlgBusqueda= 0
+
+
+
+	-- CREATE PROCEDURE [Tramite].[paListarExpedientePendienteJefaturaPorRecibirFosCad]
+select
+		@pConFiltroFecha = 0,
+		@pFechaInicio = '15/04/2026',
+		@pFechaFin = '15/04/2026',
+		@pConFiltroFechaMovimiento = 0,
+		@pFechaInicioMovimiento = '15/04/2026',
+		@pFechaFinMovimiento = '15/04/2026',
+		@pIdArea = 30,
+		@pIdCatalogoSituacionMovimientoDestino = 4,
+		@pTipoSituacionMovimiento = 0,
+		@pIdAreaOrigen = 0,
+		@pIdAreaDestino = 0,
+		@pIdPeriodo = 0,
+		@pIdCatalogoTipoPrioridad = 0,
+		@pIdCatalogoTipoTramite = 0,
+		@pIdCatalogoTipoDocumento = 0,
+		@pNumeroExpediente = '',
+		@pNumeroDocumento = '',
+		@pPersonaDesde = '',
+		@pPersonaPara = '',
+		@pIdTipoIngreso = 0,
+		@pFechaDocumento = '',
+		@pEmisorExpediente = '',
+		@pAsuntoExpediente = '',
+		@pIdUsuarioAuditoria = 52939,
+		@pCampoOrdenado = null,
+		@pTipoOrdenacion = null,
+		@pNumeroPagina = 1,
+		@pDimensionPagina = 10,
+		@pBusquedaGeneral = null,
+		@pFlgBusqueda = 0
+
+
+ -- Tramite.paListarExpedienteMesaParteDespachadosV1
+ select
+ @pIdArea=20,
+ @pIdUsuarioAuditoria=389,
+ @pCampoOrdenado=NULL,
+ @pTipoOrdenacion=NULL,
+ @pNumeroPagina=1,
+ @pDimensionPagina=10,
+ @pBusquedaGeneral=NULL
+
+ -- Tramite.paListarExpedienteMesaParteDespachadosV1 20, 389,null, null, 1,10,null
