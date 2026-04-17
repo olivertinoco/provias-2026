@@ -13,11 +13,8 @@ u_API'
 select value usuarios into #tmp001_usuarios
 from dbo.udf_split(@data, default)
 
-
--- select*from #tmp001_usuarios
-
-
-SELECT
+select StoredProcedure into #tmp001_procedures
+from(SELECT
     dp.name AS Usuario,
     concat(object_schema_name(o.object_id),'.', o.name) AS StoredProcedure,
     p.permission_name,
@@ -30,7 +27,13 @@ INNER JOIN sys.database_principals dp
 INNER JOIN #tmp001_usuarios UU
     ON UU.usuarios = dp.name
 WHERE o.type = 'P'
-order by UU.usuarios, object_schema_name(o.object_id), StoredProcedure
+order by UU.usuarios, object_schema_name(o.object_id), StoredProcedure offset 0 rows
+)t
+
+select StoredProcedure from #tmp001_procedures
+
+
+
 
 --   SELECT
 --       dp.name AS Usuario,
