@@ -1,6 +1,6 @@
 WHILE 1 = 1
 BEGIN
-    DELETE TOP (10000)
+    DELETE TOP (10000) e
     FROM Tramite.ExpedienteDocumentoAdjuntoTemporal e WITH (ROWLOCK)
     WHERE e.FechaCreacionAuditoria >= '20220101' AND e.FechaCreacionAuditoria <  '20230101'
 
@@ -13,7 +13,7 @@ END
 
 WHILE 1 = 1
 BEGIN
-    DELETE TOP (10000)
+    DELETE TOP (10000) e
     FROM Tramite.ExpedienteDocumentoFirmante e WITH (ROWLOCK)
     WHERE e.FechaCreacionAuditoria >= '20220101' AND e.FechaCreacionAuditoria <  '20230101'
 

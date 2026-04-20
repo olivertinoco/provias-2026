@@ -1,10 +1,9 @@
-
 ALTER TABLE tramite.ExpedienteBloqueado
 DROP CONSTRAINT fkIdExpedienteBloqueado;
 
 WHILE 1 = 1
 BEGIN
-    DELETE TOP (10000)
+    DELETE TOP (10000) t
     FROM Tramite.ExpedienteDevuelto t WITH (ROWLOCK)
     WHERE t.FechaCreacionAuditoria >= '20220101'
     AND t.FechaCreacionAuditoria <  '20230101'
@@ -18,7 +17,7 @@ END
 
 WHILE 1 = 1
 BEGIN
-    DELETE TOP (10000)
+    DELETE TOP (10000) t
     FROM Tramite.NumeracionSeparada t WITH (ROWLOCK)
     WHERE t.FechaCreacionAuditoria >= '20220101'
     AND t.FechaCreacionAuditoria <  '20230101'
@@ -32,7 +31,7 @@ END
 
 WHILE 1 = 1
 BEGIN
-    DELETE TOP (10000)
+    DELETE TOP (10000) t
     FROM Tramite.ExpedienteSeguimiento t WITH (ROWLOCK)
     WHERE t.FechaCreacionAuditoria >= '20220101'
     AND t.FechaCreacionAuditoria <  '20230101'

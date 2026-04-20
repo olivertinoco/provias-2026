@@ -96,7 +96,7 @@ END
 
 WHILE 1 = 1
 BEGIN
-    DELETE TOP (10000)
+    DELETE TOP (10000) e
     FROM Tramite.Expediente e
     WHERE e.FechaCreacionAuditoria >= '20230101' AND e.FechaCreacionAuditoria <  '20240101'
 

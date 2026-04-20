@@ -3,7 +3,7 @@ WHILE 1 = 1
 BEGIN
     DELETE TOP (10000) d
     FROM Tramite.ExpedienteDocumentoOrigenAdjunto d WITH (ROWLOCK)
-    WHERE d.FechaCreacionAuditoria >= '20230101' AND d.FechaCreacionAuditoria <  '20240101'
+    WHERE d.FechaCreacionAuditoria >= '20240101' AND d.FechaCreacionAuditoria <  '20250101'
 
     IF @@ROWCOUNT = 0 BREAK
 
@@ -19,7 +19,7 @@ BEGIN
     from tramite.ExpedienteDocumentoAdjuntoFirmante t
     inner join Tramite.ExpedienteDocumentoAdjunto tt
         on tt.IdExpedienteDocumentoAdjunto = t.IdExpedienteDocumentoAdjunto
-    WHERE tt.FechaCreacionAuditoria >= '20230101' AND tt.FechaCreacionAuditoria <  '20240101'
+    WHERE tt.FechaCreacionAuditoria >= '20240101' AND tt.FechaCreacionAuditoria <  '20250101'
 
     IF @@ROWCOUNT = 0 BREAK
     CHECKPOINT
@@ -28,11 +28,13 @@ END
 
 
 
+
+
 WHILE 1 = 1
 BEGIN
     DELETE TOP (10000) d
     FROM Tramite.ExpedienteDocumentoAdjunto d WITH (ROWLOCK)
-    WHERE d.FechaCreacionAuditoria >= '20230101' AND d.FechaCreacionAuditoria <  '20240101'
+    WHERE d.FechaCreacionAuditoria >= '20240101' AND d.FechaCreacionAuditoria <  '20250101'
 
     IF @@ROWCOUNT = 0 BREAK
 

@@ -30,7 +30,7 @@ END
 
 WHILE 1 = 1
 BEGIN
-    DELETE TOP (10000)
+    DELETE TOP (10000) o
     FROM Tramite.ExpedienteDocumentoOrigen o WITH (ROWLOCK)
     WHERE o.FechaCreacionAuditoria >= '20220101' AND o.FechaCreacionAuditoria <  '20230101'
 

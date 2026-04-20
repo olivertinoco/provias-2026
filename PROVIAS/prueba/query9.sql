@@ -1,3 +1,5 @@
+-- NOTA: LISTA A ELEIMINAR:
+-- =========================
 declare @tablas varchar(max) ='\
 Tramite.Descargadocumentoacerbodocumental|\
 Tramite.paActivarRegistroDocumentoExpedienteV2_SIGO|\
@@ -149,7 +151,10 @@ WHERE o.type = 'P'
 order by UU.usuarios, object_schema_name(o.object_id), StoredProcedure offset 0 rows
 )t
 
-
+-- NOTA: LA TABLA MANDATORIA SON DE LOS USUARIOS Y SUS SCHEMAS....
+-- =============================================================
+-- tenemos los que estan en los sp de schema pero no estan en
+-- la lista negra de Raul
 
 select concat('if exists(select 1 from sys.sysobjects where id = object_id(''',
 StoredProcedure, ''',''p'')) drop procedure ', StoredProcedure)

@@ -50,9 +50,9 @@ END
 
 WHILE 1 = 1
 BEGIN
-    DELETE TOP (10000)
-    FROM Tramite.ExpedienteDocumento WITH (ROWLOCK)
-    WHERE FechaCreacionAuditoria >= '20220101' AND FechaCreacionAuditoria <  '20230101'
+    DELETE TOP (10000) e
+    FROM Tramite.ExpedienteDocumento e WITH (ROWLOCK)
+    WHERE e.FechaCreacionAuditoria >= '20220101' AND e.FechaCreacionAuditoria <  '20230101'
 
     IF @@ROWCOUNT = 0 BREAK
 
