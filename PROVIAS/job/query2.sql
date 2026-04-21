@@ -1,10 +1,10 @@
 ORIGINAL NO TOCAR
 ====================
 
--- if exists(select 1 from sys.sysobjects where id=object_id('Tramite.paListarExpedientePendienteEspecialistaCreados_new','p'))
--- drop procedure [Tramite].[paListarExpedientePendienteEspecialistaCreados_new]
+-- if exists(select 1 from sys.sysobjects where id=object_id('Tramite.paListarExpedientePendienteEspecialistaCreados','p'))
+-- drop procedure [Tramite].[paListarExpedientePendienteEspecialistaCreados]
 -- go
--- CREATE PROCEDURE [Tramite].[paListarExpedientePendienteEspecialistaCreados_new]
+-- CREATE PROCEDURE [Tramite].[paListarExpedientePendienteEspecialistaCreados]
 Declare
 	@pConFiltroFecha bit,
 	@pFechaInicio varchar(10),

@@ -107,6 +107,8 @@ select
 		END
 
 
+select*from @vTablaExpediente
+return
 
 
 		SELECT

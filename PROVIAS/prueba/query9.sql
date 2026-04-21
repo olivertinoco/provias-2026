@@ -157,7 +157,7 @@ order by UU.usuarios, object_schema_name(o.object_id), StoredProcedure offset 0 
 -- la lista negra de Raul
 
 select concat('if exists(select 1 from sys.sysobjects where id = object_id(''',
-StoredProcedure, ''',''p'')) drop procedure ', StoredProcedure)
-from #tmp001_procedures t
-outer apply(select tablas from #tmp001_tablas tt where t.StoredProcedure = tt.tablas )tt
-where tt.tablas is null
+t.tablas, ''',''p'')) drop procedure ', t.tablas)
+from #tmp001_tablas t
+outer apply(select StoredProcedure from #tmp001_procedures tt where tt.StoredProcedure = t.tablas )tt
+where tt.StoredProcedure is null
