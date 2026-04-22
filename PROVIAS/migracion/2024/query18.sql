@@ -1,9 +1,9 @@
 WHILE 1 = 1
 BEGIN
-    DELETE TOP (10000)
-    FROM Tramite.ExpedienteDocumentoVisualizacion
-    WHERE FechaCreacionAuditoria >= '20240101'
-            AND FechaCreacionAuditoria <  '20250101';
+    DELETE TOP (10000) v
+    FROM Tramite.ExpedienteDocumentoVisualizacion v
+    WHERE v.FechaCreacionAuditoria >= '20240101'
+            AND v.FechaCreacionAuditoria <  '20250101';
 
     IF @@ROWCOUNT = 0 BREAK;
 
