@@ -1,0 +1,36 @@
+select
+@pConFiltroFecha = 0,
+@pFechaInicio = '22/04/2026',
+@pFechaFin = '22/04/2026',
+@pConFiltroFechaMovimiento = 0,
+@pFechaInicioMovimiento = '22/04/2026',
+@pFechaFinMovimiento = '22/04/2026',
+@pIdPersona = 350,
+@pIdEmpleadoPerfil = 2260,
+@pIdCatalogoSituacionMovimientoDestino = 4,
+@pTipoSituacionMovimiento = 4,
+@pIdAreaOrigen = 0,
+@pIdAreaDestino = 0,
+@pIdPeriodo = 2026,
+@pIdCatalogoTipoPrioridad = 0,
+@pIdCatalogoTipoTramite = 0,
+@pIdCatalogoTipoDocumento = 0,
+@pNumeroExpediente = '',
+@pNumeroDocumento = '',
+@pPersonaDesde = '',
+@pPersonaPara = '',
+@pIdTipoIngreso = 0,
+@pFechaDocumento = '',
+@pEmisorExpediente = '',
+@pAsuntoExpediente = '',
+@pIdUsuarioAuditoria = 350,
+@pCampoOrdenado = null,
+@pTipoOrdenacion = null,
+@pNumeroPagina = 1,
+@pDimensionPagina = 10,
+@pBusquedaGeneral = null,
+@pFlgBusqueda = 0
+
+
+exec [Tramite].[paListarExpedientePendienteEspecialistaV7]
+0,'22/04/2026','22/04/2026',0,'22/04/2026','22/04/2026',350,2260,4,4,0,0,2026, 0,0,0,'','','','',0,'','','',350,null,null,1,10,null,0

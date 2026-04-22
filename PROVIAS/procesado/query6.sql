@@ -1,9 +1,7 @@
--- set statistics xml on
--- set statistics io on
--- set statistics time on
+if exists(select 1 from sys.sysobjects where id = object_id('tramite.paListarExpedientePendienteEspecialistaCreados', 'p'))
+drop procedure tramite.paListarExpedientePendienteEspecialistaCreados
 go
--- alter procedure tramite.paListarExpedientePendienteEspecialistaCreados_new
-Declare
+create procedure tramite.paListarExpedientePendienteEspecialistaCreados
 	@pConFiltroFecha bit,
 	@pFechaInicio varchar(10),
 	@pFechaFin varchar(10),
@@ -40,40 +38,6 @@ begin
 begin try
 set tran isolation level read uncommitted
 set nocount on
-
-select
-	@pConFiltroFecha = 0,
-	@pFechaInicio = '13/04/2026',
-	@pFechaFin = '13/04/2026',
-	@pConFiltroFechaMovimiento = 0,
-	@pFechaInicioMovimiento = '13/04/2026',
-	@pFechaFinMovimiento = '13/04/2026',
-	@pIdPersona = 728,
-	@pIdEmpleadoPerfil = 727,
-	@pIdCatalogoSituacionMovimientoDestino = 116,
-	@pTipoSituacionMovimiento = 4,
-	@pIdAreaOrigen = 0,
-    @pIdAreaDestino = 0,
-    @pIdPeriodo = 2026,
-    @pIdCatalogoTipoPrioridad = 0,
-    @pIdCatalogoTipoTramite = 0,
-    @pIdCatalogoTipoDocumento = 0,
-    @pNumeroExpediente = '',
-    @pNumeroDocumento = '',
-	@pPersonaDesde = '',
-	@pPersonaPara = '',
-	@pIdTipoIngreso = 0,
-	@pFechaDocumento  = '',
-	@pEmisorExpediente = '',
-	@pAsuntoExpediente  = '',
-	@pIdUsuarioAuditoria = 728,
-	@pCampoOrdenado = null,
-	@pTipoOrdenacion = null,
-	@pNumeroPagina = 1,
-	@pDimensionPagina = 10,
-	@pBusquedaGeneral = null,
-	@pFlgBusqueda = 0
-
 
 
 create table #tmp001_idExpediente(IdExpediente int, FechaMovimiento datetime )
@@ -385,130 +349,3 @@ END TRY
 	 END CATCH
 end
 go
-
-
--- set statistics xml off
--- set statistics io off
--- set statistics time off
-
-
-
-exec Tramite.paListarExpedientePendienteEspecialistaCreados_new
-0, '13/04/2026','13/04/2026',0,'13/04/2026','13/04/2026',728,727, 116, 4,0,0,2026,0,0,0,'','','','',0,'','','',728,null,null,1,10,null,0
-
-
-
-
--- select
--- 	@pConFiltroFecha = 0,
--- 	@pFechaInicio = '13/04/2026',
--- 	@pFechaFin = '13/04/2026',
--- 	@pConFiltroFechaMovimiento = 0,
--- 	@pFechaInicioMovimiento = '13/04/2026',
--- 	@pFechaFinMovimiento = '13/04/2026',
--- 	@pIdPersona = 728,
--- 	@pIdEmpleadoPerfil = 727,
--- 	@pIdCatalogoSituacionMovimientoDestino = 116,
--- 	@pTipoSituacionMovimiento = 4,
--- 	@pIdAreaOrigen = 0,
---     @pIdAreaDestino = 0,
---     @pIdPeriodo = 2026,
---     @pIdCatalogoTipoPrioridad = 0,
---     @pIdCatalogoTipoTramite = 0,
---     @pIdCatalogoTipoDocumento = 0,
---     @pNumeroExpediente = '',
---     @pNumeroDocumento = '',
--- 	@pPersonaDesde = '',
--- 	@pPersonaPara = '',
--- 	@pIdTipoIngreso = 0,
--- 	@pFechaDocumento  = '',
--- 	@pEmisorExpediente = '',
--- 	@pAsuntoExpediente  = '',
--- 	@pIdUsuarioAuditoria = 728,
--- 	@pCampoOrdenado = null,
--- 	@pTipoOrdenacion = null,
--- 	@pNumeroPagina = 1,
--- 	@pDimensionPagina = 10,
--- 	@pBusquedaGeneral = null,
--- 	@pFlgBusqueda = 0
-
-
-
-
--- set statistics xml off
--- set statistics io off
--- set statistics time off
-
-
-
-
-
--- outer apply(
---     select case when estado2 > 0 then 0 when estado1 > 0 then 1 else 0 end EsParaAnular
---     from(select top 1 count(1)over() estado1,
---     sum(case when t4.IdCatalogoSituacionMovimientoDestino != 4 then 1 else 0 end)over() estado2
---     from #tmp001_idExpediente t
---     inner join Tramite.ExpedienteDocumento t2
---         on  t2.IdExpediente    = t.IdExpediente
---         and t2.EstadoAuditoria = 1
---         and t2.EsVinculado     = 0
---     inner join Tramite.ExpedienteDocumentoOrigen t3
---         on  t3.IdExpedienteDocumento = t2.IdExpedienteDocumento
---         and t3.EstadoAuditoria = 1
---     inner join Tramite.ExpedienteDocumentoOrigenDestino t4
---         on  t4.IdExpedienteDocumentoOrigen = t3.IdExpedienteDocumentoOrigen
---         and t4.EstadoAuditoria = 1
---         and t4.EsInicial       = 1
---         and t4.FechaDestinoRecepciona Is Null
---     where   t2.IdExpediente      = ex.IdExpediente
---         and t3.IdPersonaOrigen  = @pIdPersona
---     	and t3.IdAreaOrigen     = @vIdArea
---     	and t3.IdCargoOrigen    = @vIdCargo
---     	and t3.IdempresaOrigen  = @vIdEmpresa
--- )t)tt
-
-
--- outer apply(
---     select case
---         when exists(
---             select 1
---             from Tramite.ExpedienteDocumento t2
---             join Tramite.ExpedienteDocumentoOrigen t3
---                 on  t3.IdExpedienteDocumento = t2.IdExpedienteDocumento
---                 and t3.EstadoAuditoria = 1
---             join Tramite.ExpedienteDocumentoOrigenDestino t4
---                 on  t4.IdExpedienteDocumentoOrigen = t3.IdExpedienteDocumentoOrigen
---                 and t4.EstadoAuditoria = 1
---                 and t4.EsInicial = 1
---                 and t4.FechaDestinoRecepciona is null
---                 and t4.IdCatalogoSituacionMovimientoDestino != 4
---             where t2.IdExpediente     = ex.IdExpediente
---               and t2.EstadoAuditoria  = 1
---               and t2.EsVinculado      = 0
---               and t3.IdPersonaOrigen  = @pIdPersona
---               and t3.IdAreaOrigen     = @vIdArea
---               and t3.IdCargoOrigen    = @vIdCargo
---               and t3.IdempresaOrigen  = @vIdEmpresa
---         ) then 0
---         when exists(
---             select 1
---             from Tramite.ExpedienteDocumento t2
---             join Tramite.ExpedienteDocumentoOrigen t3
---                 on  t3.IdExpedienteDocumento = t2.IdExpedienteDocumento
---                 and t3.EstadoAuditoria = 1
---             join Tramite.ExpedienteDocumentoOrigenDestino t4
---                 on  t4.IdExpedienteDocumentoOrigen = t3.IdExpedienteDocumentoOrigen
---                 and t4.EstadoAuditoria = 1
---                 and t4.EsInicial = 1
---                 and t4.FechaDestinoRecepciona is null
---             where t2.IdExpediente    = ex.IdExpediente
---               and t2.EstadoAuditoria  = 1
---               and t2.EsVinculado      = 0
---               and t3.IdPersonaOrigen  = @pIdPersona
---               and t3.IdAreaOrigen     = @vIdArea
---               and t3.IdCargoOrigen    = @vIdCargo
---               and t3.IdempresaOrigen  = @vIdEmpresa
---         ) then 1
---         else 0
---     end EsParaAnular
--- ) tt

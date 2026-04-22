@@ -114,3 +114,39 @@ select
  @pBusquedaGeneral=NULL
 
  -- Tramite.paListarExpedienteMesaParteDespachadosV1 20, 389,null, null, 1,10,null
+
+
+
+ -- [Tramite].[paListarExpedientePendienteEspecialistaCreados]
+ select
+	@pConFiltroFecha = 0,
+	@pFechaInicio = '13/04/2026',
+	@pFechaFin = '13/04/2026',
+	@pConFiltroFechaMovimiento = 0,
+	@pFechaInicioMovimiento = '13/04/2026',
+	@pFechaFinMovimiento = '13/04/2026',
+	@pIdPersona = 728,
+	@pIdEmpleadoPerfil = 727,
+	@pIdCatalogoSituacionMovimientoDestino = 116,
+	@pTipoSituacionMovimiento = 4,
+	@pIdAreaOrigen = 0,
+    @pIdAreaDestino = 0,
+    @pIdPeriodo = 2026,
+    @pIdCatalogoTipoPrioridad = 0,
+    @pIdCatalogoTipoTramite = 0,
+    @pIdCatalogoTipoDocumento = 0,
+    @pNumeroExpediente = '',
+    @pNumeroDocumento = '',
+	@pPersonaDesde = '',
+	@pPersonaPara = '',
+	@pIdTipoIngreso = 0,
+	@pFechaDocumento  = '',
+	@pEmisorExpediente = '',
+	@pAsuntoExpediente  = '',
+	@pIdUsuarioAuditoria = 728,
+	@pCampoOrdenado = null,
+	@pTipoOrdenacion = null,
+	@pNumeroPagina = 1,
+	@pDimensionPagina = 10,
+	@pBusquedaGeneral = null,
+	@pFlgBusqueda = 0

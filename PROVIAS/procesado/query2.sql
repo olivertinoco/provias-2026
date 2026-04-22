@@ -1,7 +1,7 @@
 if exists(select 1 from sys.sysobjects where id = object_id('[Tramite].[paListarExpedientePendienteEspecialistaPorRecibir_new]','p'))
-drop procedure [Tramite].[paListarExpedientePendienteEspecialistaPorRecibir_new]
+drop procedure [Tramite].[paListarExpedientePendienteEspecialistaPorRecibir]
 go
-CREATE PROCEDURE [Tramite].[paListarExpedientePendienteEspecialistaPorRecibir_new]
+CREATE PROCEDURE [Tramite].[paListarExpedientePendienteEspecialistaPorRecibir]
     @pConFiltroFecha bit,
 	@pFechaInicio varchar(10),
 	@pFechaFin varchar(10),

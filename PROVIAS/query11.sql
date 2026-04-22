@@ -7,11 +7,12 @@ declare @procedures varchar(500)
 
 revisa tus actividades para tu segundo entregable: Actividades para el 2do entregable
 ************************************************************************************
-Tramite.paListarExpedientePendienteEspecialistaCreados
-Tramite.paObtenerEstadosExpedientesEspecialista
-Tramite.paListarExpedientePendienteJefaturaPorRecibirConBusqueda
-Tramite.paListarExpedientePendienteJefaturaTodosConBusquedaFosCad
+Tramite.paListarExpedientePendienteEspecialistaCreados  ya
+Tramite.paObtenerEstadosExpedientesEspecialista  ya
+Tramite.paListarExpedientePendienteJefaturaPorRecibirConBusqueda  NO VA
+Tramite.paListarExpedientePendienteJefaturaTodosConBusquedaFosCad NO VA
 Tramite.paListarExpedientePendienteEspecialistaPorRecibir
+
 
 Modificar todos los objetos de base de datos involucrados en el proceso de trámite documentario agregándole la columna: Período (Año)
 
