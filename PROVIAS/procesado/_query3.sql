@@ -1,7 +1,4 @@
-if exists(select 1 from sys.sysobjects where id=object_id('Tramite.paListarExpedienteMesaParteDespachadosVirtualesV1','p'))
-drop procedure [Tramite].[paListarExpedienteMesaParteDespachadosVirtualesV1]
-go
-CREATE PROCEDURE Tramite.paListarExpedienteMesaParteDespachadosVirtualesV1
+ALTER PROCEDURE Tramite.paListarExpedienteMesaParteDespachadosVirtualesV1
     @pIdUsuarioAuditoria int,
 	@pCampoOrdenado varchar(50),
 	@pTipoOrdenacion varchar(4),

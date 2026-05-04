@@ -1,5 +1,4 @@
-ALTER PROCEDURE [Tramite].[paListarExpedientePendienteEspecialistaReenviados_new]
--- Declare
+ALTER PROCEDURE [Tramite].[paListarExpedientePendienteEspecialistaReenviados]
 	@pConFiltroFecha bit,
 	@pFechaInicio varchar(10),
 	@pFechaFin varchar(10),
@@ -316,42 +315,3 @@ BEGIN CATCH
  END CATCH
 END
 GO
-
-
-EXECUTE [Tramite].[paListarExpedientePendienteEspecialistaReenviados_new]
-0,'23/04/2026','23/04/2026',0,'23/04/2026','23/04/2026',965,964,111,4,0,0,2026,0,0,0,'','','','',0,'','','',965,null,null,1,10,null,0
-
-
-
--- Declare
---     @pConFiltroFecha = 0,
---     @pFechaInicio = '23/04/2026',
---     @pFechaFin = '23/04/2026',
---     @pConFiltroFechaMovimiento = 0,
---     @pFechaInicioMovimiento = '23/04/2026',
---     @pFechaFinMovimiento = '23/04/2026',
---     @pIdPersona = 965,
---     @pIdEmpleadoPerfil = 964,
---     @pIdCatalogoSituacionMovimientoDestino = 111,
---     @pTipoSituacionMovimiento = 4,
---     @pIdAreaOrigen = 0,
---     @pIdAreaDestino = 0,
---     @pIdPeriodo = 2026,
---     @pIdCatalogoTipoPrioridad = 0,
---     @pIdCatalogoTipoTramite = 0,
---     @pIdCatalogoTipoDocumento = 0,
---     @pNumeroExpediente = '',
---     @pNumeroDocumento = '',
---     @pPersonaDesde = '',
---     @pPersonaPara = '',
---     @pIdTipoIngreso = 0,
---     @pFechaDocumento = '',
---     @pEmisorExpediente = '',
---     @pAsuntoExpediente = '',
---     @pIdUsuarioAuditoria = 965,
---     @pCampoOrdenado = null,
---     @pTipoOrdenacion = null,
---     @pNumeroPagina = 1,
---     @pDimensionPagina = 10,
---     @pBusquedaGeneral = null,
---     @pFlgBusqueda = 0

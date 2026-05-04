@@ -1,5 +1,6 @@
-ORIGINAL .....
-CREATE PROCEDURE [Tramite].[paListarExpedientePendienteJefaturaPorRecibirFosCad]
+-- ORIGINAL .....
+GO
+ALTER PROCEDURE [Tramite].[paListarExpedientePendienteJefaturaPorRecibirFosCad]
 	@pConFiltroFecha bit,
 	@pFechaInicio varchar(10),
 	@pFechaFin varchar(10),
@@ -128,8 +129,7 @@ BEGIN TRY
 		'|'+convert(varchar,E.NumeroExpediente),
 		'|'+convert(varchar,COALESCE(ES.IdExpedienteSeguimiento,0)), --IdExpedienteSeguimiento,
 		--Tramite.funObtenerFechaMovimientoEnExpediente(E.IdExpediente,@vIdAreaJefe,@pIdCatalogoSituacionMovimientoDestino) FechaMovimiento
-		'|'+isnull(FORMAT(tE.FechaMovimiento, 'dd/MM/yyyy HH:mm'),'') --'|'+convert(var
-char,tE.FechaMovimiento,21)
+		'|'+isnull(FORMAT(tE.FechaMovimiento, 'dd/MM/yyyy HH:mm'),'') --'|'+convert(varchar,tE.FechaMovimiento,21)
 	FROM
 	Tramite.Expediente E WITH (NOLOCK)
 	INNER JOIN Seguridad.Usuario US ON US.IdUsuario=E.IdUsuarioCreacionAuditoria AND E.EstadoAuditoria=1  AND COALESCE(E.ExpedienteAnulado,0)=0
@@ -188,6 +188,5 @@ END TRY
 BEGIN CATCH
 	DECLARE @ERROR_NUMBER INT, @ERROR_SEVERITY INT,@ERROR_STATE INT,@ERROR_LINE INT,@ERROR_PROCEDURE VARCHAR(MAX)	,@ERROR_MESSAGE VARCHAR(MAX)
 	SELECT @ERROR_NUMBER=ERROR_NUMBER() , @ERROR_SEVERITY=ERROR_SEVERITY() , @ERROR_STATE=ERROR_STATE() , @ERROR_PROCEDURE='Tramite.paListarExpedientePendienteJefaturaPorRecibir',@ERROR_LINE=ERROR_LINE(),@ERROR_MESSAGE=ERROR_MESSAGE()
-	EXEC Seguridad.paGuardarErroresEnTablaLog @ERROR_NUMBER , @ERROR_SEVE
-RITY , @ERROR_STATE ,  @ERROR_PROCEDURE,@ERROR_LINE,@ERROR_MESSAGE, @pIdUsuarioAuditoria
+	EXEC Seguridad.paGuardarErroresEnTablaLog @ERROR_NUMBER , @ERROR_SEVERITY , @ERROR_STATE ,  @ERROR_PROCEDURE,@ERROR_LINE,@ERROR_MESSAGE, @pIdUsuarioAuditoria
 END CATCH

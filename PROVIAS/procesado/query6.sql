@@ -1,7 +1,4 @@
-if exists(select 1 from sys.sysobjects where id = object_id('tramite.paListarExpedientePendienteEspecialistaCreados', 'p'))
-drop procedure tramite.paListarExpedientePendienteEspecialistaCreados
-go
-create procedure tramite.paListarExpedientePendienteEspecialistaCreados
+alter procedure tramite.paListarExpedientePendienteEspecialistaCreados
 	@pConFiltroFecha bit,
 	@pFechaInicio varchar(10),
 	@pFechaFin varchar(10),
@@ -184,7 +181,7 @@ outer apply(
 )cat
 outer apply(
     select top 1 t2.IdExpedienteDocumento,
-        concat(case pp.grupo when 1 then replace(g.cab1, 'xxx', t4.MotivoArchivado) else g.cab1 end,
+        concat(case pp.grupo when 1 then replace(g.cab1, 'xxx', isnull(t4.MotivoArchivado, '')) else g.cab1 end,
         t2.RutaArchivoDocumento, ''',', t2.IdExpedienteDocumento, g.cab2,
         case t2.Correlativo when 0 then concat(c.Descripcion, ' ', t2.NumeroDocumento)
         else t2.NumeroDocumento end, g.cab3) NumeroDocumento
@@ -292,7 +289,7 @@ left join Tramite.ExpedienteSeguimiento es
     and es.IdPersona = @pIdPersona
 outer apply(
     select top 1
-        case when u.RutaArchivoFoto is null and u.RutaArchivoFoto = ''
+        case when u.RutaArchivoFoto is null or u.RutaArchivoFoto = ''
         then iif(p.sexo = 0, 'sinfotoH.jpg', 'sinfotoM.jpg') else u.RutaArchivoFoto end RutaFotoPersona
     from General.Persona p
     inner join Seguridad.Usuario u

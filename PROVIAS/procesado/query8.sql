@@ -1,9 +1,5 @@
--- if exists(select 1 from sys.sysobjects where id = object_id('tramite.paListarExpedientePendienteEspecialistaV7_new', 'p'))
--- drop procedure tramite.paListarExpedientePendienteEspecialistaV7_new
--- go
--- CREATE PROCEDURE [Tramite].[paListarExpedientePendienteEspecialistaV7_new]
-Declare
-    @pConFiltroFecha bit,
+ALTER PROCEDURE [Tramite].[paListarExpedientePendienteEspecialistaV7]
+	@pConFiltroFecha bit,
 	@pFechaInicio varchar(10),
 	@pFechaFin varchar(10),
 	@pConFiltroFechaMovimiento bit,
@@ -34,47 +30,11 @@ Declare
 	@pDimensionPagina  INT,
 	@pBusquedaGeneral varchar(100),
 	@pFlgBusqueda INT
--- AS
--- BEGIN
--- BEGIN TRY
+AS
+BEGIN
+BEGIN TRY
 set nocount on
 set tran isolation level read uncommitted
-
-
-select
-@pConFiltroFecha = 0,
-@pFechaInicio = '22/04/2026',
-@pFechaFin = '22/04/2026',
-@pConFiltroFechaMovimiento = 0,
-@pFechaInicioMovimiento = '22/04/2026',
-@pFechaFinMovimiento = '22/04/2026',
-@pIdPersona = 350,
-@pIdEmpleadoPerfil = 2260,
-@pIdCatalogoSituacionMovimientoDestino = 4,
-@pTipoSituacionMovimiento = 4,
-@pIdAreaOrigen = 0,
-@pIdAreaDestino = 0,
-@pIdPeriodo = 2026,
-@pIdCatalogoTipoPrioridad = 0,
-@pIdCatalogoTipoTramite = 0,
-@pIdCatalogoTipoDocumento = 0,
-@pNumeroExpediente = '',
-@pNumeroDocumento = '',
-@pPersonaDesde = '',
-@pPersonaPara = '',
-@pIdTipoIngreso = 0,
-@pFechaDocumento = '',
-@pEmisorExpediente = '',
-@pAsuntoExpediente = '',
-@pIdUsuarioAuditoria = 350,
-@pCampoOrdenado = null,
-@pTipoOrdenacion = null,
-@pNumeroPagina = 1,
-@pDimensionPagina = 10,
-@pBusquedaGeneral = null,
-@pFlgBusqueda = 0
-
-
 
 Declare @vIdCargo int= 0, @vIdArea int= 0, @iRegistroTotal Int, @iPaginaRegInicio Int, @iPaginaRegFinal Int, @conBus int
 select @conBus = case when @pBusquedaGeneral is null or @pBusquedaGeneral = '' then 1 else 0 end
@@ -94,7 +54,7 @@ where   IdEmpresaSede = 1
 set language spanish
 
 insert into #vTablaExpediente
-select t1.IdExpediente, max(convert(datetime, t4.FechaDestinoEnvia +' '+ t4.HoraDestinoEnvia)) FechaMovimiento
+select t1.IdExpediente, max(convert(datetime, t4.FechaDestinoEnvia  +' '+ t4.HoraDestinoEnvia)) FechaMovimiento
 from Tramite.Expediente t1
 inner join Tramite.ExpedienteDocumento t2
     on  t2.IdExpediente = t1.IdExpediente
@@ -328,54 +288,11 @@ order by t.eNroOrden
 SELECT @iRegistroTotal
 
 
--- END TRY
--- BEGIN CATCH
--- 	DECLARE @ERROR_NUMBER INT, @ERROR_SEVERITY INT,@ERROR_STATE INT,@ERROR_LINE INT,@ERROR_PROCEDURE VARCHAR(MAX)	,@ERROR_MESSAGE VARCHAR(MAX)
--- 	SELECT @ERROR_NUMBER=ERROR_NUMBER() , @ERROR_SEVERITY=ERROR_SEVERITY() , @ERROR_STATE=ERROR_STATE() , @ERROR_PROCEDURE='Tramite.paListarExpedientePendienteEspecialistaV7',@ERROR_LINE=ERROR_LINE(),@ERROR_MESSAGE=ERROR_MESSAGE()
--- 	EXEC Seguridad.paGuardarErroresEnTablaLog @ERROR_NUMBER , @ERROR_SEVERITY , @ERROR_STATE ,  @ERROR_PROCEDURE,@ERROR_LINE,@ERROR_MESSAGE, @pIdUsuarioAuditoria
---  END CATCH
--- END
--- GO
-
-
--- exec [Tramite].[paListarExpedientePendienteEspecialistaV7_new]
--- 0,'22/04/2026','22/04/2026',0,'22/04/2026','22/04/2026',350,2260,4,4,0,0,2026, 0,0,0,'','','','',0,'','','',350,null,null,1,10,null,0
-
-
-exec [Tramite].[paListarExpedientePendienteEspecialistaV7]
-0,'22/04/2026','22/04/2026',0,'22/04/2026','22/04/2026',350,2260,4,4,0,0,2026, 0,0,0,'','','','',0,'','','',350,null,null,1,10,null,0
-
-
-
--- select
--- @pConFiltroFecha = 0,
--- @pFechaInicio = '22/04/2026',
--- @pFechaFin = '22/04/2026',
--- @pConFiltroFechaMovimiento = 0,
--- @pFechaInicioMovimiento = '22/04/2026',
--- @pFechaFinMovimiento = '22/04/2026',
--- @pIdPersona = 350,
--- @pIdEmpleadoPerfil = 2260,
--- @pIdCatalogoSituacionMovimientoDestino = 4,
--- @pTipoSituacionMovimiento = 4,
--- @pIdAreaOrigen = 0,
--- @pIdAreaDestino = 0,
--- @pIdPeriodo = 2026,
--- @pIdCatalogoTipoPrioridad = 0,
--- @pIdCatalogoTipoTramite = 0,
--- @pIdCatalogoTipoDocumento = 0,
--- @pNumeroExpediente = '',
--- @pNumeroDocumento = '',
--- @pPersonaDesde = '',
--- @pPersonaPara = '',
--- @pIdTipoIngreso = 0,
--- @pFechaDocumento = '',
--- @pEmisorExpediente = '',
--- @pAsuntoExpediente = '',
--- @pIdUsuarioAuditoria = 350,
--- @pCampoOrdenado = null,
--- @pTipoOrdenacion = null,
--- @pNumeroPagina = 1,
--- @pDimensionPagina = 10,
--- @pBusquedaGeneral = null,
--- @pFlgBusqueda = 0
+END TRY
+BEGIN CATCH
+	DECLARE @ERROR_NUMBER INT, @ERROR_SEVERITY INT,@ERROR_STATE INT,@ERROR_LINE INT,@ERROR_PROCEDURE VARCHAR(MAX)	,@ERROR_MESSAGE VARCHAR(MAX)
+	SELECT @ERROR_NUMBER=ERROR_NUMBER() , @ERROR_SEVERITY=ERROR_SEVERITY() , @ERROR_STATE=ERROR_STATE() , @ERROR_PROCEDURE='Tramite.paListarExpedientePendienteEspecialistaV7',@ERROR_LINE=ERROR_LINE(),@ERROR_MESSAGE=ERROR_MESSAGE()
+	EXEC Seguridad.paGuardarErroresEnTablaLog @ERROR_NUMBER , @ERROR_SEVERITY , @ERROR_STATE ,  @ERROR_PROCEDURE,@ERROR_LINE,@ERROR_MESSAGE, @pIdUsuarioAuditoria
+ END CATCH
+END
+GO

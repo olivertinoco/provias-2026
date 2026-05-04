@@ -9,6 +9,7 @@ tramite.expedienteDocumento|\
 tramite.expedienteDocumentoOrigen|\
 tramite.ExpedienteDocumentoVisualizacion|\
 tramite.expedienteDocumentoOrigenDestino|\
+tramite.ExpedienteSeguimiento|\
 General.Cargo'
 
 select top 0 cast(null as varchar(200)) collate database_default tabla into #tmp001_tabla

@@ -1,7 +1,4 @@
-if exists(select 1 from sys.sysobjects where id=object_id('Tramite.paListarExpedienteMesaParteDespachadosV1','p'))
-drop procedure [Tramite].[paListarExpedienteMesaParteDespachadosV1]
-go
-create PROCEDURE [Tramite].[paListarExpedienteMesaParteDespachadosV1]
+alter PROCEDURE [Tramite].[paListarExpedienteMesaParteDespachadosV1]
     @pIdArea int,
     @pIdUsuarioAuditoria int,
     @pCampoOrdenado varchar(50),
@@ -15,43 +12,70 @@ begin
 	set nocount on
 	set tran isolation level read uncommitted
 
+
 		Declare
 		@pBusquedaGeneralfText Varchar(400), @pBusquedaGeneralfTextLike Bit, @iRegistroTotal Int,
 		@iPaginaRegInicio Int, @iPaginaRegFinal Int
 
-        select @pBusquedaGeneral = RTrim(LTrim(@pBusquedaGeneral))
+        select @pBusquedaGeneral = rtrim(ltrim(@pBusquedaGeneral))
         Create Table #vTablaExpediente(IdExpediente BigInt, IdExpedienteDocumento BigInt, eNroOrden Int)
 
 		IF @pBusquedaGeneral is not null and @pBusquedaGeneral != ''
 			BEGIN
-                select @pBusquedaGeneralfText = concat('"', cadena, '*"') from tramite.fnUtilitario_sanitizar(@pBusquedaGeneral)
+                exec General.fnFullTextPrefijoVal
+                @pBusquedaGeneral, 'And', @pBusquedaGeneralfText out, @pBusquedaGeneralfTextLike out
 
-				INSERT INTO #vTablaExpediente(IdExpediente, IdExpedienteDocumento, eNroOrden)
+				;WITH FT_Expediente AS (
+                SELECT [KEY] AS IdExpediente, RANK
+                FROM CONTAINSTABLE(
+                    Tramite.Expediente,
+                    (AsuntoExpediente, NombreExpediente, NombreCompletoCreador),
+                    @pBusquedaGeneralfText
+                )), FT_Documento AS (
+                    SELECT
+                        ED.IdExpediente,
+                        FT.RANK
+                    FROM CONTAINSTABLE(
+                            Tramite.ExpedienteDocumento,
+                            NumeroDocumento,
+                            @pBusquedaGeneralfText
+                        ) FT
+                    INNER JOIN Tramite.ExpedienteDocumento ED
+                        ON ED.IdExpedienteDocumento = FT.[KEY]
+                    AND ED.EstadoAuditoria = 1
+                    AND ED.IdEmpresaEmisor = 0
+                ),
+                FT AS (
+                    SELECT IdExpediente, MAX(RANK) AS Score
+                    FROM (
+                        SELECT IdExpediente, RANK FROM FT_Expediente
+                        UNION ALL
+                        SELECT IdExpediente, RANK FROM FT_Documento
+                    ) X
+                    GROUP BY IdExpediente
+                )
+                INSERT INTO #vTablaExpediente(IdExpediente, IdExpedienteDocumento, eNroOrden)
 				SELECT
-					SE.IdExpediente,
-					SE.IdExpedienteDocumento,
-					Row_Number() Over(Order By SE.FechaExpediente desc)
-				FROM
-					(
-						SELECT Top 5000
-							E.IdExpediente,
-							ED.IdExpedienteDocumento,
-							cast(concat(E.NTFechaExpediente, ' ', E.HoraExpediente) as datetime) As FechaExpediente
-						FROM
-							Tramite.Expediente E
-							INNER JOIN Tramite.ExpedienteDocumento ED ON
-							ED.IdExpediente=E.IdExpediente AND ED.EstadoAuditoria=1 AND ED.IdEmpresaEmisor=0
-						WHERE
-							E.EstadoAuditoria=1 And E.ExpedienteAnulado=0 AND E.IdCatalogoSituacionExpediente=63
-							And
-							(
-    			                CONTAINS(E.AsuntoExpediente, @pBusquedaGeneralfText) OR
-    							CONTAINS(E.NombreExpediente, @pBusquedaGeneralfText) OR
-    							CONTAINS(E.NombreCompletoCreador, @pBusquedaGeneralfText) OR
-    							CONTAINS(ED.NumeroDocumento, @pBusquedaGeneralfText)
-							)
-						ORDER BY E.IdExpediente Desc
-					) SE
+   					SE.IdExpediente,
+   					SE.IdExpedienteDocumento,
+   					Row_Number() Over(Order By SE.FechaExpediente desc)
+				FROM(
+                    SELECT TOP 5000
+                        E.IdExpediente,
+                        ED.IdExpedienteDocumento,
+                        CAST(CONCAT(E.NTFechaExpediente,' ',E.HoraExpediente) AS datetime) FechaExpediente
+                    FROM FT
+                    INNER JOIN Tramite.Expediente E
+                        ON E.IdExpediente = FT.IdExpediente
+                    AND E.EstadoAuditoria = 1
+                    AND E.ExpedienteAnulado = 0
+                    AND E.IdCatalogoSituacionExpediente = 63
+                    INNER JOIN Tramite.ExpedienteDocumento ED
+                        ON ED.IdExpediente = E.IdExpediente
+                    AND ED.EstadoAuditoria = 1
+                    AND ED.IdEmpresaEmisor = 0
+                    ORDER BY E.IdExpediente DESC
+                )SE
 			END
 		ELSE
 			INSERT INTO #vTablaExpediente(IdExpediente, IdExpedienteDocumento, eNroOrden)
@@ -73,7 +97,6 @@ begin
 						E.EstadoAuditoria=1	And E.ExpedienteAnulado=0 AND E.IdCatalogoSituacionExpediente=63
 					ORDER BY E.IdExpediente Desc
 				) SE
-
 
 		Set @iRegistroTotal = (Select Count(1) From #vTablaExpediente)
 		SELECT @iPaginaRegInicio = c.iStartRow,
@@ -111,40 +134,48 @@ begin
             EDO.IdExpedienteDocumentoOrigen,
             CONCAT(C.Descripcion,' ', ED.NumeroDocumento) NumeroDocumento,
 			isnull(E.FgTramiteVirtual,0) FgTramiteVirtual,
-			isnull(ED.FechaEnvioDocumento,'') FechaEnvioDocumento
-		FROM
-			#vTablaExpediente EE
-			inner join Tramite.Expediente E on E.IdExpediente=EE.IdExpediente
-			inner join Tramite.ExpedienteDocumento ED
-			    on ED.IdExpediente=E.IdExpediente AND ED.IdExpedienteDocumento = EE.IdExpedienteDocumento
-			inner join Tramite.ExpedienteDocumentoOrigen EDO
-			    on EDO.IdExpedienteDocumento=ED.IdExpedienteDocumento AND EDO.EstadoAuditoria=1 AND EDO.EsCabecera=1
-			inner join Tramite.Catalogo C on C.IdCatalogo = ED.IdCatalogoTipoDocumento
-			inner join Tramite.Catalogo CTP on CTP.IdCatalogo = E.IdCatalogoTipoPrioridad
-			left join Tramite.Catalogo CTT on CTT.IdCatalogo= E.IdCatalogoTipoTramite
-			left join tmp001_empresa EMD on EMD.IdEmpresa = E.IdEmpresaCreador
-			left join General.Area AD on AD.IdArea = E.IdAreaCreador
-			left join General.Cargo CD on CD.IdCargo = E.IdCargoCreador
-			left join General.Persona PD on PD.IdPersona = E.IdPersonaCreador
-			left join (
-    			SELECT IdExpedienteDocumentoOrigen, paraAnular
-                FROM(SELECT o.IdExpedienteDocumentoOrigen,
-                    CASE
-                        WHEN COUNT(1) OVER(PARTITION BY o.IdExpedienteDocumentoOrigen) > 0
-                        THEN 0
-                        ELSE 1
-                    END AS paraAnular,
-                    ROW_NUMBER() OVER(
-                        PARTITION BY o.IdExpedienteDocumentoOrigen
-                        ORDER BY o.IdExpedienteDocumentoOrigen
-                    ) AS rn
-                    FROM Tramite.ExpedienteDocumentoOrigenDestino o WHERE o.FechaDestinoRecepciona IS NOT NULL
-                ) x WHERE rn = 1
-            ) anula ON anula.IdExpedienteDocumentoOrigen = EDO.IdExpedienteDocumentoOrigen
+			ED.FechaEnvioDocumento
+		FROM #vTablaExpediente EE
+		inner join Tramite.Expediente E
+		    on E.IdExpediente=EE.IdExpediente
+		inner join Tramite.ExpedienteDocumento ED
+		    on  ED.IdExpediente=E.IdExpediente
+			AND ED.IdExpedienteDocumento = EE.IdExpedienteDocumento
+		inner join Tramite.ExpedienteDocumentoOrigen EDO
+		    on  EDO.IdExpedienteDocumento=ED.IdExpedienteDocumento
+			AND EDO.EstadoAuditoria=1
+			AND EDO.EsCabecera=1
+		inner join Tramite.Catalogo C
+		    on C.IdCatalogo = ED.IdCatalogoTipoDocumento
+		inner join Tramite.Catalogo CTP
+		    on CTP.IdCatalogo = E.IdCatalogoTipoPrioridad
+		left join Tramite.Catalogo CTT
+		    on CTT.IdCatalogo= E.IdCatalogoTipoTramite
+		left join tmp001_empresa EMD
+		    on EMD.IdEmpresa = E.IdEmpresaCreador
+		left join General.Area AD
+		    on AD.IdArea = E.IdAreaCreador
+		left join General.Cargo CD
+		    on CD.IdCargo = E.IdCargoCreador
+		left join General.Persona PD
+		    on PD.IdPersona = E.IdPersonaCreador
+		left join (
+ 			SELECT IdExpedienteDocumentoOrigen, paraAnular
+            FROM(SELECT o.IdExpedienteDocumentoOrigen,
+                CASE WHEN COUNT(1) OVER(PARTITION BY o.IdExpedienteDocumentoOrigen) > 0 THEN 0 ELSE 1 END AS paraAnular,
+                ROW_NUMBER() OVER(
+                    PARTITION BY o.IdExpedienteDocumentoOrigen
+                    ORDER BY o.IdExpedienteDocumentoOrigen
+                ) AS rn
+                FROM Tramite.ExpedienteDocumentoOrigenDestino o
+                WHERE o.FechaDestinoRecepciona IS NOT NULL
+            ) x WHERE rn = 1
+        ) anula ON anula.IdExpedienteDocumentoOrigen = EDO.IdExpedienteDocumentoOrigen
 		WHERE EE.eNroOrden Between @iPaginaRegInicio And @iPaginaRegFinal
 		ORDER BY EE.eNroOrden ASC
 
 		SELECT @iRegistroTotal
+
 
     END TRY
     BEGIN CATCH

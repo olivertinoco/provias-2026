@@ -1,4 +1,4 @@
-CREATE PROCEDURE [Tramite].[paListarExpedientePendienteJefaturaPorRecibirFosCad]
+alter PROCEDURE [Tramite].[paListarExpedientePendienteJefaturaPorRecibirFosCad]
 	@pConFiltroFecha bit,
 	@pFechaInicio varchar(10),
 	@pFechaFin varchar(10),
@@ -101,29 +101,59 @@ set nocount on
     ;with tmp001_serieDocumental as(
         select*from(values(1,'E-'),(2,'I-'))a(IdSerieDocumentalExpediente,AbreviaturaSerieDocumentalExpediente)
     )
-    ,tmp001_css(cab,sec) as(
+    ,tmp001_NombreExpediente(cab1, cab2) as(
         select '<div style="margin: 2px;padding: 2px;" class="ui blue label">', '</div>'
     )
-    ,tmp001_expedientEnlazado(cta,cadena) as(
-        select count(1)over(), concat(cab, s.AbreviaturaSerieDocumentalExpediente, right(1000000 + t.NumeroExpediente,6), '-', t.IdPeriodo, sec)
-        from @vTablaExpediente tabExp
-        inner join Tramite.Expediente t
-            ON t.EstadoAuditoria = 1 and t.ExpedienteAnulado = 0 and t.IdSerieDocumentalExpediente in (1,2)
-        inner join tmp001_serieDocumental s on s.IdSerieDocumentalExpediente = t.IdSerieDocumentalExpediente
-        cross apply tmp001_css
-        where t.EstadoAuditoria = 1 and t.ExpedienteAnulado = 0
-        and exists(select 1
-            from Tramite.ExpedienteEnlazado ee
-            where ee.IdExpediente = tabExp.IdExpediente and ee.IdExpedienteSecundario = t.IdExpediente and ee.EstadoAuditoria = 1)
-        or exists
-            (select 1
-            from Tramite.ExpedienteEnlazado ee
-            where ee.IdExpediente = t.IdExpediente and ee.IdExpedienteSecundario = tabExp.IdExpediente and ee.EstadoAuditoria = 1)
+    ,tmp001_expedientEnlazado(id, cadena, cta, fecha) as(
+        select
+            t.IdExpedienteDocumento,
+            coalesce(en1.ExEnlazadoPri, en2.ExEnlazadoSec, '') NombreExpedientesEnlazados,
+            sum(case when en1.ExEnlazadoPri is null and en2.ExEnlazadoSec is null then 0 else 1 end)over() cta,
+            t.FechaMovimiento
+        from @vTablaExpediente t
+        outer apply(
+            select (SELECT cb.cab1, s.AbreviaturaSerieDocumentalExpediente,
+                right(1000000+ex.NumeroExpediente,6),'-', ex.IdPeriodo, cb.cab2
+            FROM Tramite.ExpedienteEnlazado ee
+            INNER JOIN Tramite.Expediente ex
+                ON  ex.IdExpediente = ee.IdExpedienteSecundario
+                AND ex.EstadoAuditoria   = 1
+                AND ex.ExpedienteAnulado = 0
+                AND ex.IdSerieDocumentalExpediente in (1,2)
+            INNER JOIN tmp001_serieDocumental s
+                ON s.IdSerieDocumentalExpediente = ex.IdSerieDocumentalExpediente
+            WHERE ee.IdExpediente = t.IdExpediente
+                AND ee.EstadoAuditoria = 1
+            for xml path, type).value('.','varchar(1000)') ExEnlazadoPri
+            from tmp001_NombreExpediente cb
+        )en1
+        outer apply(
+            select (SELECT cb.cab1, s.AbreviaturaSerieDocumentalExpediente,
+                right(1000000+ex.NumeroExpediente,6),'-', ex.IdPeriodo, cb.cab2
+            FROM Tramite.ExpedienteEnlazado ee
+            INNER JOIN Tramite.Expediente ex
+                ON  ex.IdExpediente = ee.IdExpediente
+                AND ex.EstadoAuditoria   = 1
+                AND ex.ExpedienteAnulado = 0
+                AND ex.IdSerieDocumentalExpediente in (1,2)
+            INNER JOIN tmp001_serieDocumental s
+                ON s.IdSerieDocumentalExpediente = ex.IdSerieDocumentalExpediente
+            WHERE ee.IdExpedienteSecundario = t.IdExpediente
+                AND ee.EstadoAuditoria = 1
+            for xml path, type).value('.','varchar(1000)') ExEnlazadoSec
+            from tmp001_NombreExpediente cb
+        )en2
     )
-    select t.cta cantEnlaces, (select cadena from tmp001_expedientEnlazado
-    for xml path, type).value('.', 'varchar(max)') cadena
+    ,tmp001_EsPrincipalEnlace as(
+        select id EsPrincipalEnlace from(select id, row_number()over(order by fecha desc) item
+        from tmp001_expedientEnlazado where cta > 1)t where item = 1
+    )
+    select
+        t.id, t.cadena, case when tt.EsPrincipalEnlace is null then 0 else 1 end EsPrincipalEnlace
     into #tmp001_ExpedienteEnlazado
-    from(select distinct cta from tmp001_expedientEnlazado)t
+    from tmp001_expedientEnlazado t
+    left join tmp001_EsPrincipalEnlace tt
+        on t.id = tt.EsPrincipalEnlace
 
 
     ;with tmp001_serieDocumental as(
@@ -139,7 +169,7 @@ set nocount on
 		replace(tE.NumeroDocumento,'|',''), t,
 		convert(varchar,tE.IdExpedienteDocumento), t,
 		ee.cadena, t,
-		CASE WHEN ee.cantEnlaces>0 THEN '1' ELSE '0' END, t,
+		ee.EsPrincipalEnlace, t,
 		tE.CatalogoTipoOrigen, t,
 		convert(varchar,E.IdExpediente), t,
 		convert(varchar,E.ExpedienteConfidencial), t,
@@ -175,7 +205,8 @@ set nocount on
 	    ON PE.IdPersona=E.IdPersonaCreador
 	LEFT JOIN Tramite.Catalogo CTT
 	    ON CTT.IdCatalogo=E.IdCatalogoTipoTramite
-	OUTER APPLY #tmp001_ExpedienteEnlazado ee
+	LEFT JOIN #tmp001_ExpedienteEnlazado ee
+	    ON ee.id = tE.IdExpedienteDocumento
 	ORDER BY tE.FechaMovimiento DESC
 	OFFSET (@pNumeroPagina-1)*@pDimensionPagina ROWS
 	FETCH NEXT @pDimensionPagina ROWS ONLY

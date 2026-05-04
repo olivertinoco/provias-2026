@@ -1,7 +1,4 @@
-if exists(select 1 from sys.sysobjects where id = object_id('tramite.paObtenerEstadosExpedientesEspecialista', 'p'))
-drop procedure tramite.paObtenerEstadosExpedientesEspecialista
-go
-create PROCEDURE [Tramite].[paObtenerEstadosExpedientesEspecialista]
+ALTER PROCEDURE [Tramite].[paObtenerEstadosExpedientesEspecialista]
     @pIdPersona int,
 	@pIdEmpleadoPerfil int,
 	@pIdUsuarioAuditoria int

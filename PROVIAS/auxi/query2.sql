@@ -41,38 +41,6 @@ begin try
 set tran isolation level read uncommitted
 set nocount on
 
-select
-	@pConFiltroFecha = 0,
-	@pFechaInicio = '13/04/2026',
-	@pFechaFin = '13/04/2026',
-	@pConFiltroFechaMovimiento = 0,
-	@pFechaInicioMovimiento = '13/04/2026',
-	@pFechaFinMovimiento = '13/04/2026',
-	@pIdPersona = 728,
-	@pIdEmpleadoPerfil = 727,
-	@pIdCatalogoSituacionMovimientoDestino = 116,
-	@pTipoSituacionMovimiento = 4,
-	@pIdAreaOrigen = 0,
-    @pIdAreaDestino = 0,
-    @pIdPeriodo = 2026,
-    @pIdCatalogoTipoPrioridad = 0,
-    @pIdCatalogoTipoTramite = 0,
-    @pIdCatalogoTipoDocumento = 0,
-    @pNumeroExpediente = '',
-    @pNumeroDocumento = '',
-	@pPersonaDesde = '',
-	@pPersonaPara = '',
-	@pIdTipoIngreso = 0,
-	@pFechaDocumento  = '',
-	@pEmisorExpediente = '',
-	@pAsuntoExpediente  = '',
-	@pIdUsuarioAuditoria = 728,
-	@pCampoOrdenado = null,
-	@pTipoOrdenacion = null,
-	@pNumeroPagina = 1,
-	@pDimensionPagina = 10,
-	@pBusquedaGeneral = null,
-	@pFlgBusqueda = 0
 
 
 
@@ -220,7 +188,7 @@ outer apply(
 )cat
 outer apply(
     select top 1 t2.IdExpedienteDocumento,
-        concat(case pp.grupo when 1 then replace(g.cab1, 'xxx', t4.MotivoArchivado) else g.cab1 end,
+        concat(case pp.grupo when 1 then replace(g.cab1, 'xxx', isnull(t4.MotivoArchivado, '')) else g.cab1 end,
         t2.RutaArchivoDocumento, ''',', t2.IdExpedienteDocumento, g.cab2,
         case t2.Correlativo when 0 then concat(c.Descripcion, ' ', t2.NumeroDocumento)
         else t2.NumeroDocumento end, g.cab3) NumeroDocumento

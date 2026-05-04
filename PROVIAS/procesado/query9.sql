@@ -1,10 +1,9 @@
--- CREATE PROCEDURE [Tramite].[paObtenerEstadosExpedientesJefatura_new]
- declare
-    @pIdArea int = 6,
+ALTER PROCEDURE [Tramite].[paObtenerEstadosExpedientesJefatura]
+    @pIdArea int,
     @pIdUsuarioAuditoria int
--- AS
--- BEGIN
--- BEGIN TRY
+AS
+BEGIN
+BEGIN TRY
 set nocount on
 set tran isolation level read uncommitted
 
@@ -46,14 +45,11 @@ set tran isolation level read uncommitted
                 and c.IdCatalogoTipoCargo in (32,33,34)
         )
 
-
--- END TRY
--- BEGIN CATCH
---     DECLARE @ERROR_NUMBER INT, @ERROR_SEVERITY INT, @ERROR_STATE INT, @ERROR_LINE INT, @ERROR_PROCEDURE VARCHAR(MAX), @ERROR_MESSAGE VARCHAR(MAX);
---     SELECT @ERROR_NUMBER = ERROR_NUMBER(),@ERROR_SEVERITY = ERROR_SEVERITY(),@ERROR_STATE = ERROR_STATE(), @ERROR_PROCEDURE = 'Tramite.paObtenerEstadosExpedientesJefatura',@ERROR_LINE = ERROR_LINE(), @ERROR_MESSAGE = ERROR_MESSAGE();
---     EXEC Seguridad.paGuardarErroresEnTablaLog @ERROR_NUMBER, @ERROR_SEVERITY, @ERROR_STATE,@ERROR_PROCEDURE, @ERROR_LINE, @ERROR_MESSAGE, @pIdUsuarioAuditoria;
--- END CATCH
--- END
--- GO
-
--- execute [Tramite].[paObtenerEstadosExpedientesJefatura_new] 6,986
+END TRY
+BEGIN CATCH
+    DECLARE @ERROR_NUMBER INT, @ERROR_SEVERITY INT, @ERROR_STATE INT, @ERROR_LINE INT, @ERROR_PROCEDURE VARCHAR(MAX), @ERROR_MESSAGE VARCHAR(MAX);
+    SELECT @ERROR_NUMBER = ERROR_NUMBER(),@ERROR_SEVERITY = ERROR_SEVERITY(),@ERROR_STATE = ERROR_STATE(), @ERROR_PROCEDURE = 'Tramite.paObtenerEstadosExpedientesJefatura',@ERROR_LINE = ERROR_LINE(), @ERROR_MESSAGE = ERROR_MESSAGE();
+    EXEC Seguridad.paGuardarErroresEnTablaLog @ERROR_NUMBER, @ERROR_SEVERITY, @ERROR_STATE,@ERROR_PROCEDURE, @ERROR_LINE, @ERROR_MESSAGE, @pIdUsuarioAuditoria;
+END CATCH
+END
+GO
