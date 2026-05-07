@@ -1,4 +1,4 @@
-CREATE PROCEDURE [Tramite].[paListarExpedientePendienteEspecialistaReenviados]
+ALTER PROCEDURE [Tramite].[paListarExpedientePendienteEspecialistaReenviados]
 	@pConFiltroFecha bit,
 	@pFechaInicio varchar(10),
 	@pFechaFin varchar(10),
@@ -135,6 +135,7 @@ AS
 			COALESCE(Seguridad.funObtenerRutaFotoPorIdPersona(E.IdPersonaCreador),'sinfotoH.jpg') RutaFotoPersona,
 			*
 			FROM @MITABLA E
+
 			SELECT
 			COUNT(*)
 			FROM

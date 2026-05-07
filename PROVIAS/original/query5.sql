@@ -1,7 +1,5 @@
--- ORIGINAL .....
-GO
 ALTER PROCEDURE [Tramite].[paListarExpedientePendienteJefaturaPorRecibirFosCad]
-	@pConFiltroFecha bit,
+    @pConFiltroFecha bit,
 	@pFechaInicio varchar(10),
 	@pFechaFin varchar(10),
 	@pConFiltroFechaMovimiento bit,

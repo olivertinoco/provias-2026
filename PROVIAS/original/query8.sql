@@ -1,4 +1,4 @@
-CREATE PROCEDURE [Tramite].[paListarExpedientePendienteEspecialistaV7]
+ALTER PROCEDURE Tramite.paListarExpedientePendienteEspecialistaV7
 	@pConFiltroFecha bit,
 	@pFechaInicio varchar(10),
 	@pFechaFin varchar(10),
@@ -93,8 +93,7 @@ AS
 							MAX(CONVERT(DATETIME,edod.FechaDestinoEnvia +' ' + edod.HoraDestinoEnvia)) FechaMovimiento
 						FROM
 							Tramite.Expediente E WITH (NOLOCK)
-							INNER JOIN Tramite.ExpedienteDocumento ED WITH (NOLOCK) ON  E.IdExpediente=ED.IdExpediente AND ED.Estado
-Auditoria=E.EstadoAuditoria
+							INNER JOIN Tramite.ExpedienteDocumento ED WITH (NOLOCK) ON  E.IdExpediente=ED.IdExpediente AND ED.EstadoAuditoria=E.EstadoAuditoria
 							INNER JOIN Tramite.ExpedienteDocumentoOrigen EDO WITH (NOLOCK) ON EDO.IdExpedienteDocumento=ED.IdExpedienteDocumento AND EDO.EstadoAuditoria=E.EstadoAuditoria
 							INNER JOIN Tramite.ExpedienteDocumentoOrigenDestino EDOD WITH (NOLOCK) ON EDOD.IdExpedienteDocumentoOrigen=EDO.IdExpedienteDocumentoOrigen AND EDOD.EstadoAuditoria=E.EstadoAuditoria
 						WHERE
@@ -172,7 +171,6 @@ Auditoria=E.EstadoAuditoria
 
 		SELECT @iRegistroTotal
 
-		Drop Table #vTablaExpediente
 
 	END TRY
 	BEGIN CATCH

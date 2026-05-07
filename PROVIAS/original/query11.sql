@@ -1,4 +1,4 @@
-CREATE PROCEDURE [Tramite].[paListarExpedientePendienteEspecialistaArchivados]
+ALTER PROCEDURE [Tramite].[paListarExpedientePendienteEspecialistaArchivados]
 	@pConFiltroFecha bit,
 	@pFechaInicio varchar(10),
 	@pFechaFin varchar(10),
@@ -60,7 +60,7 @@ AS
 
 		SELECT @vIdCargo=EP.IdCargo,@vIdArea=EP.IdArea,@vIdEmpresa=ES.IdEmpresa FROM RecursoHumano.EmpleadoPerfil EP INNER JOIN General.EmpresaSede ES ON ES.IdEmpresaSede=EP.IdEmpresaSede where EP.IdEmpleadoPerfil=@pIdEmpleadoPerfil AND EP.EstadoAuditoria=1 AND EP.Activo=1
 		SET LANGUAGE 'SPANISH'
-	DECLARE @vTablaExpediente TABLE(IdExpediente int)
+		DECLARE @vTablaExpediente TABLE(IdExpediente int)
 		IF ISNUMERIC(@pBusquedaGeneral)=1 OR @pBusquedaGeneral IS NULL OR @pBusquedaGeneral=''
 		BEGIN
 			INSERT INTO @vTablaExpediente

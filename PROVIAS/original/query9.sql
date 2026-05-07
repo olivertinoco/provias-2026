@@ -1,4 +1,4 @@
-CREATE PROCEDURE [Tramite].[paObtenerEstadosExpedientesJefatura]
+ALTER PROCEDURE [Tramite].[paObtenerEstadosExpedientesJefatura]
     @pIdArea int,
     @pIdUsuarioAuditoria int
 AS

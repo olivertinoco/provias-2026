@@ -1,4 +1,4 @@
-alter PROCEDURE [Tramite].[paListarExpedientePendienteJefaturaTodosFosCad]
+ALTER PROCEDURE [Tramite].[paListarExpedientePendienteJefaturaTodosFosCad]
  @pConFiltroFecha bit,
  @pFechaInicio varchar(10),
  @pFechaFin varchar(10),
@@ -100,7 +100,6 @@ AS
    COALESCE(CTT.Descripcion,'') CatalogoTipoTramite,
    COALESCE(CTT.Detalle,'') ColorCatalogoTipoTramite,
    US.Logueo,
-   --COALESCE(Seguridad.funObtenerRutaFotoPorIdPersona(E.IdPersonaCreador),'sinfotoH.jpg') RutaFotoPersona,
    E.IdPersonaCreador,
    UPPER(E.AsuntoExpediente) AsuntoExpediente,
    COALESCE(E.NumeroFoliosExpediente,0)NumeroFoliosExpediente,
@@ -119,25 +118,12 @@ AS
    LEFT JOIN Tramite.ExpedienteSeguimiento ES WITH (NOLOCK) ON ES.IdExpediente= E.IdExpediente AND ES.EstadoAuditoria=1 AND ES.IdCargo=0 AND ES.IdPersona=0 AND ES.IdArea=@pIdArea
    LEFT JOIN General.Persona PE ON PE.IdPersona=E.IdPersonaCreador
    LEFT JOIN Tramite.Catalogo CTT ON CTT.IdCatalogo=E.IdCatalogoTipoTramite
-   --WHERE E.NumeroExpediente = CASE WHEN ISNUMERIC(@pBusquedaGeneral)=1 THEN @pBusquedaGeneral ELSE 0 END OR @pBusquedaGeneral IS NULL OR @pBusquedaGeneral=0
    WHERE E.IdPeriodo = @pIdPeriodo
 	and (E.NumeroExpediente = CASE WHEN ISNUMERIC(@pBusquedaGeneral)=1 THEN @pBusquedaGeneral ELSE 0 END OR @pBusquedaGeneral IS NULL OR @pBusquedaGeneral=0)
    ORDER BY IdExpediente DESC
-   --OFFSET (@pNumeroPagina-1)*@pDimensionPagina ROWS
-   --FETCH NEXT @pDimensionPagina ROWS ONLY
+
 
 	select
-			--(SELECT
-			--   convert(varchar,COUNT(*))
-			--   FROM
-			--   Tramite.Expediente E WITH (NOLOCK)
-			--   INNER JOIN Seguridad.Usuario US ON US.IdUsuario=E.IdUsuarioCreacionAuditoria AND E.EstadoAuditoria=1 AND COALESCE(E.ExpedienteAnulado,0)=0
-			--   INNER JOIN Tramite.SerieDocumentalExpediente SD ON SD.IdSerieDocumentalExpediente=E.IdSerieDocumentalExpediente
-			--   INNER JOIN Tramite.Catalogo CTP ON CTP.IdCatalogo=E.IdCatalogoTipoPrioridad
-			--   LEFT JOIN Tramite.ExpedienteSeguimiento ES WITH (NOLOCK) ON ES.IdExpediente= E.IdExpediente AND ES.EstadoAuditoria=1 AND ES.IdCargo=0 AND ES.IdPersona=0 AND ES.IdArea=@pIdArea
-			--   LEFT JOIN General.Persona PE ON PE.IdPersona=E.IdPersonaCreador
-			--   LEFT JOIN Tramite.Catalogo CTT ON CTT.IdCatalogo=E.IdCatalogoTipoTramite
-			--   WHERE (E.NumeroExpediente =  @pBusquedaGeneral OR @pBusquedaGeneral IS NULL OR @pBusquedaGeneral=0))+'¦'+
 			(SELECT convert(varchar,COUNT(*)) from @MITABLA)+'¦'+
 			(select STUFF((
 			SELECT
@@ -158,7 +144,6 @@ AS
 			'|'+E.CatalogoTipoTramite,
 			'|'+E.ColorCatalogoTipoTramite,
 			'|'+E.Logueo,
-			--'|'+E.RutaFotoPersona,
 			'|'+COALESCE(Seguridad.funObtenerRutaFotoPorIdPersona(E.IdPersonaCreador),'sinfotoH.jpg'), --RutaFotoPersona,
 			'|'+replace(E.AsuntoExpediente,'|',' '),
 			'|'+convert(varchar,E.NumeroFoliosExpediente),
@@ -212,58 +197,7 @@ AS
 			OFFSET (@pNumeroPagina-1)*@pDimensionPagina ROWS
 			FETCH NEXT @pDimensionPagina ROWS ONLY
 			FOR XML PATH('')), 1, 1, ''))
-   --SELECT
-   --convert(bit,0) EsParaAnular,
-   --0 DiasPendiente,
-   --''NombrePersonaOrigen,
-   --'' NumeroDocumento,
-   --0 IdExpedienteDocumento,
-   --Tramite.funObtenerExpedientesEnlazados(E.IdExpediente) NombreExpedientesEnlazados,
-   --Tramite.funEsPrincipalEnlace(E.IdExpediente)EsPrincipalEnlace,
-   --Tramite.fnObtenerOrigenInicialDocumento(E.IdExpediente) CatalogoTipoOrigen,
-   --E.IdExpediente,
-   --E.ExpedienteConfidencial,
-   --E.NTFechaExpediente,
-   --E.HoraExpediente,
-   --E.IdCatalogoTipoPrioridad,
-   --COALESCE(CTP.Descripcion,'') CatalogoTipoPrioridad,
-   --COALESCE(CTT.Descripcion,'') CatalogoTipoTramite,
-   --COALESCE(CTT.Detalle,'') ColorCatalogoTipoTramite,
-   --US.Logueo,
-   --COALESCE(Seguridad.funObtenerRutaFotoPorIdPersona(E.IdPersonaCreador),'sinfotoH.jpg') RutaFotoPersona,
-   --UPPER(E.AsuntoExpediente) AsuntoExpediente,
-   --COALESCE(E.NumeroFoliosExpediente,0)NumeroFoliosExpediente,
-   --COALESCE(E.ObservacionesExpediente,'') ObservacionesExpediente,
-   --CONCAT(E.NTFechaExpediente ,' ', E.HoraExpediente) Fecha,
-   --CONCAT(SD.AbreviaturaSerieDocumentalExpediente +RIGHT('000000'+CONVERT(VARCHAR,E.NumeroExpediente),6),'-', E.IdPeriodo) NombreExpediente,
-   --CASE WHEN COALESCE(E.NombreCompletoCreador,'')<>'' THEN COALESCE(E.NombreCompletoCreador,'') ELSE PE.NombreCompleto END NombreCompletoCreador,
-   --E.NumeroExpediente,
-   --COALESCE(ES.IdExpedienteSeguimiento, 0 )IdExpedienteSeguimiento,
-   --NULL FechaMovimiento
-   --FROM
-   --Tramite.Expediente E WITH (NOLOCK)
-   --INNER JOIN Seguridad.Usuario US ON US.IdUsuario=E.IdUsuarioCreacionAuditoria AND E.EstadoAuditoria=1 AND COALESCE(E.ExpedienteAnulado,0)=0
-   --INNER JOIN Tramite.SerieDocumentalExpediente SD ON SD.IdSerieDocumentalExpediente=E.IdSerieDocumentalExpediente
-   --INNER JOIN Tramite.Catalogo CTP ON CTP.IdCatalogo=E.IdCatalogoTipoPrioridad
-   --LEFT JOIN Tramite.ExpedienteSeguimiento ES WITH (NOLOCK) ON ES.IdExpediente= E.IdExpediente AND ES.EstadoAuditoria=1 AND ES.IdCargo=0 AND ES.IdPersona=0 AND ES.IdArea=@pIdArea
-   --LEFT JOIN General.Persona PE ON PE.IdPersona=E.IdPersonaCreador
-   --LEFT JOIN Tramite.Catalogo CTT ON CTT.IdCatalogo=E.IdCatalogoTipoTramite
-   --WHERE E.NumeroExpediente = CASE WHEN ISNUMERIC(@pBusquedaGeneral)=1 THEN @pBusquedaGeneral ELSE 0 END OR @pBusquedaGeneral IS NULL OR @pBusquedaGeneral=0
-   --ORDER BY IdExpediente DESC
-   --OFFSET (@pNumeroPagina-1)*@pDimensionPagina ROWS
-   --FETCH NEXT @pDimensionPagina ROWS ONLY
 
-   --SELECT
-   --COUNT(*)
-   --FROM
-   --Tramite.Expediente E WITH (NOLOCK)
-   --INNER JOIN Seguridad.Usuario US ON US.IdUsuario=E.IdUsuarioCreacionAuditoria AND E.EstadoAuditoria=1 AND COALESCE(E.ExpedienteAnulado,0)=0
-   --INNER JOIN Tramite.SerieDocumentalExpediente SD ON SD.IdSerieDocumentalExpediente=E.IdSerieDocumentalExpediente
-   --INNER JOIN Tramite.Catalogo CTP ON CTP.IdCatalogo=E.IdCatalogoTipoPrioridad
-   --LEFT JOIN Tramite.ExpedienteSeguimiento ES WITH (NOLOCK) ON ES.IdExpediente= E.IdExpediente AND ES.EstadoAuditoria=1 AND ES.IdCargo=0 AND ES.IdPersona=0 AND ES.IdArea=@pIdArea
-   --LEFT JOIN General.Persona PE ON PE.IdPersona=E.IdPersonaCreador
-   --LEFT JOIN Tramite.Catalogo CTT ON CTT.IdCatalogo=E.IdCatalogoTipoTramite
-   --WHERE (E.NumeroExpediente =  @pBusquedaGeneral OR @pBusquedaGeneral IS NULL OR @pBusquedaGeneral=0)
  END TRY
  BEGIN CATCH
     DECLARE @ERROR_NUMBER INT, @ERROR_SEVERITY INT,@ERROR_STATE INT,@ERROR_LINE INT,@ERROR_PROCEDURE VARCHAR(MAX) ,@ERROR_MESSAGE VARCHAR(MAX)

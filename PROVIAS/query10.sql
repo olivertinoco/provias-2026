@@ -30,7 +30,7 @@ Declare @sp varchar(1000) =
 -- 'tramite.paListarExpedienteMesaParteDespachadosV1_new'
 -- 'Seguridad.funObtenerRutaFotoPorIdPersona'
 -- 'RecursoHumano.visPersonaJefe'
-'Tramite.paListarExpedientePendienteJefaturaTodosFosCad'
+'RecursoHumano.visPersonaJefe'
 
 
 select text from sys.syscomments where id = object_id(@sp)

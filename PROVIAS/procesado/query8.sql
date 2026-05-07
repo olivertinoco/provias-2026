@@ -1,4 +1,4 @@
-ALTER PROCEDURE [Tramite].[paListarExpedientePendienteEspecialistaV7]
+alter PROCEDURE Tramite.paListarExpedientePendienteEspecialistaV7
 	@pConFiltroFecha bit,
 	@pFechaInicio varchar(10),
 	@pFechaFin varchar(10),
@@ -101,16 +101,16 @@ FROM General.fnObtenerPaginacion(@pDimensionPagina, @pNumeroPagina, @iRegistroTo
     select*from(values(4,1),(5,1),(112,1),(111,2),(3,2),(6,2),(116,3))t(pIdCatalogoSituacionMovimientoDestino,grupo)
 )
 select
-    tt.EsParaAnular,
+    cast(tt.EsParaAnular as bit) EsParaAnular,
     dia.DiasPendiente,
     '' NombrePersonaOrigen,
     nro.NumeroDocumento,
     nro.IdExpedienteDocumento,
     isnull(x.NombreExpedientesEnlazados, '') NombreExpedientesEnlazados,
-    case when x.NombreExpedientesEnlazados is null then 0 else 1 end EsPrincipalEnlace,
+    cast(case when x.NombreExpedientesEnlazados is null then 0 else 1 end as bit) EsPrincipalEnlace,
     isnull(cat.CatalogoTipoOrigen, '') CatalogoTipoOrigen,
     t1.IdExpediente,
-    t1.ExpedienteConfidencial,
+    cast(t1.ExpedienteConfidencial as bit) ExpedienteConfidencial,
     t1.NTFechaExpediente,
     t1.HoraExpediente,
     t1.IdCatalogoTipoPrioridad,
@@ -248,9 +248,9 @@ outer apply(
     order by case pp.grupo when 3 then t3.IdExpedienteDocumentoOrigen when 2 then t4.IdExpedienteDocumentoOrigenDestino end desc
 )nro
 outer apply (
-    SELECT TOP 1 concat(cb.cab1, NombreExpediente, cb.cab2) NombreExpedientesEnlazados
+    SELECT (select cb.cab1, NombreExpediente, cb.cab2
     FROM (
-        SELECT ex.NombreExpediente, 1 orden
+        SELECT ex.NombreExpediente, ee.IdExpedienteEnlazado orden
         FROM Tramite.ExpedienteEnlazado ee
         INNER JOIN Tramite.Expediente ex
             ON  ex.IdExpediente = ee.IdExpedienteSecundario
@@ -259,7 +259,7 @@ outer apply (
         WHERE ee.IdExpediente = t1.IdExpediente
             AND ee.EstadoAuditoria = 1
         UNION ALL
-        SELECT ex.NombreExpediente, 2
+        SELECT ex.NombreExpediente, ee.IdExpedienteEnlazado
         FROM Tramite.ExpedienteEnlazado ee
         INNER JOIN Tramite.Expediente ex
             ON  ex.IdExpediente = ee.IdExpediente
@@ -268,7 +268,8 @@ outer apply (
         WHERE ee.IdExpedienteSecundario = t1.IdExpediente
             AND ee.EstadoAuditoria = 1
     ) Q cross apply tmp001_NombreExpediente cb
-    ORDER BY orden
+    ORDER BY orden desc
+    for xml path, type).value('.','varchar(max)') NombreExpedientesEnlazados
 )x
 outer apply(
     select top 1 concat(c.Descripcion, ' ', e.NumeroExpedienteExterno) CatalogoTipoOrigen

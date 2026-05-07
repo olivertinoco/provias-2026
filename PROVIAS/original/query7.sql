@@ -1,4 +1,4 @@
-CREATE PROCEDURE [Tramite].[paObtenerEstadosExpedientesEspecialista]
+ALTER PROCEDURE [Tramite].[paObtenerEstadosExpedientesEspecialista]
 	@pIdPersona int,
 	@pIdEmpleadoPerfil int,
 	@pIdUsuarioAuditoria int

@@ -208,9 +208,9 @@ outer apply(
     order by case pp.grupo when 3 then t3.IdExpedienteDocumentoOrigen when 2 then t4.IdExpedienteDocumentoOrigenDestino end desc
 )nro
 outer apply (
-    SELECT TOP 1 concat(cb.cab1, NombreExpediente, cb.cab2) NombreExpedientesEnlazados
+    SELECT (select cb.cab1, NombreExpediente, cb.cab2
     FROM (
-        SELECT t1.NombreExpediente, 1 orden
+        SELECT t1.NombreExpediente, ee.IdExpedienteEnlazado orden
         FROM Tramite.ExpedienteEnlazado ee
         INNER JOIN Tramite.Expediente t1
             ON  t1.IdExpediente = ee.IdExpedienteSecundario
@@ -219,7 +219,7 @@ outer apply (
         WHERE ee.IdExpediente = ex.IdExpediente
             AND ee.EstadoAuditoria = 1
         UNION ALL
-        SELECT t1.NombreExpediente, 2
+        SELECT t1.NombreExpediente, ee.IdExpedienteEnlazado
         FROM Tramite.ExpedienteEnlazado ee
         INNER JOIN Tramite.Expediente t1
             ON  t1.IdExpediente = ee.IdExpediente
@@ -228,7 +228,8 @@ outer apply (
         WHERE ee.IdExpedienteSecundario = ex.IdExpediente
             AND ee.EstadoAuditoria = 1
     ) Q cross apply tmp001_NombreExpediente cb
-    ORDER BY orden
+    ORDER BY orden desc
+    for xml path, type).value('.','varchar(max)') NombreExpedientesEnlazados
 )x
 
 
@@ -301,17 +302,17 @@ outer apply(
 
 
 select
-    EsParaAnular,
+    cast(EsParaAnular as bit) EsParaAnular,
     CatalogoTipoOrigen,
     DiasPendiente,
     NombrePersonaOrigen,
     NumeroDocumento,
     IdExpedienteDocumento,
     NombreExpedientesEnlazados,
-    EsPrincipalEnlace,
+    cast(EsPrincipalEnlace as bit) EsPrincipalEnlace,
     CatalogoTipoOrigen,
     IdExpediente,
-    ExpedienteConfidencial,
+    cast(ExpedienteConfidencial as bit) ExpedienteConfidencial,
     NTFechaExpediente,
     HoraExpediente,
     IdCatalogoTipoPrioridad,

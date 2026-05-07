@@ -1,4 +1,4 @@
-alter PROCEDURE [Tramite].[paListarExpedientePendienteJefaturaPorRecibirFosCad]
+ALTER PROCEDURE [Tramite].[paListarExpedientePendienteJefaturaPorRecibirFosCad]
 	@pConFiltroFecha bit,
 	@pFechaInicio varchar(10),
 	@pFechaFin varchar(10),

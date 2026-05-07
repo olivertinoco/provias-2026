@@ -1,4 +1,4 @@
-ALTER PROCEDURE [Tramite].[paListarExpedientePendienteEspecialistaReenviados]
+alter PROCEDURE Tramite.paListarExpedientePendienteEspecialistaReenviados
 	@pConFiltroFecha bit,
 	@pFechaInicio varchar(10),
 	@pFechaFin varchar(10),
@@ -200,11 +200,11 @@ set tran isolation level read uncommitted
         nro.NumeroDocumento,
         nro.IdExpedienteDocumento,
         isnull(x.NombreExpedientesEnlazados, '') NombreExpedientesEnlazados,
-        case when x.NombreExpedientesEnlazados is null then 0 else 1 end EsPrincipalEnlace,
+        cast(case when x.NombreExpedientesEnlazados is null then 0 else 1 end as bit) EsPrincipalEnlace,
 	    isnull(cat.CatalogoTipoOrigen, '') CatalogoTipoOrigen,
 		rf.RutaFotoPersona,
         t.IdExpediente,
-  		t.ExpedienteConfidencial,
+  		cast(t.ExpedienteConfidencial  as bit) ExpedienteConfidencial,
   		t.NTFechaExpediente,
   		t.HoraExpediente,
   		t.IdCatalogoTipoPrioridad,
@@ -252,9 +252,9 @@ set tran isolation level read uncommitted
         order by case pp.grupo when 3 then t3.IdExpedienteDocumentoOrigen when 2 then t4.IdExpedienteDocumentoOrigenDestino end desc
     )nro
     outer apply (
-        SELECT TOP 1 concat(cb.cab1, NombreExpediente, cb.cab2) NombreExpedientesEnlazados
+        SELECT (select cb.cab1, NombreExpediente, cb.cab2
         FROM (
-            SELECT ex.NombreExpediente, 1 orden
+            SELECT ex.NombreExpediente, ee.IdExpedienteEnlazado orden, 1 nro
             FROM Tramite.ExpedienteEnlazado ee
             INNER JOIN Tramite.Expediente ex
                 ON  ex.IdExpediente = ee.IdExpedienteSecundario
@@ -263,7 +263,7 @@ set tran isolation level read uncommitted
             WHERE ee.IdExpediente = t.IdExpediente
                 AND ee.EstadoAuditoria = 1
             UNION ALL
-            SELECT ex.NombreExpediente, 2
+            SELECT ex.NombreExpediente, ee.IdExpedienteEnlazado, 2
             FROM Tramite.ExpedienteEnlazado ee
             INNER JOIN Tramite.Expediente ex
                 ON  ex.IdExpediente = ee.IdExpediente
@@ -271,8 +271,9 @@ set tran isolation level read uncommitted
                 AND ex.ExpedienteAnulado = 0
             WHERE ee.IdExpedienteSecundario = t.IdExpediente
                 AND ee.EstadoAuditoria = 1
-        ) Q cross apply tmp001_NombreExpediente cb
-        ORDER BY orden
+        )Q cross apply tmp001_NombreExpediente cb
+        ORDER BY orden desc
+        for xml path, type).value('.','varchar(max)') NombreExpedientesEnlazados
     )x
     outer apply(
         select top 1 concat(c.Descripcion, ' ', e.NumeroExpedienteExterno) CatalogoTipoOrigen
