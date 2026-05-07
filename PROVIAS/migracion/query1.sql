@@ -1,5 +1,10 @@
 set rowcount 0
 
+-- NOTA: ESTO SE EJECUTA DESPUES DE LA MIGRACION
+-- ==============================================
+
+
+
 -- select FechaCreacionAuditoria, *from tramite.expediente_historico_2024
 
 -- select count(1) from tramite.expediente_historico_2022 e
@@ -28,11 +33,11 @@ set rowcount 0
 
 
 
-select distinct 2022, year(FechaCreacionAuditoria) anno, count(1)over() totReg  from tramite.expediente_historico_2022 order by 1
-select distinct 2023, year(FechaCreacionAuditoria) anno, count(1)over() totReg  from tramite.expediente_historico_2023 order by 1
-select distinct 2024, year(FechaCreacionAuditoria) anno, count(1)over() totReg  from tramite.expediente_historico_2024 order by 1
-select distinct 2025, year(FechaCreacionAuditoria) anno, count(1)over() totReg  from tramite.expediente_historico_2025 order by 1
-select distinct 2026, year(FechaCreacionAuditoria) anno, count(1)over() totReg  from tramite.expediente  order by 1
+select distinct year(FechaCreacionAuditoria) anno, count(1)over() totReg  from tramite.expediente_historico_2022 order by 1
+select distinct year(FechaCreacionAuditoria) anno, count(1)over() totReg  from tramite.expediente_historico_2023 order by 1
+select distinct year(FechaCreacionAuditoria) anno, count(1)over() totReg  from tramite.expediente_historico_2024 order by 1
+select distinct year(FechaCreacionAuditoria) anno, count(1)over() totReg  from tramite.expediente_historico_2025 order by 1
+select distinct year(FechaCreacionAuditoria) anno, count(1)over() totReg  from tramite.expediente  order by 1
 
 
 -- select distinct 2022, year(FechaCreacionAuditoria) anno, count(1)over(partition by idperiodo) reg from tramite.expediente_historico_2022 order by 1

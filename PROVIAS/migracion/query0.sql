@@ -1,6 +1,10 @@
 set rowcount 0
 set nocount on
 
+-- NOTA: ESTO SE EJECUTA ANTES DE LA MIGRACION
+-- ===========================================
+
+
 -- select FechaCreacionAuditoria, *from tramite.expediente_historico_2024
 select top 0
 cast(null as int) ano,
