@@ -5,9 +5,9 @@ CREATE function [Tramite].[funObtenerFechaMovimientoEnExpedienteEspecialista]
  @pIdPersona INT,
  @pIdCatalogoSituacionMovimientoDestino int
 )
--- RETURNS datetime
--- AS
--- BEGIN
+RETURNS datetime
+AS
+BEGIN
 	DECLARE @vfechaMovimiento datetime
 	IF @pIdCatalogoSituacionMovimientoDestino IN(4,5)--TODOS/POR RECIBIR/PENDIENTES
 	BEGIN

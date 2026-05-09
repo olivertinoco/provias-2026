@@ -35,3 +35,23 @@ ya 10: tramite.paListarExpedientePendienteEspecialistaReenviados   -- BANDEJA DE
 6:  tramite.paListarExpedientePendienteEspecialistaCreados
 10: tramite.paListarExpedientePendienteEspecialistaReenviados
 11: tramite.paListarExpedientePendienteEspecialistaArchivados
+
+
+
+
+
+
+-- =======================================================
+-- LOS PROCEDIMIENTOS QUE PROCESE EN EL SEGUNDO ENTREGABLE
+-- =======================================================
+
+-- -- JEFATURA
+-- tramite.paObtenerEstadosExpedientesJefatura
+-- tramite.paListarExpedientePendienteJefaturaPorRecibirFosCad
+-- tramite.paListarExpedientePendienteJefaturaTodosFosCad
+-- -- ESPECIALISTA
+-- tramite.paObtenerEstadosExpedientesEspecialista
+-- tramite.paListarExpedientePendienteEspecialistaV7
+-- tramite.paListarExpedientePendienteEspecialistaCreados
+-- tramite.paListarExpedientePendienteEspecialistaReenviados
+-- tramite.paListarExpedientePendienteEspecialistaArchivados

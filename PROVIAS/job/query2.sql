@@ -111,105 +111,115 @@ select
 		FechaMovimiento datetime);
 
 
-   -- ;with tmp001_serieDocumental as(
-   --     select*from(values(1,'E-'),(2,'I-'))sd(IdSerieDocumentalExpediente, AbreviaturaSerieDocumentalExpediente)
-   -- )
-   -- insert into @MITABLA
-   -- select top 1000
-   --     t1.IdExpediente,
-   --     t1.ExpedienteConfidencial,
-   --     t1.NTFechaExpediente,
-   --     t1.HoraExpediente,
-   --     t1.IdCatalogoTipoPrioridad,
-   --     isnull(c1.Descripcion,'') CatalogoTipoPrioridad,
-   --     isnull(c2.Descripcion,'') CatalogoTipoTramite,
-   --     isnull(c2.Detalle,'') ColorCatalogoTipoTramite,
-   --     isnull(su.Logueo, '') Logueo,
-   --     t1.IdPersonaCreador,
-   --     UPPER(t1.AsuntoExpediente) AsuntoExpediente,
-   --     isnull(t1.NumeroFoliosExpediente,0)NumeroFoliosExpediente,
-   --     isnull(t1.ObservacionesExpediente,'') ObservacionesExpediente,
-   --     concat(t1.NTFechaExpediente ,' ', t1.HoraExpediente) Fecha,
-   --     concat(sd.AbreviaturaSerieDocumentalExpediente, right(1000000+t1.NumeroExpediente,6),'-', t1.IdPeriodo) NombreExpediente,
-   --     isnull(t1.NombreCompletoCreador, p.NombreCompleto) NombreCompletoCreador,
-   --     t1.NumeroExpediente,
-   --     isnull(ss.IdExpedienteSeguimiento, 0 )IdExpedienteSeguimiento,
-   --     NULL FechaMovimiento
-   -- from Tramite.Expediente t1
-   -- inner join tmp001_serieDocumental sd
-   --     on sd.IdSerieDocumentalExpediente = t1.IdSerieDocumentalExpediente
-   -- inner join Tramite.Catalogo c1
-   --     on c1.IdCatalogo = t1.IdCatalogoTipoPrioridad
-   -- left join Tramite.Catalogo c2
-   --     on c2.IdCatalogo = t1.IdCatalogoTipoTramite
-   -- left join Seguridad.Usuario su
-   --     on su.IdUsuario = t1.IdUsuarioCreacionAuditoria
-   -- left join General.Persona p
-   --     on p.IdPersona = t1.IdPersonaCreador
-   -- left join Tramite.ExpedienteSeguimiento ss
-   --     on  ss.IdExpediente = t1.IdExpediente
-   --     and ss.IdArea    = @pIdArea
-   --     and ss.IdCargo   = 0
-   --     and ss.IdPersona = 0
-   --     and ss.EstadoAuditoria   = 1
-   -- where   t1.EstadoAuditoria   = 1
-   --     and t1.ExpedienteAnulado = 0
-   --     and t1.IdSerieDocumentalExpediente in (1,2)
-   --     and t1.IdPeriodo = @pIdPeriodo
-   --     and (@conBus = 1 or t1.NumeroExpediente = @pBusquedaGeneral)
-   -- order by t1.IdExpediente desc
-
-
+   ;with tmp001_serieDocumental as(
+       select*from(values(1,'E-'),(2,'I-'))sd(IdSerieDocumentalExpediente, AbreviaturaSerieDocumentalExpediente)
+   )
+   insert into @MITABLA
+   select top 1000
+       t1.IdExpediente,
+       t1.ExpedienteConfidencial,
+       t1.NTFechaExpediente,
+       t1.HoraExpediente,
+       t1.IdCatalogoTipoPrioridad,
+       isnull(c1.Descripcion,'') CatalogoTipoPrioridad,
+       isnull(c2.Descripcion,'') CatalogoTipoTramite,
+       isnull(c2.Detalle,'') ColorCatalogoTipoTramite,
+       isnull(su.Logueo, '') Logueo,
+       t1.IdPersonaCreador,
+       UPPER(t1.AsuntoExpediente) AsuntoExpediente,
+       isnull(t1.NumeroFoliosExpediente,0)NumeroFoliosExpediente,
+       isnull(t1.ObservacionesExpediente,'') ObservacionesExpediente,
+       concat(t1.NTFechaExpediente ,' ', t1.HoraExpediente) Fecha,
+       concat(sd.AbreviaturaSerieDocumentalExpediente, right(1000000+t1.NumeroExpediente,6),'-', t1.IdPeriodo) NombreExpediente,
+       isnull(t1.NombreCompletoCreador, p.NombreCompleto) NombreCompletoCreador,
+       t1.NumeroExpediente,
+       isnull(ss.IdExpedienteSeguimiento, 0 )IdExpedienteSeguimiento,
+       NULL FechaMovimiento
+   from Tramite.Expediente t1
+   inner join tmp001_serieDocumental sd
+       on sd.IdSerieDocumentalExpediente = t1.IdSerieDocumentalExpediente
+   inner join Tramite.Catalogo c1
+       on c1.IdCatalogo = t1.IdCatalogoTipoPrioridad
+   left join Tramite.Catalogo c2
+       on c2.IdCatalogo = t1.IdCatalogoTipoTramite
+   left join Seguridad.Usuario su
+       on su.IdUsuario = t1.IdUsuarioCreacionAuditoria
+   left join General.Persona p
+       on p.IdPersona = t1.IdPersonaCreador
+   left join Tramite.ExpedienteSeguimiento ss
+       on  ss.IdExpediente = t1.IdExpediente
+       and ss.IdArea    = @pIdArea
+       and ss.IdCargo   = 0
+       and ss.IdPersona = 0
+       and ss.EstadoAuditoria   = 1
+   where   t1.EstadoAuditoria   = 1
+       and t1.ExpedienteAnulado = 0
+       and t1.IdSerieDocumentalExpediente in (1,2)
+       and t1.IdPeriodo = @pIdPeriodo
+       and (@conBus = 1 or t1.NumeroExpediente = @pBusquedaGeneral)
+   order by t1.IdExpediente desc
 
 
    ;with tmp001_serieDocumental as(
        select*from(values(1,'E-'),(2,'I-'))sd(IdSerieDocumentalExpediente, AbreviaturaSerieDocumentalExpediente)
    )
-   -- insert into @MITABLA
-   select top 1000 t1.*
-       -- t1.IdExpediente,
-       -- t1.ExpedienteConfidencial,
-       -- t1.NTFechaExpediente,
-       -- t1.HoraExpediente,
-       -- t1.IdCatalogoTipoPrioridad,
-       -- isnull(c1.Descripcion,'') CatalogoTipoPrioridad,
-       -- isnull(c2.Descripcion,'') CatalogoTipoTramite,
-       -- isnull(c2.Detalle,'') ColorCatalogoTipoTramite,
-       -- isnull(su.Logueo, '') Logueo,
-       -- t1.IdPersonaCreador,
-       -- UPPER(t1.AsuntoExpediente) AsuntoExpediente,
-       -- isnull(t1.NumeroFoliosExpediente,0)NumeroFoliosExpediente,
-       -- isnull(t1.ObservacionesExpediente,'') ObservacionesExpediente,
-       -- concat(t1.NTFechaExpediente ,' ', t1.HoraExpediente) Fecha,
-       -- concat(sd.AbreviaturaSerieDocumentalExpediente, right(1000000+t1.NumeroExpediente,6),'-', t1.IdPeriodo) NombreExpediente,
-       -- isnull(t1.NombreCompletoCreador, p.NombreCompleto) NombreCompletoCreador,
-       -- t1.NumeroExpediente,
-       -- isnull(ss.IdExpedienteSeguimiento, 0 )IdExpedienteSeguimiento,
-       -- NULL FechaMovimiento
-   from Tramite.Expediente t1
-   cross apply tmp001_serieDocumental sd
-   cross apply Tramite.Catalogo c1
-   -- outer apply(select*from Tramite.Catalogo c2 where c2.IdCatalogo = t1.IdCatalogoTipoTramite)c2
-   -- outer apply(select*from Seguridad.Usuario su where su.IdUsuario = t1.IdUsuarioCreacionAuditoria)su
-   -- outer apply(select*from General.Persona p where p.IdPersona = t1.IdPersonaCreador)p
-   outer apply(select*from Tramite.ExpedienteSeguimiento ss
-        where   ss.IdExpediente = t1.IdExpediente
-            and ss.IdArea    = @pIdArea
-            and ss.IdCargo   = 0
-            and ss.IdPersona = 0
-            and ss.EstadoAuditoria   = 1)ss
-    where   t1.EstadoAuditoria   = 1
-        and t1.ExpedienteAnulado = 0
-        and t1.IdSerieDocumentalExpediente in (1,2)
-        and t1.IdPeriodo = @pIdPeriodo
-        and (@conBus = 1 or t1.NumeroExpediente = @pBusquedaGeneral)
-    order by t1.IdExpediente desc
+   ,tmp001_NombreExpediente(cab1, cab2)as(
+       select '<div style="margin: 2px;padding: 2px;" class="ui blue label">', '</div> '
+   )
+   select
+       0,
+       0,
+       null,
+       null,
+       0,
+
+       t.*
+   from @MITABLA t
+   outer apply (
+        SELECT (select cb.cab1, AbreviaturaSerieDocumentalExpediente, right(1000000+NumeroExpediente,6),'-', IdPeriodo, cb.cab2
+        FROM (
+            SELECT ex.NumeroExpediente, ex.IdPeriodo, s.AbreviaturaSerieDocumentalExpediente, ee.IdExpedienteEnlazado orden
+            FROM Tramite.ExpedienteEnlazado ee
+            INNER JOIN Tramite.Expediente ex
+                ON  ex.IdExpediente = ee.IdExpedienteSecundario
+                AND ex.EstadoAuditoria   = 1
+                AND ex.ExpedienteAnulado = 0
+                AND ex.IdSerieDocumentalExpediente in (1,2)
+            INNER JOIN tmp001_serieDocumental s
+                ON s.IdSerieDocumentalExpediente = ex.IdSerieDocumentalExpediente
+            WHERE ee.IdExpediente = t.IdExpediente
+                AND ee.EstadoAuditoria = 1
+            UNION ALL
+            SELECT ex.NumeroExpediente, ex.IdPeriodo, s.AbreviaturaSerieDocumentalExpediente, ee.IdExpedienteEnlazado
+            FROM Tramite.ExpedienteEnlazado ee
+            INNER JOIN Tramite.Expediente ex
+                ON  ex.IdExpediente = ee.IdExpediente
+                AND ex.EstadoAuditoria   = 1
+                AND ex.ExpedienteAnulado = 0
+                AND ex.IdSerieDocumentalExpediente in (1,2)
+            INNER JOIN tmp001_serieDocumental s
+                ON s.IdSerieDocumentalExpediente = ex.IdSerieDocumentalExpediente
+            WHERE ee.IdExpedienteSecundario = t.IdExpediente
+                AND ee.EstadoAuditoria = 1
+        )Q cross apply tmp001_NombreExpediente cb
+        ORDER BY orden
+        for xml path, type).value('.','varchar(max)') NombreExpedientesEnlazados
+   )x
+   outer apply(
+        select top 1 concat(c.Descripcion, ' ', e.NumeroExpedienteExterno) CatalogoTipoOrigen
+        from Tramite.Expediente e
+        inner join Tramite.ExpedienteDocumento tt
+            on  tt.IdExpediente = e.IdExpediente
+            and tt.EstadoAuditoria = 1
+        inner join Tramite.Catalogo c
+            on  c.IdCatalogo   = tt.IdCatalogoTipoOrigen
+        where   e.IdExpediente = t.IdExpediente
+            and e.EstadoAuditoria = 1
+        order by tt.IdExpedienteDocumento
+   )cat
 
 
 
-
-
-   select*from @MITABLA
    return
 
  --    select (SELECT convert(varchar,COUNT(*)) from @MITABLA)+'¦'+

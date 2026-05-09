@@ -1,5 +1,4 @@
--- alter PROCEDURE [Tramite].[paListarExpedientePendienteEspecialistaTodos]
-declare
+ALTER PROCEDURE [Tramite].[paListarExpedientePendienteEspecialistaTodos_arq]
 	@pConFiltroFecha bit,
 	@pFechaInicio varchar(10),
 	@pFechaFin varchar(10),
@@ -31,44 +30,11 @@ declare
 	@pDimensionPagina INT,
 	@pBusquedaGeneral varchar(100),
 	@pFlgBusqueda INT
--- AS
--- BEGIN TRY
+AS
+BEGIN
+BEGIN TRY
 set tran isolation level read uncommitted
 set nocount on
-
-select
-@pConFiltroFecha=0,
-@pFechaInicio='08/05/2026',
-@pFechaFin='08/05/2026',
-@pConFiltroFechaMovimiento=1,
-@pFechaInicioMovimiento='08/05/2026',
-@pFechaFinMovimiento='08/05/2026',
-@pIdPersona=1059,
-@pIdEmpleadoPerfil=2259,
-@pIdCatalogoSituacionMovimientoDestino=0,
-@pTipoSituacionMovimiento=0,
-@pIdAreaOrigen=0,
-@pIdAreaDestino=0,
-@pIdPeriodo=2025,
-@pIdCatalogoTipoPrioridad=0,
-@pIdCatalogoTipoTramite=0,
-@pIdCatalogoTipoDocumento=0,
-@pNumeroExpediente='',
-@pNumeroDocumento='',
-@pPersonaDesde='',
-@pPersonaPara='',
-@pIdTipoIngreso=0,
-@pFechaDocumento='',
-@pEmisorExpediente='',
-@pAsuntoExpediente='',
-@pIdUsuarioAuditoria=1059,
-@pCampoOrdenado=NULL,
-@pTipoOrdenacion=NULL,
-@pNumeroPagina=1,
-@pDimensionPagina=10,
-@pBusquedaGeneral='010058',
-@pFlgBusqueda=0
-
 
     declare @conBus int, @vIdCargo int=0, @vIdArea int=0
     select @conBus = case when @pBusquedaGeneral is null or @pBusquedaGeneral = '' or isnumeric(@pBusquedaGeneral) = 0 then 1 else 0 end
@@ -79,7 +45,6 @@ select
         and EstadoAuditoria = 1
         and Activo = 1
         and IdEmpleadoPerfil = @pIdEmpleadoPerfil
-
 
 	create table #MITABLA(
     	IdExpediente int,
@@ -195,7 +160,6 @@ select
         @pBusquedaGeneral = @pBusquedaGeneral
 
     select @sql = null
-
     select @sql = N'
     ;with tmp001_serieDocumental as(
         select*from(values(1,''E-''),(2,''I-''))sd(IdSerieDocumentalExpediente, AbreviaturaSerieDocumentalExpediente))
@@ -273,10 +237,11 @@ select
 
 	select count(*) from #MITABLA
 
-
--- END TRY
--- BEGIN CATCH
--- 	DECLARE @ERROR_NUMBER INT, @ERROR_SEVERITY INT,@ERROR_STATE INT,@ERROR_LINE INT,@ERROR_PROCEDURE VARCHAR(MAX)	,@ERROR_MESSAGE VARCHAR(MAX)
--- 	SELECT @ERROR_NUMBER=ERROR_NUMBER() , @ERROR_SEVERITY=ERROR_SEVERITY() , @ERROR_STATE=ERROR_STATE() , @ERROR_PROCEDURE='Tramite.paListarExpedientePendienteEspecialistaTodos',@ERROR_LINE=ERROR_LINE(),@ERROR_MESSAGE=ERROR_MESSAGE()
--- 	EXEC Seguridad.paGuardarErroresEnTablaLog @ERROR_NUMBER , @ERROR_SEVERITY , @ERROR_STATE ,  @ERROR_PROCEDURE,@ERROR_LINE,@ERROR_MESSAGE, @pIdUsuarioAuditoria
--- END CATCH
+END TRY
+BEGIN CATCH
+	DECLARE @ERROR_NUMBER INT, @ERROR_SEVERITY INT,@ERROR_STATE INT,@ERROR_LINE INT,@ERROR_PROCEDURE VARCHAR(MAX)	,@ERROR_MESSAGE VARCHAR(MAX)
+	SELECT @ERROR_NUMBER=ERROR_NUMBER() , @ERROR_SEVERITY=ERROR_SEVERITY() , @ERROR_STATE=ERROR_STATE() , @ERROR_PROCEDURE='Tramite.paListarExpedientePendienteEspecialistaTodos',@ERROR_LINE=ERROR_LINE(),@ERROR_MESSAGE=ERROR_MESSAGE()
+	EXEC Seguridad.paGuardarErroresEnTablaLog @ERROR_NUMBER , @ERROR_SEVERITY , @ERROR_STATE ,  @ERROR_PROCEDURE,@ERROR_LINE,@ERROR_MESSAGE, @pIdUsuarioAuditoria
+END CATCH
+END
+GO

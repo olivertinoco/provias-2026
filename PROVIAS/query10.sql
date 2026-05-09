@@ -22,7 +22,7 @@ Declare @sp varchar(1000) =
 -- '[Tramite].[paListarExpedienteMesaParteDespachadosV1]' -- DURO 30 S
 -- '[tramite].[paObtenerEstadosExpedientesEspecialista]' -- DURO 5 S
 --  ///////////////////////////////////////////////////////////////////////////////////////////////////////
--- 'Tramite.paListarExpedienteMesaParteDespachadosV1'
+'Tramite.paListarExpedientePendienteEspecialistaTodos'
 -- 'General.fnFullTextPrefijoVal'
 -- 'General.SplitFilas'
 -- 'General.fnFullTextBusCarEspecial'
@@ -30,7 +30,7 @@ Declare @sp varchar(1000) =
 -- 'tramite.paListarExpedienteMesaParteDespachadosV1_new'
 -- 'Seguridad.funObtenerRutaFotoPorIdPersona'
 -- 'RecursoHumano.visPersonaJefe'
-'RecursoHumano.visPersonaJefe'
+-- 'RecursoHumano.visPersonaJefe'
 
 
 select text from sys.syscomments where id = object_id(@sp)
