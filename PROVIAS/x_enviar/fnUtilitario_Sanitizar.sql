@@ -1,4 +1,4 @@
-alter function tramite.fnUtilitario_Sanitizar(
+create function tramite.fnUtilitario_Sanitizar(
     @pvcTexto varchar(1000)
 )returns table as return(
 select cadena =

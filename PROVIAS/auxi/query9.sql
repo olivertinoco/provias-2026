@@ -24,8 +24,11 @@ where concat(schema_name(schema_id),'.', name)
 = 'tramite.paListarExpedientePendienteEspecialistaTodos'
 
 
+
 declare @datos varchar(max)
 select @datos = 'select referencias from #tmp001_procedures t cross apply dbo.udf_objeto_referenciados(t.procedimiento)'
+
+
 
 select top 0 cast(null as varchar(1000)) dato into #tmp001_datosvarios
 insert into #tmp001_datosvarios exec(@datos)
