@@ -194,48 +194,53 @@ select
 			) Ver
             LEFT JOIN General.Empresa EMO
                 ON EMO.IdEmpresa=EDO.IdEmpresaOrigen
-            LEFT JOIN General.Area AO
-                ON AO.IdArea= EDO.IdAreaOrigen
-            LEFT JOIN General.Cargo CO
-                ON CO.IdCargo=EDO.IdCargoOrigen
             LEFT JOIN General.Empresa EMD
                 ON EMD.IdEmpresa=EDOD.IdEmpresaDestino
+            LEFT JOIN General.Empresa EMR
+                ON EMR.IdEmpresa=EDOD.IdEmpresaDestinoRecepciona
+            LEFT JOIN General.Empresa EMA
+                ON EMA.IdEmpresa=EDOD.IdEmpresaDestinoAtencion
+
+            LEFT JOIN General.Area AO
+                ON AO.IdArea= EDO.IdAreaOrigen
             LEFT JOIN General.Area AD
                 ON AD.IdArea= EDOD.IdAreaDestino
+            LEFT JOIN General.Area AR
+                ON AR.IdArea= EDOD.IdAreaDestinoRecepciona
+            LEFT JOIN General.Area AA
+                ON AA.IdArea= EDOD.IdAreaDestinoAtencion
+
+            LEFT JOIN General.Cargo CO
+                ON CO.IdCargo=EDO.IdCargoOrigen
             LEFT JOIN General.Cargo CD
                 ON CD.IdCargo=EDOD.IdCargoDestino
-            LEFT JOIN RecursoHumano.Empleado EMPD
-                ON EMPD.IdPersona=EDOD.IdPersonaDestino
-                AND EMPD.EstadoAuditoria=1
+            LEFT JOIN General.Cargo CR
+                ON CR.IdCargo=EDOD.IdCargoDestinoRecepciona
+            LEFT JOIN General.Cargo CA
+                ON CA.IdCargo=EDOD.IdCargoDestinoAtencion
+
 			LEFT JOIN General.Persona PD
 			    ON PD.IdPersona=EMPD.IdPersona
 				AND PD.EstadoAuditoria=1
-			LEFT JOIN RecursoHumano.Catalogo CTED
-			    ON CTED.IdCatalogo=EMPD.IdCatalogoTipoEmpleado
-			LEFT JOIN RecursoHumano.Empleado EMPO
-			    ON EMPO.IdPersona=EDO.IdPersonaOrigen
-				AND EMPO.EstadoAuditoria=1
 			LEFT JOIN General.Persona PO
 			    ON PO.IdPersona=EMPO.IdPersona
 				AND PO.EstadoAuditoria=1
-			LEFT JOIN RecursoHumano.Catalogo CTEO
-			    ON CTEO.IdCatalogo=EMPO.IdCatalogoTipoEmpleado
-            LEFT JOIN General.Empresa EMR
-                ON EMR.IdEmpresa=EDOD.IdEmpresaDestinoRecepciona
-            LEFT JOIN General.Area AR
-                ON AR.IdArea= EDOD.IdAreaDestinoRecepciona
-            LEFT JOIN General.Cargo CR
-                ON CR.IdCargo=EDOD.IdCargoDestinoRecepciona
-            LEFT JOIN General.Persona PR
+			LEFT JOIN General.Persona PR
                 ON PR.IdPersona=EDOD.IdPersonaDestinoRecepciona
-            LEFT JOIN General.Empresa EMA
-                ON EMA.IdEmpresa=EDOD.IdEmpresaDestinoAtencion
-            LEFT JOIN General.Area AA
-                ON AA.IdArea= EDOD.IdAreaDestinoAtencion
-            LEFT JOIN General.Cargo CA
-                ON CA.IdCargo=EDOD.IdCargoDestinoAtencion
             LEFT JOIN General.Persona PA
                 ON PA.IdPersona=EDOD.IdPersonaDestinoAtencion
+
+            LEFT JOIN RecursoHumano.Empleado EMPD
+                ON EMPD.IdPersona=EDOD.IdPersonaDestino
+                AND EMPD.EstadoAuditoria=1
+            LEFT JOIN RecursoHumano.Empleado EMPO
+      		    ON EMPO.IdPersona=EDO.IdPersonaOrigen
+     			AND EMPO.EstadoAuditoria=1
+
+			LEFT JOIN RecursoHumano.Catalogo CTED
+			    ON CTED.IdCatalogo=EMPD.IdCatalogoTipoEmpleado
+			LEFT JOIN RecursoHumano.Catalogo CTEO
+			    ON CTEO.IdCatalogo=EMPO.IdCatalogoTipoEmpleado
 			LEFT JOIN Courrier.Envio EE
 			    ON EE.IdExpedienteDocumentoOrigenDestino = EDOD.IdExpedienteDocumentoOrigenDestino
 				AND EE.EstadoAuditoria = 1
@@ -251,6 +256,7 @@ select
 			ORDER BY CONVERT(DATETIME,edo.FechaOrigen +' ' + edo.HoraOrigen) DESC, EDOD.IdExpedienteDocumentoOrigenDestino DESC
 			OFFSET (@pNumeroPagina-1)*@pDimensionPagina ROWS
 			FETCH NEXT @pDimensionPagina ROWS ONLY
+
 
 
 			SELECT COUNT(*)
