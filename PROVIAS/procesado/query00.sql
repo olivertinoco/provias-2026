@@ -279,6 +279,8 @@ set tran isolation level read uncommitted
         t.IdExpedienteDocumento,
         isnull(x.NombreExpedientesEnlazados, '') NombreExpedientesEnlazados,
         cast(case when x.NombreExpedientesEnlazados is null then 0 else 1 end as bit) EsPrincipalEnlace,
+        -- coalesce(en1.ExEnlazadoPri, en2.ExEnlazadoSec, '') NombreExpedientesEnlazados,
+        -- cast(case coalesce(en1.ExEnlazadoPri, en2.ExEnlazadoSec, '') when '' then 0 else 1 end as bit) EsPrincipalEnlace,
         t.CatalogoTipoOrigen,
 		t.IdExpediente,
 		cast(t.ExpedienteConfidencial as bit) ExpedienteConfidencial,
@@ -343,3 +345,40 @@ BEGIN CATCH
  END CATCH
 END
 GO
+
+
+
+
+-- outer apply(
+--     select (SELECT cb.cab1, s.AbreviaturaSerieDocumentalExpediente,
+--         right(1000000+ex.NumeroExpediente,6),'-', ex.IdPeriodo, cb.cab2
+--     FROM Tramite.ExpedienteEnlazado ee
+--     INNER JOIN Tramite.Expediente ex
+--         ON  ex.IdExpediente = ee.IdExpedienteSecundario
+--         AND ex.EstadoAuditoria   = 1
+--         AND ex.ExpedienteAnulado = 0
+--         AND ex.IdSerieDocumentalExpediente in (1,2)
+--     INNER JOIN tmp001_serieDocumental s
+--         ON s.IdSerieDocumentalExpediente = ex.IdSerieDocumentalExpediente
+--     WHERE ee.IdExpediente = t.IdExpediente
+--         AND ee.EstadoAuditoria = 1
+--     for xml path, type).value('.','varchar(1000)') ExEnlazadoPri
+--     from tmp001_NombreExpediente cb
+-- )en1
+-- outer apply(
+--     select (SELECT cb.cab1, s.AbreviaturaSerieDocumentalExpediente,
+--         right(1000000+ex.NumeroExpediente,6),'-', ex.IdPeriodo, cb.cab2
+--     FROM Tramite.ExpedienteEnlazado ee
+--     INNER JOIN Tramite.Expediente ex
+--         ON  ex.IdExpediente = ee.IdExpediente
+--         AND ex.EstadoAuditoria   = 1
+--         AND ex.ExpedienteAnulado = 0
+--         AND ex.IdSerieDocumentalExpediente in (1,2)
+--     INNER JOIN tmp001_serieDocumental s
+--         ON s.IdSerieDocumentalExpediente = ex.IdSerieDocumentalExpediente
+--     WHERE ee.IdExpedienteSecundario = t.IdExpediente
+--         AND ee.EstadoAuditoria = 1
+--     for xml path, type).value('.','varchar(1000)') ExEnlazadoSec
+--     from tmp001_NombreExpediente cb
+-- )en2
+-- order by t.FechaMovimiento desc
