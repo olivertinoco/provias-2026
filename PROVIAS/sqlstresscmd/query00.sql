@@ -30,6 +30,8 @@ create function mastertable(
 go
 
 
+
+return
 -- NOTA: TABLAS Y SUS DESCRIPCIONES
 -- ================================
 

@@ -1,4 +1,5 @@
 set rowcount 0
+set nocount on
 
 -- NOTA: ESTO SE EJECUTA DESPUES DE LA MIGRACION
 -- ==============================================
