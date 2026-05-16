@@ -20,8 +20,8 @@ declare @vIdCargo int = 0, @vIdArea int = 0
 
     select
         0 Res,
-        count(case t4.IdCatalogoSituacionMovimientoDestino when 4 then 1 end) Rec,
-        count(case t4.IdCatalogoSituacionMovimientoDestino when 5 then 1 end) Pen,
+        count(case t.IdCatalogoSituacionMovimientoDestino when 4 then 1 end) Rec,
+        count(case t.IdCatalogoSituacionMovimientoDestino when 5 then 1 end) Pen,
         0 Dev,
        	0 Ree,
        	0 Arc,
@@ -29,29 +29,25 @@ declare @vIdCargo int = 0, @vIdArea int = 0
        	0 Seg,
        	0 Mis,
        	0 Tod
-    from tramite.ExpedienteDocumentoOrigenDestino t4
-    where   t4.EstadoAuditoria   = 1
+    from(select distinct t1.IdExpediente, t4.IdCatalogoSituacionMovimientoDestino
+    from tramite.Expediente t1
+    inner join tramite.ExpedienteDocumento t2
+        on  t2.IdExpediente = t1.IdExpediente
+        and t2.EstadoAuditoria = 1
+        and t2.FgEnEsperaFirmaDigital = 0
+    inner join tramite.ExpedienteDocumentoOrigen t3
+        on  t3.IdExpedienteDocumento = t2.IdExpedienteDocumento
+        and t3.EstadoAuditoria = 1
+    inner join tramite.ExpedienteDocumentoOrigenDestino t4
+        on  t4.IdExpedienteDocumentoOrigen = t3.IdExpedienteDocumentoOrigen
+        and t4.EstadoAuditoria   = 1
         and t4.IdPersonaDestino  = @pIdPersona
         and t4.IdAreaDestino     = @vIdArea
         and t4.IdCargoDestino    = @vIdCargo
         and t4.IdEmpresaDestino  = 2
-        and exists(
-            select 1
-            from tramite.ExpedienteDocumentoOrigen t3
-            inner join tramite.ExpedienteDocumento t2
-                on  t2.IdExpedienteDocumento = t3.IdExpedienteDocumento
-                and t2.EstadoAuditoria = 1
-                and t2.FgEnEsperaFirmaDigital = 0
-            inner join tramite.Expediente t1
-                on  t1.IdExpediente = t2.IdExpediente
-                and t1.EstadoAuditoria   = 1
-                and t1.ExpedienteAnulado = 0
-                and t1.IdSerieDocumentalExpediente in (1,2)
-            where   t3.IdExpedienteDocumentoOrigen = t4.IdExpedienteDocumentoOrigen
-                and t3.EstadoAuditoria = 1
-        )
-
-
+    where   t1.EstadoAuditoria   = 1
+        and t1.ExpedienteAnulado = 0
+        and t1.IdSerieDocumentalExpediente in (1,2))t
 
 	END TRY
 	BEGIN CATCH

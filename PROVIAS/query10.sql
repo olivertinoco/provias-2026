@@ -22,7 +22,7 @@ Declare @sp varchar(1000) =
 -- '[Tramite].[paListarExpedienteMesaParteDespachadosV1]' -- DURO 30 S
 -- '[tramite].[paObtenerEstadosExpedientesEspecialista]' -- DURO 5 S
 --  ///////////////////////////////////////////////////////////////////////////////////////////////////////
-'Tramite.paListarExpedienteDocumentoHojaRuta'
+'Tramite.visExpedienteCompleto'
 -- 'General.fnFullTextPrefijoVal'
 -- 'General.SplitFilas'
 -- 'General.fnFullTextBusCarEspecial'

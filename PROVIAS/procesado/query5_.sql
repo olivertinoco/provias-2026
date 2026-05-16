@@ -1,4 +1,4 @@
-ALTER PROCEDURE [Tramite].[paListarExpedientePendienteJefaturaPorRecibirFosCad]
+alter PROCEDURE [Tramite].[paListarExpedientePendienteJefaturaPorRecibirFosCad]
 	@pConFiltroFecha bit,
 	@pFechaInicio varchar(10),
 	@pFechaFin varchar(10),
@@ -35,7 +35,7 @@ BEGIN TRY
 set tran isolation level read uncommitted
 set nocount on
 
-	DECLARE @vIdAreaJefe int=0, @vIdEmpresaJefe int=0, @nroReg int
+	DECLARE @vIdAreaJefe int=0, @vIdEmpresaJefe int=0, @nroReg varchar(6)
 	select @vIdAreaJefe = @pIdArea, @vIdEmpresaJefe = 2
 	DECLARE @vTablaExpediente TABLE(
 	    IdExpediente int,
@@ -162,7 +162,7 @@ set nocount on
     ,tmp001_sep(t,r,i)as(
         select*from(values('|','¬','¦'))t(SepCamp,SepReg,SepAux)
     )
-	select concat(@nroReg, stuff((select r,
+	select @nroReg + stuff((select r,
 		convert(varchar,tE.EsParaAnular), t,
 		convert(varchar,tE.DiasPendiente), t,
 		tE.NombrePersonaOrigen, t,
@@ -210,14 +210,15 @@ set nocount on
 	ORDER BY tE.FechaMovimiento DESC
 	OFFSET (@pNumeroPagina-1)*@pDimensionPagina ROWS
 	FETCH NEXT @pDimensionPagina ROWS ONLY
-	for xml path, type).value('.','varchar(max)'),1,1,i))
+	for xml path, type).value('.','varchar(max)'),1,1,i)
 	from tmp001_sep
 
 
 END TRY
 BEGIN CATCH
-	DECLARE @ERROR_NUMBER INT, @ERROR_SEVERITY INT,@ERROR_STATE INT,@ERROR_LINE INT,@ERROR_PROCEDURE VARCHAR(MAX)	,@ERROR_MESSAGE VARCHAR(MAX)
-	SELECT @ERROR_NUMBER=ERROR_NUMBER() , @ERROR_SEVERITY=ERROR_SEVERITY() , @ERROR_STATE=ERROR_STATE() , @ERROR_PROCEDURE='Tramite.paListarExpedientePendienteJefaturaPorRecibir',@ERROR_LINE=ERROR_LINE(),@ERROR_MESSAGE=ERROR_MESSAGE()
+	DECLARE @ERROR_NUMBER INT, @ERROR_SEVERITY INT,@ERROR_STATE INT,@ERROR_LINE INT,@ERROR_PROCEDURE VARCHAR(MAX),@ERROR_MESSAGE VARCHAR(MAX)
+	SELECT @ERROR_NUMBER=ERROR_NUMBER() , @ERROR_SEVERITY=ERROR_SEVERITY() , @ERROR_STATE=ERROR_STATE(),
+	@ERROR_PROCEDURE='Tramite.paListarExpedientePendienteJefaturaPorRecibirFosCad',@ERROR_LINE=ERROR_LINE(),@ERROR_MESSAGE=ERROR_MESSAGE()
 	EXEC Seguridad.paGuardarErroresEnTablaLog @ERROR_NUMBER , @ERROR_SEVERITY , @ERROR_STATE ,  @ERROR_PROCEDURE,@ERROR_LINE,@ERROR_MESSAGE, @pIdUsuarioAuditoria
 END CATCH
 END

@@ -5,7 +5,7 @@ Declare
 @tabla varchar(200), @aux varchar(max),
 @procedures varchar(1000) =
 -- 'tramite.paListarExpedienteMesaParteDespachadosVirtualesV1'
-'tramite.paObtenerEstadosExpedientesJefatura'
+'tramite.paObtenerEstadosExpedientesEspecialista'
 -- 'tramite.paListarExpedientePendienteEspecialistaPorRecibir'
 -- 'tramite.paListarExpedientePendienteJefaturaPorRecibirFosCad'
 -- 'tramite.paListarExpedienteMesaParteDespachadosV1'
@@ -42,7 +42,14 @@ exec(@aux)
 -- ===========================================================
 select 'insert into '+ @tabla +' select '
 
-insert into dbo.paObtenerEstadosExpedientesJefatura select 79, 349
+
+    insert into dbo.paObtenerEstadosExpedientesEspecialista select 226, 2261, 226
+    insert into dbo.paObtenerEstadosExpedientesEspecialista select 1059, 2259, 1059
+
+
+-- insert into dbo.paObtenerEstadosExpedientesJefatura select 79, 349
+-- insert into dbo.paListarExpedientePendienteJefaturaTodosFosCad select 0,'15/05/2026','15/05/2026',1,'15/05/2026','15/05/2026',79,0,0,0,0,2026,0,0,0,'','','','',0,'','','',349,NULL,NULL,1,10,'11477',0
+
 
 -- insert into dbo.paListarExpedientePendienteJefaturaTodosFosCad select 0,'06/05/2026','06/05/2026',0,'06/05/2026','06/05/2026',79,0,0,0,0,2026,0,0,0,'','','','',0,'','','',349,NULL,NULL,1,10,'11477',0
 
@@ -55,8 +62,6 @@ insert into dbo.paObtenerEstadosExpedientesJefatura select 79, 349
 
 -- insert into dbo.paListarExpedientePendienteEspecialistaV7 select 0,'22/04/2026','22/04/2026',0,'22/04/2026','22/04/2026',350,2260,4,4,0,0,2026, 0,0,0,'','','','',0,'','','',350,null,null,1,10,null,0
 
--- insert into dbo.paObtenerEstadosExpedientesEspecialista select 226, 2261, 226
--- insert into dbo.paObtenerEstadosExpedientesEspecialista select 1059, 2259, 1059
 
 -- insert into dbo.paListarExpedienteMesaParteDespachadosV1 select 20, 389,null, null, 1,10,null
 -- insert into dbo.paListarExpedienteMesaParteDespachadosV1 select 116,27208,null,null,1,10,'6740-2025-MTC/19.03'
