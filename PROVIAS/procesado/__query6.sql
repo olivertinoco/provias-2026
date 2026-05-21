@@ -1,4 +1,4 @@
-alter procedure tramite.paListarExpedientePendienteEspecialistaCreados
+alter procedure tramite.paListarExpedientePendienteEspecialistaCreados_new
 	@pConFiltroFecha bit,
 	@pFechaInicio varchar(10),
 	@pFechaFin varchar(10),
@@ -36,7 +36,6 @@ begin try
 set tran isolation level read uncommitted
 set nocount on
 
-
 create table #tmp001_idExpediente(IdExpediente int, FechaMovimiento datetime )
 declare @vIdCargo int = 0, @vIdArea int = 0, @vIdEmpresa int = 0, @vBuscar int
 select @vBuscar =
@@ -72,7 +71,6 @@ and exists(
         and t2.IdExpediente = t1.IdExpediente
 )
 
-
 insert into #tmp001_idExpediente
 select t1.IdExpediente, t.FechaMovimiento
 from #tmp011_idExpediente t1
@@ -94,6 +92,11 @@ cross apply (
              or cast(t3.FechaOrigen as date) between @pFechaInicio and @pFechaFin)
     order by FechaMovimiento desc
 )t
+
+SELECT*into #tmp111_idExpediente from #tmp001_idExpediente
+order by FechaMovimiento desc
+OFFSET (@pNumeroPagina-1)*@pDimensionPagina ROWS
+FETCH NEXT @pDimensionPagina ROWS ONLY
 
 
 ;with tmp001_cabComp(grupo, cab1, cab2, cab3) as(
@@ -122,7 +125,7 @@ select
     isnull(x.NombreExpedientesEnlazados, '') NombreExpedientesEnlazados,
     case when x.NombreExpedientesEnlazados is null then 0 else 1 end EsPrincipalEnlace
 into #tmp001_EpedienteResum
-from #tmp001_idExpediente ex
+from #tmp111_idExpediente ex
 outer apply(
     select case
         when exists(
@@ -254,7 +257,7 @@ select
     isnull(c2.Descripcion,'') CatalogoTipoTramite,
     isnull(c2.Detalle,'') ColorCatalogoTipoTramite,
     su.Logueo,
-    r.RutaFotoPersona RutaFotoPersona,
+    isnull(r.RutaFotoPersona, iif(r.sexo = 0, 'sinfotoH.jpg', 'sinfotoM.jpg')) RutaFotoPersona,
     t1.AsuntoExpediente,
     t1.NumeroFoliosExpediente,
     isnull(t1.ObservacionesExpediente,'') ObservacionesExpediente,
@@ -290,16 +293,15 @@ left join Tramite.ExpedienteSeguimiento es
     and es.IdPersona = @pIdPersona
 outer apply(
     select top 1
-        case when u.RutaArchivoFoto is null or u.RutaArchivoFoto = ''
-        then iif(p.sexo = 0, 'sinfotoH.jpg', 'sinfotoM.jpg') else u.RutaArchivoFoto end RutaFotoPersona
+        isnull(p.sexo, 0) sexo, nullif(u.RutaArchivoFoto,'') RutaFotoPersona
     from General.Persona p
     inner join Seguridad.Usuario u
         on  u.IdPersona = p.IdPersona
         and u.EstadoAuditoria = 1
         and u.Bloqueado = 0
     where p.IdPersona = t1.IdPersonaCreador
+    order by u.RutaArchivoFoto desc
 )r
-
 
 select
     cast(EsParaAnular as bit) EsParaAnular,
@@ -332,18 +334,14 @@ select
     FechaMovimiento
 from #tmp001_EpedienteRespuesta
 order by FechaMovimiento desc
-OFFSET (@pNumeroPagina-1)*@pDimensionPagina ROWS
-FETCH NEXT @pDimensionPagina ROWS ONLY
 
-
-select count(1) from #tmp001_EpedienteRespuesta
-
+SELECT count(1) from #tmp001_idExpediente
 
 END TRY
 	BEGIN CATCH
-			DECLARE @ERROR_NUMBER INT, @ERROR_SEVERITY INT,@ERROR_STATE INT,@ERROR_LINE INT,@ERROR_PROCEDURE VARCHAR(MAX)	,@ERROR_MESSAGE VARCHAR(MAX)
-			SELECT @ERROR_NUMBER=ERROR_NUMBER() , @ERROR_SEVERITY=ERROR_SEVERITY() , @ERROR_STATE=ERROR_STATE() , @ERROR_PROCEDURE='Tramite.paListarExpedientePendienteEspecialistaCreados',@ERROR_LINE=ERROR_LINE(),@ERROR_MESSAGE=ERROR_MESSAGE()
-			EXEC Seguridad.paGuardarErroresEnTablaLog @ERROR_NUMBER , @ERROR_SEVERITY , @ERROR_STATE ,  @ERROR_PROCEDURE,@ERROR_LINE,@ERROR_MESSAGE, @pIdUsuarioAuditoria
+		DECLARE @ERROR_NUMBER INT, @ERROR_SEVERITY INT,@ERROR_STATE INT,@ERROR_LINE INT,@ERROR_PROCEDURE VARCHAR(MAX)	,@ERROR_MESSAGE VARCHAR(MAX)
+		SELECT @ERROR_NUMBER=ERROR_NUMBER() , @ERROR_SEVERITY=ERROR_SEVERITY() , @ERROR_STATE=ERROR_STATE() , @ERROR_PROCEDURE='Tramite.paListarExpedientePendienteEspecialistaCreados',@ERROR_LINE=ERROR_LINE(),@ERROR_MESSAGE=ERROR_MESSAGE()
+		EXEC Seguridad.paGuardarErroresEnTablaLog @ERROR_NUMBER , @ERROR_SEVERITY , @ERROR_STATE ,  @ERROR_PROCEDURE,@ERROR_LINE,@ERROR_MESSAGE, @pIdUsuarioAuditoria
 	 END CATCH
 end
 go

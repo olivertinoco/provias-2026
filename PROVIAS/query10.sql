@@ -14,7 +14,6 @@
 -- and ttt.IdExpedienteDocumentoOrigen = tttt.IdExpedienteDocumentoOrigen and ttt.EstadoAuditoria = 1 and tttt.EstadoAuditoria = 1
 -- and left(convert(varchar, t.FechaCreacionAuditoria, 23),7) = '2026-02'
 
-
 Declare @sp varchar(1000) =
 -- '[Tramite].[paListarPeriodoBusquedaExpediente]'
 -- '[Tramite].[paListarComboAreaPorAreaPadrePendientes]'
@@ -22,7 +21,7 @@ Declare @sp varchar(1000) =
 -- '[Tramite].[paListarExpedienteMesaParteDespachadosV1]' -- DURO 30 S
 -- '[tramite].[paObtenerEstadosExpedientesEspecialista]' -- DURO 5 S
 --  ///////////////////////////////////////////////////////////////////////////////////////////////////////
-'Tramite.visExpedienteCompleto'
+'tramite.paListarExpedientePendienteJefaturaTodosFosCad'
 -- 'General.fnFullTextPrefijoVal'
 -- 'General.SplitFilas'
 -- 'General.fnFullTextBusCarEspecial'

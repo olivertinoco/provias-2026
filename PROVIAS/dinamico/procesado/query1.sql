@@ -36,6 +36,36 @@ BEGIN TRY
 set tran isolation level read uncommitted
 set nocount on
 
+create table #tmp001_expedientePendEsp (
+    EsParaAnular bit,
+    DiasPendiente int,
+    NombrePersonaOrigen varchar(1) collate database_default,
+    NumeroDocumento varchar(1) collate database_default,
+    IdExpedienteDocumento int,
+    NombreExpedientesEnlazados varchar(max) collate database_default,
+    EsPrincipalEnlace bit,
+    CatalogoTipoOrigen varchar(501) collate database_default,
+    IdExpediente int,
+    ExpedienteConfidencial bit,
+    NTFechaExpediente varchar(10) collate database_default,
+    HoraExpediente varchar(5) collate database_default,
+    IdCatalogoTipoPrioridad int,
+    CatalogoTipoPrioridad varchar(100) collate database_default,
+    CatalogoTipoTramite varchar(100) collate database_default,
+    ColorCatalogoTipoTramite varchar(100) collate database_default,
+    Logueo varchar(100) collate database_default,
+    RutaFotoPersona varchar(50) collate database_default,
+    AsuntoExpediente varchar(8000) collate database_default,
+    NumeroFoliosExpediente int,
+    ObservacionesExpediente varchar(4000) collate database_default,
+    Fecha varchar(20) collate database_default,
+    NombreExpediente varchar(100) collate database_default,
+    NombreCompletoCreador varchar(100) collate database_default,
+    NumeroExpediente int,
+    IdExpedienteSeguimiento int,
+    FechaMovimiento datetime
+)
+
     declare @conBus int, @vIdCargo int=0, @vIdArea int=0
     select @conBus = case when @pBusquedaGeneral is null or @pBusquedaGeneral = '' or isnumeric(@pBusquedaGeneral) = 0 then 1 else 0 end
 
@@ -102,7 +132,7 @@ set nocount on
     	select 0
     	return;
     end
-	SET LANGUAGE 'SPANISH'
+	SET LANGUAGE SPANISH
 
 	DECLARE @sql NVARCHAR(MAX) = N'
 	;with tmp001_serieDocumental as(
@@ -165,45 +195,46 @@ set nocount on
         select*from(values(1,''E-''),(2,''I-''))sd(IdSerieDocumentalExpediente, AbreviaturaSerieDocumentalExpediente))
     ,tmp001_NombreExpediente(cab1, cab2)as(
         select ''<div style="margin: 2px;padding: 2px;" class="ui blue label">'', ''</div>'')
+    insert into #tmp001_expedientePendEsp
     select
-        convert(bit, 0) EsParaAnular, 0 DiasPendiente,'''' NombrePersonaOrigen,'''' NumeroDocumento,
+        0 EsParaAnular, 0 DiasPendiente,'''' NombrePersonaOrigen,'''' NumeroDocumento,
         0 IdExpedienteDocumento, isnull(x.NombreExpedientesEnlazados, '''') NombreExpedientesEnlazados,
-        cast(case when x.NombreExpedientesEnlazados is null then 0 else 1 end as bit) EsPrincipalEnlace,
-        cat.CatalogoTipoOrigen,t.IdExpediente,cast(t.ExpedienteConfidencial as bit) ExpedienteConfidencial,
+        case when x.NombreExpedientesEnlazados is null then 0 else 1 end EsPrincipalEnlace,
+        cat.CatalogoTipoOrigen,t.IdExpediente,t.ExpedienteConfidencial,
   		t.NTFechaExpediente,t.HoraExpediente,t.IdCatalogoTipoPrioridad,t.CatalogoTipoPrioridad,
   		t.CatalogoTipoTramite,t.ColorCatalogoTipoTramite,t.Logueo,rf.RutaFotoPersona,t.AsuntoExpediente,
   		t.NumeroFoliosExpediente,t.ObservacionesExpediente,t.Fecha,t.NombreExpediente,t.NombreCompletoCreador,
   		t.NumeroExpediente,t.IdExpedienteSeguimiento,t.FechaMovimiento
     from #MITABLA t
     outer apply (
-         SELECT (select cb.cab1, AbreviaturaSerieDocumentalExpediente, right(1000000+NumeroExpediente,6),''-'', IdPeriodo, cb.cab2
-         FROM (
-             SELECT ex.NumeroExpediente, ex.IdPeriodo, s.AbreviaturaSerieDocumentalExpediente, ee.IdExpedienteEnlazado orden
-             FROM Tramite.ExpedienteEnlazado_Historico_' + cast(@pIdPeriodo as varchar) + N' ee
-             INNER JOIN Tramite.Expediente_Historico_' + cast(@pIdPeriodo as varchar) + N' ex
-                 ON  ex.IdExpediente = ee.IdExpedienteSecundario
-                 AND ex.EstadoAuditoria   = 1
-                 AND ex.ExpedienteAnulado = 0
-                 AND ex.IdSerieDocumentalExpediente in (1,2)
-             INNER JOIN tmp001_serieDocumental s
-                 ON s.IdSerieDocumentalExpediente = ex.IdSerieDocumentalExpediente
-             WHERE ee.IdExpediente = t.IdExpediente
-                 AND ee.EstadoAuditoria = 1
-             UNION ALL
-             SELECT ex.NumeroExpediente, ex.IdPeriodo, s.AbreviaturaSerieDocumentalExpediente, ee.IdExpedienteEnlazado
-             FROM Tramite.ExpedienteEnlazado_Historico_' + cast(@pIdPeriodo as varchar) + N' ee
-             INNER JOIN Tramite.Expediente_Historico_' + cast(@pIdPeriodo as varchar) + N' ex
-                 ON  ex.IdExpediente = ee.IdExpediente
-                 AND ex.EstadoAuditoria   = 1
-                 AND ex.ExpedienteAnulado = 0
-                 AND ex.IdSerieDocumentalExpediente in (1,2)
-             INNER JOIN tmp001_serieDocumental s
-                 ON s.IdSerieDocumentalExpediente = ex.IdSerieDocumentalExpediente
-             WHERE ee.IdExpedienteSecundario = t.IdExpediente
-                 AND ee.EstadoAuditoria = 1
-         )Q cross apply tmp001_NombreExpediente cb
-         ORDER BY orden
-         for xml path, type).value(''.'',''varchar(max)'') NombreExpedientesEnlazados
+        SELECT (select cb.cab1, AbreviaturaSerieDocumentalExpediente, right(1000000+NumeroExpediente,6),''-'', IdPeriodo, cb.cab2
+        FROM (
+            SELECT ex.NumeroExpediente, ex.IdPeriodo, s.AbreviaturaSerieDocumentalExpediente, ee.IdExpedienteEnlazado orden
+            FROM Tramite.ExpedienteEnlazado_Historico_' + cast(@pIdPeriodo as varchar) + N' ee
+            INNER JOIN Tramite.Expediente_Historico_' + cast(@pIdPeriodo as varchar) + N' ex
+                ON  ex.IdExpediente = ee.IdExpedienteSecundario
+                AND ex.EstadoAuditoria   = 1
+                AND ex.ExpedienteAnulado = 0
+                AND ex.IdSerieDocumentalExpediente in (1,2)
+            INNER JOIN tmp001_serieDocumental s
+                ON s.IdSerieDocumentalExpediente = ex.IdSerieDocumentalExpediente
+            WHERE ee.IdExpediente = t.IdExpediente
+                AND ee.EstadoAuditoria = 1
+            UNION ALL
+            SELECT ex.NumeroExpediente, ex.IdPeriodo, s.AbreviaturaSerieDocumentalExpediente, ee.IdExpedienteEnlazado
+            FROM Tramite.ExpedienteEnlazado_Historico_' + cast(@pIdPeriodo as varchar) + N' ee
+            INNER JOIN Tramite.Expediente_Historico_' + cast(@pIdPeriodo as varchar) + N' ex
+                ON  ex.IdExpediente = ee.IdExpediente
+                AND ex.EstadoAuditoria   = 1
+                AND ex.ExpedienteAnulado = 0
+                AND ex.IdSerieDocumentalExpediente in (1,2)
+            INNER JOIN tmp001_serieDocumental s
+                ON s.IdSerieDocumentalExpediente = ex.IdSerieDocumentalExpediente
+            WHERE ee.IdExpedienteSecundario = t.IdExpediente
+                AND ee.EstadoAuditoria = 1
+        )Q cross apply tmp001_NombreExpediente cb
+        ORDER BY orden
+        for xml path, type).value(''.'',''varchar(max)'') NombreExpedientesEnlazados
     )x
     outer apply(
         select top 1 concat(c.Descripcion, '' '', e.NumeroExpedienteExterno) CatalogoTipoOrigen
@@ -227,15 +258,16 @@ set nocount on
             and u.Bloqueado = 0
     )rf
     ORDER BY IdExpediente DESC
-	OFFSET (@pNumeroPagina-1)*@pDimensionPagina ROWS
-	FETCH NEXT @pDimensionPagina ROWS ONLY'
+    OFFSET (@pNumeroPagina-1)*@pDimensionPagina ROWS
+    FETCH NEXT @pDimensionPagina ROWS ONLY'
 
-	EXEC sp_executesql @sql,
-        N'@pNumeroPagina INT, @pDimensionPagina INT',
-        @pNumeroPagina = @pNumeroPagina,
-        @pDimensionPagina = @pDimensionPagina
+    EXEC sp_executesql @sql,
+            N'@pNumeroPagina INT, @pDimensionPagina INT',
+            @pNumeroPagina = @pNumeroPagina,
+            @pDimensionPagina = @pDimensionPagina
 
-	select count(*) from #MITABLA
+    select*from #tmp001_expedientePendEsp
+    select count(*) from #MITABLA
 
 END TRY
 BEGIN CATCH
@@ -245,3 +277,37 @@ BEGIN CATCH
 END CATCH
 END
 GO
+
+
+-- exec Tramite.paListarExpedientePendienteEspecialistaTodos_arq
+-- @pConFiltroFecha=0,
+-- @pFechaInicio='19/05/2026',
+-- @pFechaFin='19/05/2026',
+-- @pConFiltroFechaMovimiento=1,
+-- @pFechaInicioMovimiento='19/05/2026',
+-- @pFechaFinMovimiento='19/05/2026',
+-- @pIdPersona=350,
+-- @pIdEmpleadoPerfil=2260,
+-- @pIdCatalogoSituacionMovimientoDestino=0,
+-- @pTipoSituacionMovimiento=0,
+-- @pIdAreaOrigen=0,
+-- @pIdAreaDestino=0,
+-- @pIdPeriodo=2025,
+-- @pIdCatalogoTipoPrioridad=0,
+-- @pIdCatalogoTipoTramite=0,
+-- @pIdCatalogoTipoDocumento=0,
+-- @pNumeroExpediente='',
+-- @pNumeroDocumento='',
+-- @pPersonaDesde='',
+-- @pPersonaPara='',
+-- @pIdTipoIngreso=0,
+-- @pFechaDocumento='',
+-- @pEmisorExpediente='',
+-- @pAsuntoExpediente='',
+-- @pIdUsuarioAuditoria=350,
+-- @pCampoOrdenado=NULL,
+-- @pTipoOrdenacion=NULL,
+-- @pNumeroPagina=1,
+-- @pDimensionPagina=10,
+-- @pBusquedaGeneral='11477',
+-- @pFlgBusqueda=0

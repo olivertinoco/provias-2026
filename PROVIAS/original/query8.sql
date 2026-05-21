@@ -159,12 +159,12 @@ AS
 			INNER JOIN Tramite.Catalogo CTT ON CTT.IdCatalogo=E.IdCatalogoTipoTramite
 			LEFT JOIN General.Persona PE ON PE.IdPersona=E.IdPersonaCreador
 			LEFT  JOIN Tramite.ExpedienteSeguimiento ES WITH (NOLOCK) ON ES.IdExpediente= E.IdExpediente AND ES.EstadoAuditoria=1 AND ES.IdEmpresa=@vIdEmpresa AND ES.IdCargo=@vIdCargo AND ES.IdPersona=@pIdPersona AND ES.IdArea=@vIdArea
-			OUTER APPLY(SELECT TOP 1 FU.RutaArchivoFoto
-
-                 FROM Seguridad.Usuario FU
-                                    WHERE FU.IdPersona = PE.IdPersona And FU.EstadoAuditoria=1 AND FU.Bloqueado=0
-                                    ORDER BY FU.RutaArchivoFoto DESC
-                                    ) SFU
+			OUTER APPLY(
+			    SELECT TOP 1 FU.RutaArchivoFoto
+                FROM Seguridad.Usuario FU
+                WHERE FU.IdPersona = PE.IdPersona And FU.EstadoAuditoria=1 AND FU.Bloqueado=0
+                ORDER BY FU.RutaArchivoFoto DESC
+            ) SFU
 		WHERE EX.eNroOrden Between @iPaginaRegInicio And @iPaginaRegFinal
 		ORDER BY EX.eNroOrden ASC
 

@@ -1,4 +1,3 @@
---X JOB
 ALTER PROCEDURE [Tramite].[paListarExpedientePendienteJefaturaV8FosCad]
 @pConFiltroFecha bit,
 @pFechaInicio varchar(10),

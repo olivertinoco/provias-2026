@@ -36,6 +36,7 @@ BEGIN TRY
 set nocount on
 set tran isolation level read uncommitted
 
+
 Declare @vIdCargo int= 0, @vIdArea int= 0, @iRegistroTotal Int, @iPaginaRegInicio Int, @iPaginaRegFinal Int, @conBus int
 select @conBus = case when @pBusquedaGeneral is null or @pBusquedaGeneral = '' then 1 else 0 end
 
@@ -118,7 +119,7 @@ select
 	isnull(c2.Descripcion,'') CatalogoTipoTramite,
 	isnull(c2.Detalle,'') ColorCatalogoTipoTramite,
 	su.Logueo,
-    rf.RutaFotoPersona,
+    isnull(rf.RutaFotoPersona, iif(rf.sexo = 0, 'sinfotoH.jpg', 'sinfotoM.jpg')) RutaFotoPersona,
     t1.AsuntoExpediente,
 	t1.NumeroFoliosExpediente,
 	isnull(t1.ObservacionesExpediente,'') ObservacionesExpediente,
@@ -148,12 +149,12 @@ left join Tramite.ExpedienteSeguimiento ss
    	and ss.IdArea    = @vIdArea
 outer apply(
     select top 1
-        case when u.RutaArchivoFoto is null or u.RutaArchivoFoto = ''
-        then iif(p.sexo = 0, 'sinfotoH.jpg', 'sinfotoM.jpg') else u.RutaArchivoFoto end RutaFotoPersona
+        isnull(p.sexo, 0) sexo, nullif(u.RutaArchivoFoto, '') RutaFotoPersona
     from Seguridad.Usuario u
     where   u.IdPersona = p.IdPersona
         and u.EstadoAuditoria = 1
         and u.Bloqueado = 0
+    order by u.RutaArchivoFoto desc
 )rf
 outer apply(
     select case

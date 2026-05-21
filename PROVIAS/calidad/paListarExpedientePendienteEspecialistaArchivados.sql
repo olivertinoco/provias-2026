@@ -100,60 +100,10 @@ set tran isolation level read uncommitted
         )
 
 
-    ;with tmp001_serieDocumental as(
-        select*from(values(1,'E-'),(2,'I-'))sd(IdSerieDocumentalExpediente, AbreviaturaSerieDocumentalExpediente)
-    )
-    select
-  		t1.IdExpediente,
-  		t1.ExpedienteConfidencial,
-  		t1.NTFechaExpediente,
-  		t1.HoraExpediente,
-  		t1.IdCatalogoTipoPrioridad,
-  		c1.Descripcion CatalogoTipoPrioridad,
-  		isnull(c2.Descripcion,'') CatalogoTipoTramite,
-  		isnull(c2.Detalle,'') ColorCatalogoTipoTramite,
-  		su.Logueo,
-  		t1.IdPersonaCreador,
-  		t1.AsuntoExpediente,
-  		t1.NumeroFoliosExpediente,
-  		isnull(t1.ObservacionesExpediente,'') ObservacionesExpediente,
-  		concat(t1.NTFechaExpediente ,' ', t1.HoraExpediente) Fecha,
-  		concat(sd.AbreviaturaSerieDocumentalExpediente, right(1000000+t1.NumeroExpediente,6),'-', t1.IdPeriodo) NombreExpediente,
-  		isnull(t1.NombreCompletoCreador, p.NombreCompleto) NombreCompletoCreador,
-  		t1.NumeroExpediente,
-  		isnull(ss.IdExpedienteSeguimiento, 0) IdExpedienteSeguimiento,
-        p.sexo
-    into #tmp001_resumen
-   	from @vTablaExpediente t
-    inner join Tramite.Expediente t1
-        on  t1.IdExpediente      = t.IdExpediente
-        and t1.EstadoAuditoria   = 1
-        and t1.ExpedienteAnulado = 0
-        and t1.IdSerieDocumentalExpediente in (1,2)
-    inner join tmp001_serieDocumental sd
-        on sd.IdSerieDocumentalExpediente = t1.IdSerieDocumentalExpediente
-    inner join Seguridad.Usuario su
-        on su.IdUsuario = t1.IdUsuarioCreacionAuditoria
-    inner join Tramite.Catalogo c1
-        on c1.IdCatalogo = t1.IdCatalogoTipoPrioridad
-    inner join Tramite.Catalogo c2
-        on c2.IdCatalogo = t1.IdCatalogoTipoTramite
-    left join General.Persona p
-        on p.IdPersona = t1.IdPersonaCreador
-    left join Tramite.ExpedienteSeguimiento ss
-        on  ss.IdExpediente = t1.IdExpediente
-        and ss.IdArea    = @vIdArea
-       	and ss.IdCargo   = @vIdCargo
-       	and ss.IdPersona = @pIdPersona
-        and ss.EstadoAuditoria = 1
-       	and ss.IdEmpresa = 2
-
-
     ;with tmp001_params as(
         select*from(values(4,1),(5,1),(111,2),(3,2),(6,2),(112,3),(116,4))t(pIdCatalogoSituacionMovimientoDestino,grupo)
     )
-    insert into @MITABLA
-    select*from #tmp001_resumen t1
+    select*into #tmp001_TablaExpediente from @vTablaExpediente t1
     outer apply(
         select top 1
             case pp.grupo when 1 then convert(datetime, t4.FechaDestino +' '+ t4.HoraDestino)
@@ -188,6 +138,55 @@ set tran isolation level read uncommitted
 	OFFSET (@pNumeroPagina-1)*@pDimensionPagina ROWS FETCH NEXT @pDimensionPagina ROWS ONLY
 
 
+    ;with tmp001_serieDocumental as(
+        select*from(values(1,'E-'),(2,'I-'))sd(IdSerieDocumentalExpediente, AbreviaturaSerieDocumentalExpediente)
+    )
+    insert into @MITABLA
+    select
+  		t1.IdExpediente,
+  		t1.ExpedienteConfidencial,
+  		t1.NTFechaExpediente,
+  		t1.HoraExpediente,
+  		t1.IdCatalogoTipoPrioridad,
+  		c1.Descripcion CatalogoTipoPrioridad,
+  		isnull(c2.Descripcion,'') CatalogoTipoTramite,
+  		isnull(c2.Detalle,'') ColorCatalogoTipoTramite,
+  		su.Logueo,
+  		t1.IdPersonaCreador,
+  		t1.AsuntoExpediente,
+  		t1.NumeroFoliosExpediente,
+  		isnull(t1.ObservacionesExpediente,'') ObservacionesExpediente,
+  		concat(t1.NTFechaExpediente ,' ', t1.HoraExpediente) Fecha,
+  		concat(sd.AbreviaturaSerieDocumentalExpediente, right(1000000+t1.NumeroExpediente,6),'-', t1.IdPeriodo) NombreExpediente,
+  		isnull(t1.NombreCompletoCreador, p.NombreCompleto) NombreCompletoCreador,
+  		t1.NumeroExpediente,
+  		isnull(ss.IdExpedienteSeguimiento, 0) IdExpedienteSeguimiento,
+        p.sexo,
+        t.FechaMovimiento
+   	from #tmp001_TablaExpediente t
+    inner join Tramite.Expediente t1
+        on  t1.IdExpediente      = t.IdExpediente
+        and t1.EstadoAuditoria   = 1
+        and t1.ExpedienteAnulado = 0
+        and t1.IdSerieDocumentalExpediente in (1,2)
+    inner join tmp001_serieDocumental sd
+        on sd.IdSerieDocumentalExpediente = t1.IdSerieDocumentalExpediente
+    inner join Seguridad.Usuario su
+        on su.IdUsuario = t1.IdUsuarioCreacionAuditoria
+    inner join Tramite.Catalogo c1
+        on c1.IdCatalogo = t1.IdCatalogoTipoPrioridad
+    inner join Tramite.Catalogo c2
+        on c2.IdCatalogo = t1.IdCatalogoTipoTramite
+    left join General.Persona p
+        on p.IdPersona = t1.IdPersonaCreador
+    left join Tramite.ExpedienteSeguimiento ss
+        on  ss.IdExpediente = t1.IdExpediente
+        and ss.IdArea    = @vIdArea
+       	and ss.IdCargo   = @vIdCargo
+       	and ss.IdPersona = @pIdPersona
+        and ss.EstadoAuditoria = 1
+       	and ss.IdEmpresa = 2
+
     ;with tmp001_cabComp(cab1, cab2, cab3) as(
         select
         '<button type="button" data-toggle="tooltip" title="xxx" class="btn ui blue label" onclick="MostrarDocumentoPdfExp(''',
@@ -206,7 +205,7 @@ set tran isolation level read uncommitted
 		t.CatalogoTipoTramite,
 		t.ColorCatalogoTipoTramite,
 		t.Logueo,
-		rf.RutaFotoPersona,
+		isnull(rf.RutaFotoPersona, iif(isnull(t.sexo, 0) = 0, 'sinfotoH.jpg', 'sinfotoM.jpg')) RutaFotoPersona,
 		t.AsuntoExpediente,
 		t.NumeroFoliosExpediente,
 		t.ObservacionesExpediente,
@@ -220,12 +219,12 @@ set tran isolation level read uncommitted
     from @MITABLA t
     outer apply(
         select top 1
-            case when u.RutaArchivoFoto is null or u.RutaArchivoFoto = ''
-            then iif(t.sexo = 0, 'sinfotoH.jpg', 'sinfotoM.jpg') else u.RutaArchivoFoto end RutaFotoPersona
+            nullif(u.RutaArchivoFoto, '') RutaFotoPersona
         from Seguridad.Usuario u
         where   u.IdPersona = t.IdPersonaCreador
             and u.EstadoAuditoria = 1
             and u.Bloqueado = 0
+        order by u.RutaArchivoFoto desc
     )rf
     cross apply tmp001_cabComp g
     outer apply(
@@ -333,6 +332,7 @@ set tran isolation level read uncommitted
     order by t.FechaMovimiento desc
 
 	select count(*) from @vTablaExpediente
+
 
 END TRY
 BEGIN CATCH

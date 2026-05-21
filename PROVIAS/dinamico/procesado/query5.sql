@@ -108,4 +108,4 @@ END CATCH
 END
 GO
 
-EXEC Tramite.paListarExpedienteDocumentoHojaRuta_arq 570251,1059,NULL,NULL,1,10,NULL, 2025
+-- EXEC Tramite.paListarExpedienteDocumentoHojaRuta_arq 570251,1059,NULL,NULL,1,10,NULL, 2025
