@@ -77,3 +77,38 @@ WHERE   s.login_name = ORIGINAL_LOGIN()
 -- concat(object_schema_name(parent_object_id), '.', object_name(parent_object_id)) tabla,
 -- concat(object_schema_name(referenced_object_id), '.', object_name(referenced_object_id)) tabla_ref
 -- from sys.foreign_key_columns
+
+
+
+
+-- -- Filtrar sp_who2 para mostrar solo U_SgdDesa
+-- CREATE TABLE #sp_who2 (
+--     SPID INT null,
+--     Status VARCHAR(100) null,
+--     Login SYSNAME null,
+--     HostName SYSNAME null,
+--     BlkBy SYSNAME null,
+--     DBName SYSNAME null,
+--     Command VARCHAR(200) null,
+--     CPUTime INT null,
+--     DiskIO INT null,
+--     LastBatch VARCHAR(50) null,
+--     ProgramName VARCHAR(200) null,
+--     SPID2 INT null,
+--     REQUESTID INT  null
+-- )
+-- INSERT INTO #sp_who2 EXEC sp_who2
+-- SELECT
+--     SPID,
+--     Status,
+--     Login,
+--     HostName,
+--     ISNULL(DBName, 'master') AS DBName,
+--     Command,
+--     CPUTime,
+--     DiskIO,
+--     LastBatch,
+--     ProgramName
+-- FROM #sp_who2
+-- WHERE Login = 'U_SgdDesa'
+--     AND SPID != @@SPID
