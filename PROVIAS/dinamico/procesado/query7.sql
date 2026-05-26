@@ -1,4 +1,4 @@
-ALTER PROCEDURE [Tramite].[paListarDocumentoOrigenDestinoHojaRutaV1_arq]
+ALTER PROCEDURE Tramite.paListarDocumentoOrigenDestinoHojaRuta_arq
 	@pIdExpediente int,
 	@pIdArea int,
 	@pEsVinculado int,
@@ -240,11 +240,12 @@ BEGIN CATCH
 	DECLARE @ERROR_PROCEDURE VARCHAR(MAX)
 	DECLARE @ERROR_LINE INT
 	DECLARE @ERROR_MESSAGE VARCHAR(MAX)
-	SELECT @ERROR_NUMBER=ERROR_NUMBER() , @ERROR_SEVERITY=ERROR_SEVERITY() , @ERROR_STATE=ERROR_STATE() , @ERROR_PROCEDURE='Tramite.paListarDocumentoOrigenDestinoHojaRuta',@ERROR_LINE=ERROR_LINE(),@ERROR_MESSAGE=ERROR_MESSAGE()
+	SELECT @ERROR_NUMBER=ERROR_NUMBER() , @ERROR_SEVERITY=ERROR_SEVERITY() , @ERROR_STATE=ERROR_STATE(),
+	@ERROR_PROCEDURE='Tramite.paListarDocumentoOrigenDestinoHojaRuta_arq',@ERROR_LINE=ERROR_LINE(),@ERROR_MESSAGE=ERROR_MESSAGE()
 	EXEC Seguridad.paGuardarErroresEnLog @ERROR_NUMBER , @ERROR_SEVERITY , @ERROR_STATE ,  @ERROR_PROCEDURE,@ERROR_LINE,@ERROR_MESSAGE
 END CATCH
 END
 GO
 
 
--- exec tramite.paListarDocumentoOrigenDestinoHojaRutaV1_arq 506370, null, null, 0, null, 2025
+-- exec tramite.paListarDocumentoOrigenDestinoHojaRuta_arq 506370, null, null, 0, null, 2025

@@ -54,10 +54,14 @@ BEGIN TRY
 			MAX(ed.IdExpedienteDocumento) IdExpedienteDocumento
 		FROM
 		Tramite.Expediente E WITH (NOLOCK)
-		INNER JOIN Tramite.SerieDocumentalExpediente SD WITH (NOLOCK) ON SD.IdSerieDocumentalExpediente=E.IdSerieDocumentalExpediente
-		INNER JOIN Tramite.ExpedienteDocumento ED WITH (NOLOCK)  ON E.IdExpediente=ED.IdExpediente AND ED.EstadoAuditoria=1 AND COALESCE(E.ExpedienteAnulado,0)=0 AND E.EstadoAuditoria=1
-		INNER JOIN Tramite.ExpedienteDocumentoOrigen EDO WITH (NOLOCK) ON EDO.IdExpedienteDocumento=ED.IdExpedienteDocumento AND EDO.EstadoAuditoria=1
-		INNER JOIN Tramite.ExpedienteDocumentoOrigenDestino EDOD WITH (NOLOCK) ON EDOD.IdExpedienteDocumentoOrigen=EDO.IdExpedienteDocumentoOrigen and edod.EstadoAuditoria=1
+		INNER JOIN Tramite.SerieDocumentalExpediente SD WITH (NOLOCK)
+		    ON SD.IdSerieDocumentalExpediente=E.IdSerieDocumentalExpediente
+		INNER JOIN Tramite.ExpedienteDocumento ED WITH (NOLOCK)
+		    ON E.IdExpediente=ED.IdExpediente AND ED.EstadoAuditoria=1 AND COALESCE(E.ExpedienteAnulado,0)=0 AND E.EstadoAuditoria=1
+		INNER JOIN Tramite.ExpedienteDocumentoOrigen EDO WITH (NOLOCK)
+		    ON EDO.IdExpedienteDocumento=ED.IdExpedienteDocumento AND EDO.EstadoAuditoria=1
+		INNER JOIN Tramite.ExpedienteDocumentoOrigenDestino EDOD WITH (NOLOCK)
+		    ON EDOD.IdExpedienteDocumentoOrigen=EDO.IdExpedienteDocumentoOrigen and edod.EstadoAuditoria=1
 		left join General.Area A ON A.IdArea=EDO.IdAreaOrigen
 		LEFT JOIN Tramite.Catalogo CTD ON CTD.IdCatalogo=ED.IdCatalogoTipoDocumento
 		where COALESCE(E.ExpedienteAnulado,0)=0 AND E.EstadoAuditoria=1
@@ -194,3 +198,7 @@ exec Tramite.paListarExpedientePendienteJefaturaPorRecibirFosCad
 @pDimensionPagina=10,
 @pBusquedaGeneral=NULL,
 @pFlgBusqueda=0
+
+exec tramite.paListarExpedientePendienteJefaturaPorRecibirFosCad 0,'22/05/2026','22/05/2026',1,'22/05/2026','22/05/2026',79,4,4,0,0,2026,0,0,0,'','','','',0,'','','',349,NULL,NULL,1,10,NULL,0
+exec tramite.paListarExpedientePendienteJefaturaPorRecibirFosCad 0,'15/04/2026','15/04/2026',0,'15/04/2026','15/04/2026',30,4,0,0,0,0,0,0,0,'','','','',0,'','','',52939,null,null,1,10,null,0
+exec tramite.paListarExpedientePendienteJefaturaPorRecibirFosCad 0,'15/04/2026','15/04/2026',0,'15/04/2026','15/04/2026',30,4,4,0,0,0,0,0,0,'','','','',0,'','','',52939,null,null,1,10,null,0

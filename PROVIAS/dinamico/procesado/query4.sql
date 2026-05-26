@@ -1,4 +1,4 @@
-ALTER PROCEDURE [Tramite].[paListarDocumentoHojaRutaV1_arq]
+ALTER PROCEDURE Tramite.paListarDocumentoHojaRuta_arq
 	@pIdExpediente int,
 	@pIdArea int,
 	@pIdUsuarioAuditoria int,
@@ -181,14 +181,14 @@ BEGIN CATCH
     DECLARE @ERROR_LINE INT
     DECLARE @ERROR_MESSAGE VARCHAR(MAX)
     SELECT @ERROR_NUMBER=ERROR_NUMBER() , @ERROR_SEVERITY=ERROR_SEVERITY() , @ERROR_STATE=ERROR_STATE() ,
-    @ERROR_PROCEDURE='Tramite.paListarDocumentoHojaRutaV1_arq',
+    @ERROR_PROCEDURE='Tramite.paListarDocumentoHojaRuta_arq',
     @ERROR_LINE=ERROR_LINE(),@ERROR_MESSAGE=ERROR_MESSAGE()
     EXEC Seguridad.paGuardarErroresEnLog @ERROR_NUMBER , @ERROR_SEVERITY , @ERROR_STATE ,  @ERROR_PROCEDURE,@ERROR_LINE,@ERROR_MESSAGE
 END CATCH
 END
 go
 
-exec Tramite.paListarDocumentoHojaRutaV1_arq 570251,79,1059, 2025
+exec Tramite.paListarDocumentoHojaRuta_arq 570251,79,1059, 2025
 
 
 -- cross apply(

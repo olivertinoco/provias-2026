@@ -26,3 +26,4 @@ U    Tramite.ExpedienteDocumentoOrigen
 U    Tramite.ExpedienteDocumentoOrigenDestino
 U    Tramite.ExpedienteEnlazado
 U    Tramite.ExpedienteSeguimiento
+U    Tramite.ExpedienteDocumentoFirmante
