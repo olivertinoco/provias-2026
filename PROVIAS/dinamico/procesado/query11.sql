@@ -1,4 +1,4 @@
-ALTER PROCEDURE [Tramite].[paListarMisDocumentosGeneradosJefatura_arq]
+create PROCEDURE [Tramite].[paListarMisDocumentosGeneradosJefatura_arq]
        @pIdAreaEmisor int,
 	   @pIdPersona int,
 	   @pIdCatalogoTipoDocumento int,

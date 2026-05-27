@@ -1,4 +1,4 @@
-ALTER PROCEDURE [Tramite].[paListarExpedienteBusquedaPendiente_arq]
+create PROCEDURE [Tramite].[paListarExpedienteBusquedaPendiente_arq]
 	@pIdUsuarioAuditoria int,
 	@pCampoOrdenado varchar(50),
 	@pTipoOrdenacion varchar(4),

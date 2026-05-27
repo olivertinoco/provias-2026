@@ -1,4 +1,4 @@
-ALTER PROCEDURE [Tramite].[paListarExpedientePendienteEspecialistaTodos_arq]
+create PROCEDURE [Tramite].[paListarExpedientePendienteEspecialistaTodos_arq]
 	@pConFiltroFecha bit,
 	@pFechaInicio varchar(10),
 	@pFechaFin varchar(10),

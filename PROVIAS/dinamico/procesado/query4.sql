@@ -1,4 +1,4 @@
-ALTER PROCEDURE Tramite.paListarDocumentoHojaRuta_arq
+create PROCEDURE Tramite.paListarDocumentoHojaRuta_arq
 	@pIdExpediente int,
 	@pIdArea int,
 	@pIdUsuarioAuditoria int,

@@ -1,4 +1,4 @@
-ALTER PROCEDURE Tramite.paListarDocumentoOrigenDestinoHojaRuta_arq
+create PROCEDURE Tramite.paListarDocumentoOrigenDestinoHojaRuta_arq
 	@pIdExpediente int,
 	@pIdArea int,
 	@pEsVinculado int,

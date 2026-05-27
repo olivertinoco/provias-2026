@@ -1,4 +1,4 @@
-ALTER PROCEDURE Tramite.paListarDetalleBusquedaExpedienteGeneral_arq
+alter PROCEDURE Tramite.paListarDetalleBusquedaExpedienteGeneral_arq
     @pIdExpediente int,
     @pIdArea int,
     @pIdUsuarioAuditoria int,
@@ -189,7 +189,7 @@ GO
 
 
 EXECUTE Tramite.paListarDetalleBusquedaExpedienteGeneral 727733,79,349,null,null,1,25,null,-1
-EXECUTE Tramite.paListarDetalleBusquedaExpedienteGeneral_arq 727733,79,349,null,null,1,25,null,-1, 2025
+-- EXECUTE Tramite.paListarDetalleBusquedaExpedienteGeneral_arq 727733,79,349,null,null,1,25,null,-1, 2025
 
 
 -- exec Tramite.paListarDetalleBusquedaExpedienteGeneral_arq 727730,79,349,null,null,1,25,null,-1, 2025

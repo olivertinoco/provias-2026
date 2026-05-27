@@ -1,4 +1,4 @@
-ALTER PROCEDURE Tramite.paListarExpedientePendienteJefaturaTodos_arq
+create PROCEDURE Tramite.paListarExpedientePendienteJefaturaTodos_arq
  @pConFiltroFecha bit,
  @pFechaInicio varchar(10),
  @pFechaFin varchar(10),

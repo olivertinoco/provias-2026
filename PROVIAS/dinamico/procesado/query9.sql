@@ -1,4 +1,4 @@
-ALTER PROCEDURE Tramite.paListarDocumentoPendienteJefatura_arq
+create PROCEDURE Tramite.paListarDocumentoPendienteJefatura_arq
     @pIdExpediente int,
     @pIdArea int,
     @pIdUsuarioAuditoria int,

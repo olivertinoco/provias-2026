@@ -1,4 +1,4 @@
-ALTER PROCEDURE [Tramite].[paListarDocumentoPendienteEspecialistaV1_arq]
+create PROCEDURE [Tramite].[paListarDocumentoPendienteEspecialistaV1_arq]
     @pIdExpediente int,
     @pIdEmpresa int,
     @pIdArea int,

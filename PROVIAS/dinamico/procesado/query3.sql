@@ -1,4 +1,4 @@
-ALTER PROCEDURE [Tramite].[paListarMisDocumentosGeneradosEspecialistaV1_arq]
+create PROCEDURE [Tramite].[paListarMisDocumentosGeneradosEspecialistaV1_arq]
 @pIdPersona int,
 @pIdCatalogoTipoDocumento int,
 @pIdPeriodo int,

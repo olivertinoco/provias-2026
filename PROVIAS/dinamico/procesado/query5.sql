@@ -1,4 +1,4 @@
-ALTER PROCEDURE [Tramite].[paListarExpedienteDocumentoHojaRuta_arq]
+create PROCEDURE [Tramite].[paListarExpedienteDocumentoHojaRuta_arq]
 	@pIdExpediente int,
 	@pIdUsuarioAuditoria int,
 	@pCampoOrdenado varchar(50),

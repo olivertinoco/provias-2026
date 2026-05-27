@@ -1,4 +1,4 @@
-ALTER PROCEDURE [Tramite].[paListarDemoraAtencionPorExpediente_arq]
+create PROCEDURE [Tramite].[paListarDemoraAtencionPorExpediente_arq]
 	@pIdExpediente int,
 	@pIdUsuarioAuditoria int,
 	@pCampoOrdenado varchar(50),
