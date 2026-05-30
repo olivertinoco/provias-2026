@@ -27,3 +27,23 @@ U    Tramite.ExpedienteDocumentoOrigenDestino
 U    Tramite.ExpedienteEnlazado
 U    Tramite.ExpedienteSeguimiento
 U    Tramite.ExpedienteDocumentoFirmante
+
+
+
+--I-091266-2025
+--HOJA DE RUTA ACTUAL -> TRAE 8 FILAS
+EXECUTE [Tramite].[paListarDocumentoOrigenDestinoHojaRutaV1] 727733,79,0,0,349
+
+--HOJA DE RUTA CON ARQ -> TRAE SOLO 1 FILA
+EXECUTE [Tramite].[paListarDocumentoOrigenDestinoHojaRuta_arq] 727733,79,0,0,349,2025
+
+
+
+
+
+--I-091266-2025
+--HOJA DE RUTA COMPLETA ACTUAL -> TRAE 8 FILAS
+EXECUTE [Tramite].[paListarDocumentoHojaRutaV1] 727733,79,349
+
+--HOJA DE RUTA COMPLETA CON ARQ -> TRAE SOLO 1 FILA
+EXECUTE [Tramite].[paListarDocumentoHojaRuta_arq] 727733,79,349,2025

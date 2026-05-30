@@ -1,5 +1,4 @@
--- alter PROCEDURE Tramite.paListarDetalleBusquedaExpedienteGeneralPorAnno_arq
-declare
+alter PROCEDURE Tramite.paListarDetalleBusquedaExpedienteGeneral_arq
     @pIdExpediente int,
     @pIdArea int,
     @pIdUsuarioAuditoria int,
@@ -10,25 +9,12 @@ declare
     @pBusquedaGeneral varchar(100),
     @pCorrelativoVinculado int,
     @pIdPeriodo int
--- AS
--- BEGIN
--- BEGIN TRY
+AS
+BEGIN
+BEGIN TRY
 SET TRAN ISOLATION LEVEL READ UNCOMMITTED
 SET NOCOUNT ON
 SET LANGUAGE SPANISH
-
-
-SELECT
-@pIdExpediente= 727733,  -- 797442, --
-@pIdArea=79,
-@pIdUsuarioAuditoria=349,
-@pCampoOrdenado=null,
-@pTipoOrdenacion=null,
-@pNumeroPagina= 1,
-@pDimensionPagina= 25,
-@pBusquedaGeneral= null,
-@pCorrelativoVinculado= -1,
-@pIdPeriodo= 2025
 
 create table #tmp001_dato_expediente01 (
     FgEnEsperaFirmaDigital bit,
@@ -84,7 +70,8 @@ create table #tmp001_dato_expediente01 (
     IdExpedienteVirtual int,
     FechaOrigen varchar(10) collate database_default,
     HoraOrigen varchar(5) collate database_default,
-    IdCatalogoTipoDocumento int
+    IdCatalogoTipoDocumento int,
+    Descripcion varchar(400) collate database_default
 )
 
     DECLARE @Consulta Nvarchar(max)=''
@@ -203,24 +190,23 @@ create table #tmp001_dato_expediente01 (
     EDOD.IdCargoDestinoRecepciona,EDOD.IdPersonaDestinoRecepciona,EDOD.IdEmpresaDestinoAtencion,EDOD.IdAreaDestinoAtencion,EDOD.IdCargoDestinoAtencion,EDOD.IdPersonaDestinoAtencion,
     EDOD.IdPersonaDestino,EDO.IdPersonaOrigen,EDO.NombreCompletoOrigen,EDOD.NumeroDiasAtencionAceptado,EDOD.Original,EDOD.Copia,EDOD.FechaDestino,EDOD.HoraDestino,EDOD.FechaDestinoEnvia,EDOD.HoraDestinoEnvia,
     EDOD.DestinatarioDestino,EDOD.ObservacionesDestinatario,EDOD.IdExpedienteDocumentoOrigenDestino,ED.NumeroDocumento,ED.AsuntoDocumento,ED.RutaArchivoDocumento,EDOD.FechaArchivado,EDOD.HoraArchivado,
-    EDO.Descripciondevolucion,EDOD.EsInicial,EDOD.MotivoArchivado,ED.CorrelativoVinculado,ED.FgEsObligatorioFirmaDigital,ED.FlagParaDespacho,ED.IdExpedienteVirtual,EDO.FechaOrigen,EDO.HoraOrigen,ED.IdCatalogoTipoDocumento
+    EDO.Descripciondevolucion,EDOD.EsInicial,EDOD.MotivoArchivado,ED.CorrelativoVinculado,ED.FgEsObligatorioFirmaDigital,ED.FlagParaDespacho,ED.IdExpedienteVirtual,EDO.FechaOrigen,EDO.HoraOrigen,ED.IdCatalogoTipoDocumento,CSM.Descripcion
     FROM (' + @vcExpedienteRpta + N')E
     INNER JOIN (' + @vcExpedienteDocumentoRpta + N')ED ON ED.IdExpediente=E.IdExpediente
     INNER JOIN (' + @vcExpedienteDocumentoOrigenRpta + N')EDO ON EDO.IdExpedienteDocumento=ED.IdExpedienteDocumento AND ED.EstadoAuditoria=1
     INNER JOIN (' + @vcExpedienteDocumentoOrigenDestinoRpta + N')EDOD ON EDOD.IdExpedienteDocumentoOrigen=EDO.IdExpedienteDocumentoOrigen  AND EDO.EstadoAuditoria=1
+    INNER JOIN Tramite.Catalogo CSM ON CSM.IdCatalogo=EDOD.IdCatalogoSituacionMovimientoDestino
     WHERE EDOD.EstadoAuditoria=1 AND E.IdExpediente=@pIdExpediente'
     +@vCondicionVinculado
+    +@Filtros
 
     EXECUTE sp_executesql @Consulta,
     N'@pIdExpediente int, @vIdPersonaActual int',
     @pIdExpediente = @pIdExpediente,
     @vIdPersonaActual = @vIdPersonaActual
 
-
--- insert into #tmp001_expediente_listar
-
     select
-    case when t.FgEnEsperaFirmaDigital=1 then 0 else @vSiPariticipo end SiPariticipo,
+    cast(case when t.FgEnEsperaFirmaDigital=1 then 0 else @vSiPariticipo end as int) SiPariticipo,
     t.EsVinculado,
     t.ExpedienteAnulado,
     t.IdExpediente,
@@ -228,67 +214,64 @@ create table #tmp001_dato_expediente01 (
     t.IdExpedienteDocumentoOrigenDestino,
     t.IdExpedienteDocumentoOrigen,
     t.IdCatalogoSituacionMovimientoDestino,
-    CSM.Descripcion,
+    t.Descripcion CatalogoSituacionMovimientoDestino,
     t.IdCatalogoTipoMovimientoDestino,
-    CTM.Descripcion,
-    t.IdCatalogoTipodevolucion,
+    CTM.Descripcion CatalogoTipoMovimientoDestino,
+    isnull(t.IdCatalogoTipodevolucion,0) IdCatalogoTipodevolucion,
     t.NumeroDiasAtencionSolicitado,
-    t.FechaDestinoRecepciona,
-    t.HoraDestinoRecepciona,
-    EMO.NombreEmpresa,
-    AO.NombreArea,
-    CO.NombreCargo,
-    Seguridad.funObtenerRutaFotoPorIdPersona(t.IdPersonaOrigen),
-    Seguridad.funObtenerRutaFotoPorIdPersona(t.IdPersonaDestino),
-    CASE WHEN t.IdPersonaOrigen=0 THEN t.NombreCompletoOrigen ELSE PO.NombreCompleto END,
-    null,
+    isnull(t.FechaDestinoRecepciona, '')FechaDestinoRecepciona,
+    isnull(t.HoraDestinoRecepciona, '')HoraDestinoRecepciona,
+    isnull(EMO.NombreEmpresa, '') NombreEmpresaOrigen,
+    isnull(AO.NombreArea,'') NombreAreaOrigen,
+    isnull(CO.NombreCargo,'') NombreCargoOrigen,
+    isnull(Seguridad.funObtenerRutaFotoPorIdPersona(t.IdPersonaOrigen),'sinfotoH.jpg') RutaFotoPersona,
+    isnull(Seguridad.funObtenerRutaFotoPorIdPersona(t.IdPersonaDestino),'sinfotoH.jpg') RutaFotoPersonaDestino,
+    CASE WHEN t.IdPersonaOrigen=0 THEN t.NombreCompletoOrigen ELSE PO.NombreCompleto END NombrePersonaOrigen,
+    isnull(Seguridad.funObtenerRutaFotoPorIdPersona(t.IdPersonaDestino),'sinfotoH.jpg') RutaFotoPersonaDestino,
     t.NumeroDiasAtencionAceptado,
     t.Original,
     t.Copia,
     t.FechaDestino,
     t.HoraDestino,
-    t.FechaDestinoEnvia,
-    t.HoraDestinoEnvia,
-    COALESCE(EMD.NombreEmpresa,t.DestinatarioDestino,''),
-    AD.NombreArea,
-    CD.NombreCargo,
-    PD.NombreCompleto,
-    EMR.NombreEmpresa,
-    AR.NombreArea,
-    CR.NombreCargo,
-    PR.NombreCompleto,
-    EMA.NombreEmpresa,
-    AA.NombreArea,
-    CA.NombreCargo,
-    PA.NombreCompleto,
-    t.ObservacionesDestinatario,
-    Tramite.funMostrarAccionesPorDestino(t.IdExpedienteDocumentoOrigenDestino),
-    null,
-    CTD.Descripcion,
-    t.NumeroDocumento,
-    t.AsuntoDocumento,
-    t.RutaArchivoDocumento,
-    t.FechaArchivado,
-    t.HoraArchivado,
-    t.Descripciondevolucion,
-    Tramite.funEsExtornable(t.IdExpedienteDocumentoOrigen,t.IdExpedienteDocumentoOrigenDestino),
+    isnull(t.FechaDestinoEnvia,'') FechaDestinoEnvia,
+    isnull(t.HoraDestinoEnvia,'') HoraDestinoEnvia,
+    COALESCE(EMD.NombreEmpresa,t.DestinatarioDestino,'') NombreEmpresaDestino,
+    isnull(AD.NombreArea,'') NombreAreaDestino,
+    isnull(CD.NombreCargo,'') NombreCargoDestino,
+    isnull(PD.NombreCompleto,'') NombrePersonaDestino,
+    isnull(EMR.NombreEmpresa, 'EXTERNO') NombreEmpresaDestinoRecepciona,
+    isnull(AR.NombreArea,'') NombreAreaDestinoRecepciona,
+    isnull(CR.NombreCargo,'') NombreCargoDestinoRecepciona,
+    isnull(PR.NombreCompleto,'') NombrePersonaDestinoRecepciona,
+    isnull(EMA.NombreEmpresa, 'EXTERNO') NombreEmpresaDestinoAtencion,
+    isnull(AA.NombreArea,'') NombreAreaDestinoAtencion,
+    isnull(CA.NombreCargo,'') NombreCargoDestinoAtencion,
+    isnull(PA.NombreCompleto,'') NombrePersonaDestinoAtencion,
+    isnull(t.ObservacionesDestinatario,'') ObservacionesDestinatario,
+    Tramite.funMostrarAccionesPorDestino(t.IdExpedienteDocumentoOrigenDestino) Acciones,
+    t.IdExpedienteDocumento,
+    isnull(CTD.Descripcion,'') CatalogoTipoDocumento,
+    isnull(t.NumeroDocumento,'') NumeroDocumento,
+    isnull(t.AsuntoDocumento,'') AsuntoDocumento,
+    isnull(t.RutaArchivoDocumento,'') RutaArchivoDocumento,
+    isnull(t.FechaArchivado,'') +' '+ isnull(t.HoraArchivado,'') FechaArchivado,
+    isnull(t.Descripciondevolucion,'') Descripciondevolucion,
+    Tramite.funEsExtornable(t.IdExpedienteDocumentoOrigen,t.IdExpedienteDocumentoOrigenDestino) EsExtornable,
     t.EsInicial,
-    null,
-    t.MotivoArchivado,
-    EE.FechaEntregaDocumento,
-    EE.HoraEntregaDocumento,
-    EE.RutaArchivoCargo,
+    isnull(t.Descripciondevolucion,'') Descripciondevolucion,
+    isnull(t.MotivoArchivado,'') MotivoArchivado,
+    isnull(EE.FechaEntregaDocumento,'') FechaEntregaDocumento,
+    isnull(EE.HoraEntregaDocumento,'') HoraEntregaDocumento,
+    isnull(EE.RutaArchivoCargo,'') RutaArchivoCargo,
     t.CorrelativoVinculado,
-    null,
-    CTD.IdCatalogo,
+    isnull(CTD.Descripcion,'') CatalogoTipoDocumento,
+    CTD.IdCatalogo IdCatalogoTipoDocumento,
     t.FgEsObligatorioFirmaDigital,
     t.FgEnEsperaFirmaDigital,
     t.FlagParaDespacho,
-    t.IdExpedienteVirtual,
-    concat(t.FechaOrigen,t.HoraOrigen)
+    isnull(t.IdExpedienteVirtual,0) IdExpedienteVirtual
     from #tmp001_dato_expediente01 t
     INNER JOIN Tramite.Catalogo CTD ON CTD.IdCatalogo=t.IdCatalogoTipoDocumento
-    INNER JOIN Tramite.Catalogo CSM ON CSM.IdCatalogo=t.IdCatalogoSituacionMovimientoDestino
     INNER JOIN Tramite.Catalogo CTM ON CTM.IdCatalogo=t.IdCatalogoTipoMovimientoDestino
     LEFT JOIN General.Empresa EMO ON EMO.IdEmpresa=t.IdEmpresaOrigen
     LEFT JOIN General.Area AO ON AO.IdArea=t.IdAreaOrigen
@@ -308,108 +291,26 @@ create table #tmp001_dato_expediente01 (
     LEFT JOIN General.Persona PA ON PA.IdPersona=t.IdPersonaDestinoAtencion
     LEFT JOIN Courrier.Envio EE ON EE.IdExpedienteDocumentoOrigenDestino = t.IdExpedienteDocumentoOrigenDestino
     AND EE.EstadoAuditoria=1 AND EE.FgEntregado=0
--- +@Filtros
+    order by convert(datetime, t.FechaOrigen +' '+ t.HoraOrigen) desc
+    OFFSET (@pNumeroPagina-1)*@pDimensionPagina ROWS FETCH NEXT @pDimensionPagina ROWS ONLY
 
+    select count(1) from #tmp001_dato_expediente01
 
-SELECT
-    SiPariticipo,
-    EsVinculado,
-    ExpedienteAnulado,
-    IdExpediente,
-    IdExpedienteDocumento,
-    IdExpedienteDocumentoOrigenDestino,
-    IdExpedienteDocumentoOrigen,
-    IdCatalogoSituacionMovimientoDestino,
-    CatalogoSituacionMovimientoDestino,
-    IdCatalogoTipoMovimientoDestino,
-    CatalogoTipoMovimientoDestino,
-    isnull(IdCatalogoTipoDevolucion, 0) IdCatalogoTipoDevolucion,
-    NumeroDiasAtencionSolicitado,
-    isnull(FechaDestinoRecepciona, '') FechaDestinoRecepciona,
-    isnull(HoraDestinoRecepciona,'') HoraDestinoRecepciona,
-    isnull(NombreEmpresaOrigen,'') NombreEmpresaOrigen,
-    isnull(NombreAreaOrigen,'') NombreAreaOrigen,
-    isnull(NombreCargoOrigen,'') NombreCargoOrigen,
-    isnull(RutaFotoPersona,'sinfotoH.jpg') RutaFotoPersona,
-    isnull(RutaFotoPersonaDestino,'sinfotoH.jpg') RutaFotoPersonaDestino,
-    NombrePersonaOrigen,
-    isnull(RutaFotoPersonaDestino,'sinfotoH.jpg') RutaFotoPersonaDestino,
-    NumeroDiasAtencionAceptado,
-    Original,
-    Copia,
-    FechaDestino,
-    HoraDestino,
-    isnull(FechaDestinoEnvia,'') FechaDestinoEnvia,
-    isnull(HoraDestinoEnvia,'') HoraDestinoEnvia,
-    NombreEmpresaDestino,
-    isnull(NombreAreaDestino,'') NombreAreaDestino,
-    isnull(NombreCargoDestino,'') NombreCargoDestino,
-    isnull(NombrePersonaDestino,'') NombrePersonaDestino,
-    isnull(NombreEmpresaDestinoRecepciona, 'EXTERNO') NombreEmpresaDestinoRecepciona,
-    isnull(NombreAreaDestinoRecepciona,'') NombreAreaDestinoRecepciona,
-    isnull(NombreCargoDestinoRecepciona,'') NombreCargoDestinoRecepciona,
-    isnull(NombrePersonaDestinoRecepciona,'') NombrePersonaDestinoRecepciona,
-    isnull(NombreEmpresaDestinoAtencion, 'EXTERNO') NombreEmpresaDestinoAtencion,
-    isnull(NombreAreaDestinoAtencion,'') NombreAreaDestinoAtencion,
-    isnull(NombreCargoDestinoAtencion,'') NombreCargoDestinoAtencion,
-    isnull(NombrePersonaDestinoAtencion,'') NombrePersonaDestinoAtencion,
-    isnull(ObservacionesDestinatario,'') ObservacionesDestinatario,
-    Acciones,
-    IdExpedienteDocumento,
-    CatalogoTipoDocumento,
-    isnull(NumeroDocumento,'') NumeroDocumento,
-    isnull(AsuntoDocumento,'') AsuntoDocumento,
-    isnull(RutaArchivoDocumento,'') RutaArchivoDocumento,
-    isnull(FechaArchivado,'') +' '+ isnull(HoraArchivado,'') FechaArchivado,
-    isnull(DescripcionDevolucion,'') DescripcionDevolucion,
-    EsExtornable,
-    EsInicial,
-    isnull(DescripcionDevolucion,'') DescripcionDevolucion,
-    isnull(MotivoArchivado, '') MotivoArchivado,
-    isnull(FechaEntregaDocumento, '') FechaEntregaDocumento,
-    isnull(HoraEntregaDocumento, '') HoraEntregaDocumento,
-    isnull(RutaArchivoCargo, '') RutaArchivoCargo,
-    CorrelativoVinculado,
-    CatalogoTipoDocumento,
-    IdCatalogoTipoDocumento,
-    FgEsObligatorioFirmaDigital,
-    FgEnEsperaFirmaDigital,
-    FlagParaDespacho,
-    isnull(IdExpedienteVirtual, 0) IdExpedienteVirtual
-FROM #tmp001_expediente_listar
-order by convert(datetime, substring(fechaOrden,1,10) +' '+ stuff(fechaOrden,1,10,'')) desc
-OFFSET (@pNumeroPagina-1)*@pDimensionPagina ROWS FETCH NEXT @pDimensionPagina ROWS ONLY
-
-select count(1) from #tmp001_expediente_listar
-
-
-
-
-
-
-
-
-
-
-
-
-
-
--- END TRY
--- BEGIN CATCH
---     DECLARE @ERROR_NUMBER INT, @ERROR_SEVERITY INT,@ERROR_STATE INT,@ERROR_LINE INT,@ERROR_PROCEDURE VARCHAR(MAX) ,@ERROR_MESSAGE VARCHAR(MAX)
---     SELECT @ERROR_NUMBER=ERROR_NUMBER() , @ERROR_SEVERITY=ERROR_SEVERITY() , @ERROR_STATE=ERROR_STATE(),
---     @ERROR_PROCEDURE='Tramite.paListarDetalleBusquedaExpedienteGeneralPorAnno_arq',@ERROR_LINE=ERROR_LINE(),@ERROR_MESSAGE=ERROR_MESSAGE()
---     EXEC Seguridad.paGuardarErroresEnLog @ERROR_NUMBER , @ERROR_SEVERITY , @ERROR_STATE ,  @ERROR_PROCEDURE,@ERROR_LINE,@ERROR_MESSAGE
--- END CATCH
--- END
--- GO
+END TRY
+BEGIN CATCH
+    DECLARE @ERROR_NUMBER INT, @ERROR_SEVERITY INT,@ERROR_STATE INT,@ERROR_LINE INT,@ERROR_PROCEDURE VARCHAR(MAX) ,@ERROR_MESSAGE VARCHAR(MAX)
+    SELECT @ERROR_NUMBER=ERROR_NUMBER() , @ERROR_SEVERITY=ERROR_SEVERITY() , @ERROR_STATE=ERROR_STATE(),
+    @ERROR_PROCEDURE='Tramite.paListarDetalleBusquedaExpedienteGeneral_arq',@ERROR_LINE=ERROR_LINE(),@ERROR_MESSAGE=ERROR_MESSAGE()
+    EXEC Seguridad.paGuardarErroresEnLog @ERROR_NUMBER , @ERROR_SEVERITY , @ERROR_STATE ,  @ERROR_PROCEDURE,@ERROR_LINE,@ERROR_MESSAGE
+END CATCH
+END
+GO
 
 
 -- EXECUTE Tramite.paListarDetalleBusquedaExpedienteGeneralPorAnno_arq 727733,79,349,null,null,1,25,null,-1, 2025
 
--- EXECUTE Tramite.paListarDetalleBusquedaExpedienteGeneral_arq 797442,79,349,null,null,1,25,null,-1, 2025
--- EXECUTE Tramite.paListarDetalleBusquedaExpedienteGeneral_arq 506369,79,349,null,null,1,25,null,-1, 2025
+EXECUTE Tramite.paListarDetalleBusquedaExpedienteGeneral_arq 797442,79,349,null,null,1,25,null,-1, 2025
+EXECUTE Tramite.paListarDetalleBusquedaExpedienteGeneral_arq 506369,79,349,null,null,1,25,null,-1, 2025
 
 
 
@@ -424,3 +325,31 @@ select count(1) from #tmp001_expediente_listar
 -- @pBusquedaGeneral= null,
 -- @pCorrelativoVinculado= -1,
 -- @pIdPeriodo= 2025
+
+
+
+
+
+EXECUTE Tramite.paListarDetalleBusquedaExpedienteGeneral 727733,79,349,null,null,1,25,null,-1
+-- EXECUTE Tramite.paListarDetalleBusquedaExpedienteGeneral_arq 727733,79,349,null,null,1,25,null,-1, 2025
+
+
+-- exec Tramite.paListarDetalleBusquedaExpedienteGeneral_arq 727730,79,349,null,null,1,25,null,-1, 2025
+-- EXECUTE Tramite.paListarDetalleBusquedaExpedienteGeneral_arq 727730,79,349,null,null,1,25,null,-1, 2025
+-- EXECUTE Tramite.paListarDetalleBusquedaExpedienteGeneral_arq 797442,79,349,null,null,1,25,null,-1, 2025
+-- EXECUTE Tramite.paListarDetalleBusquedaExpedienteGeneral_arq 506369,79,349,null,null,1,25,null,-1, 2025
+
+
+
+-- SELECT
+-- @pIdExpediente= 727730,
+-- @pIdArea=79,
+-- @pIdUsuarioAuditoria=349,
+-- @pCampoOrdenado=null,
+-- @pTipoOrdenacion=null,
+-- @pNumeroPagina= 1,
+-- @pDimensionPagina= 25,
+-- @pBusquedaGeneral= null,
+-- @pCorrelativoVinculado= -1,
+-- @pIdPeriodo= 2025
+--

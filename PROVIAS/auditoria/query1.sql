@@ -3,18 +3,20 @@
 -- SELECT * FROM GENERAL.Persona WHERE IdPersona = 1009
 -- SELECT * FROM Seguridad.Usuario WHERE IdPersona = 1009
 -- ========================================================
--- SELECT t.logueo, tt.NombreCompleto
--- FROM Seguridad.Usuario t, GENERAL.Persona tt
--- WHERE t.IdPersona = tt.IdPersona
--- -- and t.IdPersona = 735
+SELECT t.logueo, tt.NombreCompleto
+FROM Seguridad.Usuario t, GENERAL.Persona tt
+WHERE t.IdPersona = tt.IdPersona
+and t.IdPersona = 637
 -- and t.logueo = 'rsoto'
 -- ========================================================
--- select distinct top 100  cast(FechaCreacionAuditoria as date) fecha, Procedimiento
--- from seguridad.LogError order by fecha desc
+return
+select distinct top 100  cast(FechaCreacionAuditoria as date) fecha, Procedimiento
+from seguridad.LogError order by fecha desc
+
+-- ========================================================
 
 
-
-
+return
 
 SELECT
     s.session_id,

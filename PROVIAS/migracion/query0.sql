@@ -32,7 +32,6 @@ WHERE e.FechaCreacionAuditoria >= '20260101' AND e.FechaCreacionAuditoria <  '20
 
 select*from #tmp001_cantidades order by ano
 
-return
 select distinct year(FechaCreacionAuditoria) from tramite.expediente_historico_2022 order by 1
 select distinct year(FechaCreacionAuditoria) from tramite.expediente_historico_2023 order by 1
 select distinct year(FechaCreacionAuditoria) from tramite.expediente_historico_2024 order by 1

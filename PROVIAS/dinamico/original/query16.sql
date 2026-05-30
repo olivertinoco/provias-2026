@@ -9,75 +9,72 @@ CREATE PROCEDURE [Tramite].[paListarDocumentoPendienteCourrierJefatura]
        @pBusquedaGeneral varchar(100),
 	   @pVerSoloMio INT
 AS
-       BEGIN TRY
-             --OBTENER EL JEFE DE AREA PARA OBTENER LOS PENDIENTES DEL JEFE
-			SET LANGUAGE SPANISH;
+BEGIN TRY
+	SET LANGUAGE SPANISH;
 
-             DECLARE @vIdCargoJefe int=0
-             DECLARE @vIdAreaJefe int=0
-             DECLARE @vIdEmpresaJefe int=0
+    DECLARE @vIdCargoJefe int=0
+    DECLARE @vIdAreaJefe int=0
+    DECLARE @vIdEmpresaJefe int=0
 
-             SELECT @vIdCargoJefe=IdCargo, @vIdAreaJefe=IdArea,@vIdEmpresaJefe=IdEmpresa FROM RecursoHumano.visPersonaJefe where IdArea=@pIdArea
-			 DECLARE @vCargoJefe VARCHAR(MAX)=''
+    SELECT @vIdCargoJefe=IdCargo, @vIdAreaJefe=IdArea,@vIdEmpresaJefe=IdEmpresa FROM RecursoHumano.visPersonaJefe where IdArea=@pIdArea
+	DECLARE @vCargoJefe VARCHAR(MAX)=''
 
-			 --IF (@vIdAreaJefe=2)--150= CARGO DE JEFE DE ADMINISTRACION
-				--SET @vCargoJefe='SELECT IdCargo FROM General.Cargo WHERE IdCatalogoTipoCargo in (32,33,34) UNION ALL SELECT 150 '
-			 --ELSE
-				SET @vCargoJefe='SELECT IdCargo FROM General.Cargo WHERE IdCatalogoTipoCargo in (32,33,34)'
+		SET @vCargoJefe='SELECT IdCargo FROM General.Cargo WHERE IdCatalogoTipoCargo in (32,33,34)'
 
-             DECLARE @Consulta Nvarchar(max)=''
-             DECLARE @ConsultaTotal Nvarchar(max)=''
-             DECLARE @Filtros Nvarchar(max)=''
-             DECLARE @Offset NVARCHAR(MAX)='';
-             DECLARE @Fetch NVARCHAR(MAX)='';
-             DECLARE @Orden NVARCHAR(MAX)='';
-             DECLARE @Parametros NVARCHAR(MAX)='';
-             DECLARE @pTotalRegistros  INT;
-              DECLARE @vCondicionVerSoloMio VARCHAR(200)=''
+        DECLARE @Consulta Nvarchar(max)=''
+        DECLARE @ConsultaTotal Nvarchar(max)=''
+        DECLARE @Filtros Nvarchar(max)=''
+        DECLARE @Offset NVARCHAR(MAX)='';
+        DECLARE @Fetch NVARCHAR(MAX)='';
+        DECLARE @Orden NVARCHAR(MAX)='';
+        DECLARE @Parametros NVARCHAR(MAX)='';
+        DECLARE @pTotalRegistros  INT;
+        DECLARE @vCondicionVerSoloMio VARCHAR(200)=''
 
 
-             SET @Orden=' ORDER BY CONVERT(DATETIME,edo.FechaOrigen +'' '' + edo.HoraOrigen) DESC, EDOD.IdExpedienteDocumentoOrigenDestino DESC '
-             SET @Offset= ' OFFSET ' +CONVERT(VARCHAR(10),(@pNumeroPagina-1)*@pDimensionPagina) + ' ROWS'
-             SET @Fetch= ' FETCH NEXT '+CONVERT(VARCHAR(10),@pDimensionPagina) +' ROWS ONLY'
+        SET @Orden=' ORDER BY CONVERT(DATETIME,edo.FechaOrigen +'' '' + edo.HoraOrigen) DESC, EDOD.IdExpedienteDocumentoOrigenDestino DESC '
+        SET @Offset= ' OFFSET ' +CONVERT(VARCHAR(10),(@pNumeroPagina-1)*@pDimensionPagina) + ' ROWS'
+        SET @Fetch= ' FETCH NEXT '+CONVERT(VARCHAR(10),@pDimensionPagina) +' ROWS ONLY'
 
-             IF COALESCE(@pBusquedaGeneral,'')<>'' SET @Filtros =' AND (CSM.Descripcion LIKE ''%'+@pBusquedaGeneral +'%'')'
-             SET @ConsultaTotal = N'SELECT @vpTotalRegistros = count(*)
-            FROM Tramite.Expediente E
-            INNER JOIN Tramite.ExpedienteDocumento ED ON ED.IdExpediente=E.IdExpediente
-            INNER JOIN Tramite.ExpedienteDocumentoOrigen EDO ON EDO.IdExpedienteDocumento=ED.IdExpedienteDocumento AND ED.EstadoAuditoria=1
-            INNER JOIN Tramite.ExpedienteDocumentoOrigenDestino EDOD ON EDOD.IdExpedienteDocumentoOrigen=EDO.IdExpedienteDocumentoOrigen  AND EDO.EstadoAuditoria=1
-            INNER JOIN Tramite.Catalogo CTD ON CTD.IdCatalogo=ED.IdCatalogoTipoDocumento
-            INNER JOIN Tramite.Catalogo CSM ON CSM.IdCatalogo=EDOD.IdCatalogoSituacionMovimientoDestino
-            INNER JOIN Tramite.Catalogo CTM ON CTM.IdCatalogo=EDOD.IdCatalogoTipoMovimientoDestino
-            LEFT JOIN General.Empresa EMO ON EMO.IdEmpresa=EDO.IdEmpresaOrigen
-            LEFT JOIN General.Area AO ON AO.IdArea= EDO.IdAreaOrigen
-            LEFT JOIN General.Cargo CO ON CO.IdCargo=EDO.IdCargoOrigen
-            LEFT JOIN General.Empresa EMD ON EMD.IdEmpresa=EDOD.IdEmpresaDestino
-            LEFT JOIN General.Area AD ON AD.IdArea= EDOD.IdAreaDestino
-            LEFT JOIN General.Cargo CD ON CD.IdCargo=EDOD.IdCargoDestino
-            LEFT JOIN General.Persona PD ON PD.IdPersona=EDOD.IdPersonaDestino
-            LEFT JOIN General.Persona PO ON PO.IdPersona=EDO.IdPersonaOrigen
-            LEFT JOIN General.Empresa EMR ON EMR.IdEmpresa=EDOD.IdEmpresaDestinoRecepciona
-            LEFT JOIN General.Area AR ON AR.IdArea= EDOD.IdAreaDestinoRecepciona
-            LEFT JOIN General.Cargo CR ON CR.IdCargo=EDOD.IdCargoDestinoRecepciona
-            LEFT JOIN General.Persona PR ON PR.IdPersona=EDOD.IdPersonaDestinoRecepciona
-            LEFT JOIN General.Empresa EMA ON EMA.IdEmpresa=EDOD.IdEmpresaDestinoAtencion
-            LEFT JOIN General.Area AA ON AA.IdArea= EDOD.IdAreaDestinoAtencion
-            LEFT JOIN General.Cargo CA ON CA.IdCargo=EDOD.IdCargoDestinoAtencion
-            LEFT JOIN General.Persona PA ON PA.IdPersona=EDOD.IdPersonaDestinoAtencion
-			LEFT JOIN Courrier.Envio EE ON EE.IdExpedienteDocumentoOrigenDestino =	EDOD.IdExpedienteDocumentoOrigenDestino AND EE.EstadoAuditoria=1 AND COALESCE(EE.FgEntregado,0)=0
-			LEFT JOIN Courrier.Courriers CU ON CU.IdCourriers =EE.IdCourriers
-			LEFT JOIN Courrier.Catalogo CSMEE ON CSMEE.IdCatalogo=EE.IdCatalogoSituacionEnvio
-			LEFT JOIN Courrier.Destino DM ON DM.PersonaDestino= CASE WHEN CHARINDEX('''',COALESCE(EDOD.DestinatarioDestino,''0''))=0 THEN COALESCE(EDOD.DestinatarioDestino,'''') ELSE  RTRIM(LTRIM(REPLACE( SUBSTRING(COALESCE(EDOD.DestinatarioDestino,''''),1, CHARINDEX('''',COALESCE(EDOD.DestinatarioDestino,''0''))  ),'''',''''))) END AND DM.EstadoAuditoria=1
-            WHERE EDOD.EstadoAuditoria=1 AND EDOD.IdCatalogoTipoMovimientoDestino=72 AND E.IdExpediente='+CONVERT(NVARCHAR,@pIdExpediente) +' AND EDO.IdAreaOrigenEnvia='+CONVERT(VARCHAR,@pIdArea)
-            +@Filtros
-			+@vCondicionVerSoloMio
-             SET @Parametros = N'@vpTotalRegistros int OUTPUT';
-             EXECUTE sp_executesql @ConsultaTotal,@Parametros, @vpTotalRegistros = @pTotalRegistros OUTPUT
+        IF COALESCE(@pBusquedaGeneral,'')<>'' SET @Filtros =' AND (CSM.Descripcion LIKE ''%'+@pBusquedaGeneral +'%'')'
+        SET @ConsultaTotal = N'SELECT @vpTotalRegistros = count(*)
+        FROM Tramite.Expediente E
+        INNER JOIN Tramite.ExpedienteDocumento ED ON ED.IdExpediente=E.IdExpediente
+        INNER JOIN Tramite.ExpedienteDocumentoOrigen EDO ON EDO.IdExpedienteDocumento=ED.IdExpedienteDocumento AND ED.EstadoAuditoria=1
+        INNER JOIN Tramite.ExpedienteDocumentoOrigenDestino EDOD ON EDOD.IdExpedienteDocumentoOrigen=EDO.IdExpedienteDocumentoOrigen  AND EDO.EstadoAuditoria=1
+        INNER JOIN Tramite.Catalogo CTD ON CTD.IdCatalogo=ED.IdCatalogoTipoDocumento
+        INNER JOIN Tramite.Catalogo CSM ON CSM.IdCatalogo=EDOD.IdCatalogoSituacionMovimientoDestino
+        INNER JOIN Tramite.Catalogo CTM ON CTM.IdCatalogo=EDOD.IdCatalogoTipoMovimientoDestino
+        LEFT JOIN General.Empresa EMO ON EMO.IdEmpresa=EDO.IdEmpresaOrigen
+        LEFT JOIN General.Area AO ON AO.IdArea= EDO.IdAreaOrigen
+        LEFT JOIN General.Cargo CO ON CO.IdCargo=EDO.IdCargoOrigen
+        LEFT JOIN General.Empresa EMD ON EMD.IdEmpresa=EDOD.IdEmpresaDestino
+        LEFT JOIN General.Area AD ON AD.IdArea= EDOD.IdAreaDestino
+        LEFT JOIN General.Cargo CD ON CD.IdCargo=EDOD.IdCargoDestino
+        LEFT JOIN General.Persona PD ON PD.IdPersona=EDOD.IdPersonaDestino
+        LEFT JOIN General.Persona PO ON PO.IdPersona=EDO.IdPersonaOrigen
+        LEFT JOIN General.Empresa EMR ON EMR.IdEmpresa=EDOD.IdEmpresaDestinoRecepciona
+        LEFT JOIN General.Area AR ON AR.IdArea= EDOD.IdAreaDestinoRecepciona
+        LEFT JOIN General.Cargo CR ON CR.IdCargo=EDOD.IdCargoDestinoRecepciona
+        LEFT JOIN General.Persona PR ON PR.IdPersona=EDOD.IdPersonaDestinoRecepciona
+        LEFT JOIN General.Empresa EMA ON EMA.IdEmpresa=EDOD.IdEmpresaDestinoAtencion
+        LEFT JOIN General.Area AA ON AA.IdArea= EDOD.IdAreaDestinoAtencion
+        LEFT JOIN General.Cargo CA ON CA.IdCargo=EDOD.IdCargoDestinoAtencion
+        LEFT JOIN General.Persona PA ON PA.IdPersona=EDOD.IdPersonaDestinoAtencion
+		LEFT JOIN Courrier.Envio EE ON EE.IdExpedienteDocumentoOrigenDestino =	EDOD.IdExpedienteDocumentoOrigenDestino AND EE.EstadoAuditoria=1 AND COALESCE(EE.FgEntregado,0)=0
+		LEFT JOIN Courrier.Courriers CU ON CU.IdCourriers =EE.IdCourriers
+		LEFT JOIN Courrier.Catalogo CSMEE ON CSMEE.IdCatalogo=EE.IdCatalogoSituacionEnvio
+		LEFT JOIN Courrier.Destino DM ON DM.PersonaDestino= CASE WHEN CHARINDEX('''',COALESCE(EDOD.DestinatarioDestino,''0''))=0 THEN COALESCE(EDOD.DestinatarioDestino,'''') ELSE  RTRIM(LTRIM(REPLACE( SUBSTRING(COALESCE(EDOD.DestinatarioDestino,''''),1, CHARINDEX('''',COALESCE(EDOD.DestinatarioDestino,''0''))  ),'''',''''))) END AND DM.EstadoAuditoria=1
+        WHERE EDOD.EstadoAuditoria=1 AND EDOD.IdCatalogoTipoMovimientoDestino=72 AND E.IdExpediente='+CONVERT(NVARCHAR,@pIdExpediente) +' AND EDO.IdAreaOrigenEnvia='+CONVERT(VARCHAR,@pIdArea)
+        +@Filtros
+		+@vCondicionVerSoloMio
+		print @ConsultaTotal
+        SET @Parametros = N'@vpTotalRegistros int OUTPUT';
+        EXECUTE sp_executesql @ConsultaTotal,@Parametros, @vpTotalRegistros = @pTotalRegistros OUTPUT
 
-            SET @Consulta='
+        SET @Consulta='
 			SELECT
-			ED.CorrelativoVinculado,
+			ED.CorrelativoVinculado ,
 			EDO.EsVinculado,
 			E.ExpedienteAnulado,
             E.IdExpediente,
@@ -162,16 +159,16 @@ AS
 			LEFT JOIN Courrier.Catalogo CSMEE ON CSMEE.IdCatalogo=EE.IdCatalogoSituacionEnvio
 			LEFT JOIN Courrier.Destino DM ON DM.PersonaDestino= CASE WHEN CHARINDEX('''',COALESCE(EDOD.DestinatarioDestino,''0''))=0 THEN COALESCE(EDOD.DestinatarioDestino,'''') ELSE  RTRIM(LTRIM(REPLACE( SUBSTRING(COALESCE(EDOD.DestinatarioDestino,''''),1, CHARINDEX('''',COALESCE(EDOD.DestinatarioDestino,''0''))  ),'''',''''))) END AND DM.EstadoAuditoria=1
             WHERE EDOD.EstadoAuditoria=1 AND EDOD.IdCatalogoTipoMovimientoDestino=72 AND E.IdExpediente='+CONVERT(NVARCHAR,@pIdExpediente) +' AND EDO.IdAreaOrigenEnvia='+CONVERT(VARCHAR,@pIdArea)
-            +@Filtros
-            +@Orden
-            +@Offset
-            +@Fetch
-            EXECUTE sp_executesql @Consulta
-            select @pTotalRegistros
+        +@Filtros
+        +@Orden
+        +@Offset
+        +@Fetch
+        EXECUTE sp_executesql @Consulta
+        select @pTotalRegistros
 
-       END TRY
-       BEGIN CATCH
-                    DECLARE @ERROR_NUMBER INT, @ERROR_SEVERITY INT,@ERROR_STATE INT,@ERROR_LINE INT,@ERROR_PROCEDURE VARCHAR(MAX) ,@ERROR_MESSAGE VARCHAR(MAX)
-                    SELECT @ERROR_NUMBER=ERROR_NUMBER() , @ERROR_SEVERITY=ERROR_SEVERITY() , @ERROR_STATE=ERROR_STATE() , @ERROR_PROCEDURE='Tramite.paListarDocumentoPendienteCourrierJefatura',@ERROR_LINE=ERROR_LINE(),@ERROR_MESSAGE=ERROR_MESSAGE()
-                    EXEC Seguridad.paGuardarErroresEnLog @ERROR_NUMBER , @ERROR_SEVERITY , @ERROR_STATE ,  @ERROR_PROCEDURE,@ERROR_LINE,@ERROR_MESSAGE
-        END CATCH
+END TRY
+BEGIN CATCH
+    DECLARE @ERROR_NUMBER INT, @ERROR_SEVERITY INT,@ERROR_STATE INT,@ERROR_LINE INT,@ERROR_PROCEDURE VARCHAR(MAX) ,@ERROR_MESSAGE VARCHAR(MAX)
+    SELECT @ERROR_NUMBER=ERROR_NUMBER() , @ERROR_SEVERITY=ERROR_SEVERITY() , @ERROR_STATE=ERROR_STATE() , @ERROR_PROCEDURE='Tramite.paListarDocumentoPendienteCourrierJefatura',@ERROR_LINE=ERROR_LINE(),@ERROR_MESSAGE=ERROR_MESSAGE()
+    EXEC Seguridad.paGuardarErroresEnLog @ERROR_NUMBER , @ERROR_SEVERITY , @ERROR_STATE ,  @ERROR_PROCEDURE,@ERROR_LINE,@ERROR_MESSAGE
+END CATCH
