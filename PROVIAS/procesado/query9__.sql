@@ -1,4 +1,4 @@
-ALTER PROCEDURE [Tramite].[paObtenerEstadosExpedientesJefatura_new]
+ALTER PROCEDURE [Tramite].[paObtenerEstadosExpedientesJefatura]
     @pIdArea int,
     @pIdUsuarioAuditoria int
 AS

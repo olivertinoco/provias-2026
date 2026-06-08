@@ -1,4 +1,4 @@
-CREATE PROCEDURE [Tramite].[paListarDocumentoPendienteCourrierJefatura]
+alter PROCEDURE [Tramite].[paListarDocumentoPendienteCourrierJefatura]
        @pIdExpediente int,
        @pIdArea int,
        @pIdUsuarioAuditoria int,
@@ -172,3 +172,17 @@ BEGIN CATCH
     SELECT @ERROR_NUMBER=ERROR_NUMBER() , @ERROR_SEVERITY=ERROR_SEVERITY() , @ERROR_STATE=ERROR_STATE() , @ERROR_PROCEDURE='Tramite.paListarDocumentoPendienteCourrierJefatura',@ERROR_LINE=ERROR_LINE(),@ERROR_MESSAGE=ERROR_MESSAGE()
     EXEC Seguridad.paGuardarErroresEnLog @ERROR_NUMBER , @ERROR_SEVERITY , @ERROR_STATE ,  @ERROR_PROCEDURE,@ERROR_LINE,@ERROR_MESSAGE
 END CATCH
+
+go
+
+
+execute [Tramite].[paListarDocumentoPendienteCourrierJefatura]
+    @pIdExpediente= 518024,
+    @pIdArea= 79,
+    @pIdUsuarioAuditoria= 349,
+    @pCampoOrdenado= null,
+    @pTipoOrdenacion= null,
+    @pNumeroPagina= 1,
+    @pDimensionPagina= 25,
+    @pBusquedaGeneral= null,
+    @pVerSoloMio= 0

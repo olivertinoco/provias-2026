@@ -1,4 +1,4 @@
-alter PROCEDURE Tramite.paObtenerEstadosExpedientesEspecialista_new
+alter PROCEDURE Tramite.paObtenerEstadosExpedientesEspecialista
     @pIdPersona int,
 	@pIdEmpleadoPerfil int,
 	@pIdUsuarioAuditoria int

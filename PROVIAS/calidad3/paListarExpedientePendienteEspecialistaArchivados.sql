@@ -1,4 +1,4 @@
-alter PROCEDURE Tramite.paListarExpedientePendienteEspecialistaArchivados_new
+alter PROCEDURE Tramite.paListarExpedientePendienteEspecialistaArchivados
 	@pConFiltroFecha bit,
 	@pFechaInicio varchar(10),
 	@pFechaFin varchar(10),
@@ -39,7 +39,7 @@ set tran isolation level read uncommitted
 	declare @vIdCargo int=0, @vIdArea int=0, @conBus int
 	select @conBus = case when @pBusquedaGeneral is null or @pBusquedaGeneral = '' then 1 else 0 end
 
-	DECLARE @vTablaExpediente TABLE(IdExpediente int)
+	DECLARE @vTablaExpediente TABLE(IdExpediente int, FechaMovimiento datetime)
 	DECLARE @MITABLA TABLE (
 		IdExpediente int,
 		ExpedienteConfidencial bit,
@@ -72,11 +72,13 @@ set tran isolation level read uncommitted
 
    	set language spanish
     insert into @vTablaExpediente
-    select t1.IdExpediente
+    select t1.IdExpediente,
+    Tramite.funObtenerFechaMovimientoEnExpedienteEspecialista(t1.IdExpediente,@vIdArea,@vIdCargo,@pIdPersona,@pIdCatalogoSituacionMovimientoDestino)
 	from Tramite.Expediente t1
 	where   t1.EstadoAuditoria   = 1
         and t1.ExpedienteAnulado = 0
         and t1.IdSerieDocumentalExpediente in (1,2)
+        and (@conBus = 1 or t1.NumeroExpediente = @pBusquedaGeneral)
         and exists(
             select 1
             from Tramite.ExpedienteDocumento t2
@@ -85,58 +87,22 @@ set tran isolation level read uncommitted
                 and t3.EstadoAuditoria = 1
             inner join Tramite.ExpedienteDocumentoOrigenDestino t4
                 on  t4.IdExpedienteDocumentoOrigen = t3.IdExpedienteDocumentoOrigen
+                and t4.IdPersonaDestino  = @pIdPersona
+                and year(t4.FechaCreacionAuditoria) = @pIdPeriodo
+                and t4.IdAreaDestino     = @vIdArea
+                and t4.IdCargoDestino    = @vIdCargo
+                and t4.IdEmpresaDestino  = 2
+                and t4.IdCatalogoSituacionMovimientoDestino = @pIdCatalogoSituacionMovimientoDestino
+                and t4.EstadoAuditoria   = 1
+                and (@pConFiltroFecha != 1 or convert(date, t4.FechaArchivado) between @pFechaInicio and @pFechaFin)
             where   t2.IdExpediente      = t1.IdExpediente
                 and t2.EstadoAuditoria   = 1
                 and t2.FgEnEsperaFirmaDigital = 0
-                and t4.IdEmpresaDestino  = 2
-                and t4.IdAreaDestino     = @vIdArea
-                and t4.IdCargoDestino    = @vIdCargo
-                and t4.IdPersonaDestino  = @pIdPersona
-                and t4.EstadoAuditoria   = 1
-                and t4.IdCatalogoSituacionMovimientoDestino = @pIdCatalogoSituacionMovimientoDestino
-                and year(t4.FechaCreacionAuditoria) = @pIdPeriodo
-                and (@pConFiltroFecha != 1 or convert(date, t4.FechaArchivado) between @pFechaInicio and @pFechaFin)
-                and (@conBus = 1 or t1.NumeroExpediente = @pBusquedaGeneral)
         )
 
-
-    ;with tmp001_params as(
-        select*from(values(4,1),(5,1),(111,2),(3,2),(6,2),(112,3),(116,4))t(pIdCatalogoSituacionMovimientoDestino,grupo)
-    )
-    select*into #tmp001_TablaExpediente from @vTablaExpediente t1
-    outer apply(
-        select top 1
-            case pp.grupo when 1 then convert(datetime, t4.FechaDestino +' '+ t4.HoraDestino)
-                when 2 then convert(datetime, t4.FechaDestinoEnvia +' '+ t4.HoraDestinoEnvia)
-                when 3 then convert(datetime, t4.FechaArchivado +' '+ t4.HoraArchivado)
-                when 4 then convert(datetime, t3.FechaOrigen +' '+ t3.HoraOrigen) end FechaMovimiento
-        from Tramite.ExpedienteDocumento t2
-        inner join Tramite.ExpedienteDocumentoOrigen t3
-            on  t3.IdExpedienteDocumento = t2.IdExpedienteDocumento
-            and t3.EstadoAuditoria = 1
-        inner join Tramite.ExpedienteDocumentoOrigenDestino t4
-            on  t4.IdExpedienteDocumentoOrigen = t3.IdExpedienteDocumentoOrigen
-            and t4.IdEmpresaDestino  = 2
-            and t4.IdAreaDestino     = @vIdArea
-            and t4.IdCargoDestino    = @vIdCargo
-            and t4.IdPersonaDestino  = @pIdPersona
-            and t4.EstadoAuditoria   = 1
-            and t4.IdCatalogoSituacionMovimientoDestino = @pIdCatalogoSituacionMovimientoDestino
-        inner join tmp001_params pp
-            on  pp.pIdCatalogoSituacionMovimientoDestino = @pIdCatalogoSituacionMovimientoDestino
-        where t2.IdExpediente = t1.IdExpediente
-            and case when pp.grupo in (1,2,3) then t4.IdAreaDestino    else t3.IdAreaOrigen    end = @vIdArea
-            and case when pp.grupo in (1,2,3) then t4.IdCargoDestino   else t3.IdCargoOrigen   end = @vIdCargo
-            and case when pp.grupo in (1,2,3) then t4.IdPersonaDestino else t3.IdPersonaOrigen end = @pIdPersona
-            and case when pp.grupo in (1,2,3) then t4.IdCatalogoSituacionMovimientoDestino
-                else t3.IdCatalogoSituacionMovimientoOrigen end = @pIdCatalogoSituacionMovimientoDestino
-        order by case
-            when pp.grupo in (1,2,3) then t4.IdExpedienteDocumentoOrigenDestino
-            when pp.grupo = 4 then t3.IdExpedienteDocumentoOrigen end desc
-    )f
-    ORDER BY f.FechaMovimiento DESC
+    select*into #tmp001_TablaExpediente from @vTablaExpediente
+    ORDER BY FechaMovimiento DESC
 	OFFSET (@pNumeroPagina-1)*@pDimensionPagina ROWS FETCH NEXT @pDimensionPagina ROWS ONLY
-
 
     ;with tmp001_serieDocumental as(
         select*from(values(1,'E-'),(2,'I-'))sd(IdSerieDocumentalExpediente, AbreviaturaSerieDocumentalExpediente)
@@ -186,6 +152,7 @@ set tran isolation level read uncommitted
        	and ss.IdPersona = @pIdPersona
         and ss.EstadoAuditoria = 1
        	and ss.IdEmpresa = 2
+
 
     ;with tmp001_cabComp(cab1, cab2, cab3) as(
         select
@@ -336,10 +303,10 @@ set tran isolation level read uncommitted
 
 END TRY
 BEGIN CATCH
-		DECLARE @ERROR_NUMBER INT, @ERROR_SEVERITY INT,@ERROR_STATE INT,@ERROR_LINE INT,@ERROR_PROCEDURE VARCHAR(MAX)	,@ERROR_MESSAGE VARCHAR(MAX)
-		SELECT @ERROR_NUMBER=ERROR_NUMBER() , @ERROR_SEVERITY=ERROR_SEVERITY() , @ERROR_STATE=ERROR_STATE() , @ERROR_PROCEDURE='Tramite.paListarExpedientePendienteEspecialistaArchivados',@ERROR_LINE=ERROR_LINE(),@ERROR_MESSAGE=ERROR_MESSAGE()
-		EXEC Seguridad.paGuardarErroresEnTablaLog @ERROR_NUMBER , @ERROR_SEVERITY , @ERROR_STATE ,  @ERROR_PROCEDURE,@ERROR_LINE,@ERROR_MESSAGE, @pIdUsuarioAuditoria
-
+	DECLARE @ERROR_NUMBER INT, @ERROR_SEVERITY INT,@ERROR_STATE INT,@ERROR_LINE INT,@ERROR_PROCEDURE VARCHAR(MAX)	,@ERROR_MESSAGE VARCHAR(MAX)
+	SELECT @ERROR_NUMBER=ERROR_NUMBER() , @ERROR_SEVERITY=ERROR_SEVERITY() , @ERROR_STATE=ERROR_STATE(),
+	@ERROR_PROCEDURE='Tramite.paListarExpedientePendienteEspecialistaArchivados',@ERROR_LINE=ERROR_LINE(),@ERROR_MESSAGE=ERROR_MESSAGE()
+	EXEC Seguridad.paGuardarErroresEnTablaLog @ERROR_NUMBER , @ERROR_SEVERITY , @ERROR_STATE ,  @ERROR_PROCEDURE,@ERROR_LINE,@ERROR_MESSAGE, @pIdUsuarioAuditoria
  END CATCH
 END
 GO

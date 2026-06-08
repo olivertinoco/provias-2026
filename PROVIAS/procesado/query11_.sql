@@ -1,4 +1,4 @@
-alter PROCEDURE Tramite.paListarExpedientePendienteEspecialistaArchivados_new
+alter PROCEDURE Tramite.paListarExpedientePendienteEspecialistaArchivados
 	@pConFiltroFecha bit,
 	@pFechaInicio varchar(10),
 	@pFechaFin varchar(10),

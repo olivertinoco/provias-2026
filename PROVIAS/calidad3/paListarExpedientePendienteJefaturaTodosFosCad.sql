@@ -1,4 +1,4 @@
-ALTER PROCEDURE [Tramite].[paListarExpedientePendienteJefaturaTodosFosCad]
+alter PROCEDURE Tramite.paListarExpedientePendienteJefaturaTodosFosCad
     @pConFiltroFecha bit,
     @pFechaInicio varchar(10),
     @pFechaFin varchar(10),
@@ -66,88 +66,70 @@ set tran isolation level read uncommitted
 	sexo bit);
 
    ;with tmp001_serieDocumental as(
-      select*from(values(1,'E-'),(2,'I-'))sd(IdSerieDocumentalExpediente, AbreviaturaSerieDocumentalExpediente))
+      select*from(values(1,'E-'),(2,'I-'))sd(IdSerieDocumentalExpediente, AbreviaturaSerieDocumentalExpediente)
+   )
 	insert into @MITABLA select top 1000
-         t1.IdExpediente,
-         t1.ExpedienteConfidencial,
-         t1.NTFechaExpediente,
-         t1.HoraExpediente,
-         t1.IdCatalogoTipoPrioridad,
-         isnull(c1.Descripcion,'') CatalogoTipoPrioridad,
-         isnull(c2.Descripcion,'') CatalogoTipoTramite,
-         isnull(c2.Detalle,'') ColorCatalogoTipoTramite,
-         isnull(su.Logueo, '') Logueo,
-         t1.IdPersonaCreador,
-         UPPER(t1.AsuntoExpediente) AsuntoExpediente,
-         isnull(t1.NumeroFoliosExpediente,0)NumeroFoliosExpediente,
-         isnull(t1.ObservacionesExpediente,'') ObservacionesExpediente,
-         concat(t1.NTFechaExpediente ,' ', t1.HoraExpediente) Fecha,
-         concat(sd.AbreviaturaSerieDocumentalExpediente, right(1000000+t1.NumeroExpediente,6),'-', t1.IdPeriodo) NombreExpediente,
-         isnull(t1.NombreCompletoCreador, p.NombreCompleto) NombreCompletoCreador,
-         t1.NumeroExpediente,
-         isnull(ss.IdExpedienteSeguimiento, 0 )IdExpedienteSeguimiento,
-         NULL FechaMovimiento,
-         p.sexo
-	from Tramite.Expediente t1
-    inner join tmp001_serieDocumental sd
-        on sd.IdSerieDocumentalExpediente = t1.IdSerieDocumentalExpediente
+        t1.IdExpediente,
+        t1.ExpedienteConfidencial,
+        t1.NTFechaExpediente,
+        t1.HoraExpediente,
+        t1.IdCatalogoTipoPrioridad,
+        isnull(c1.Descripcion,'') CatalogoTipoPrioridad,
+        isnull(c2.Descripcion,'') CatalogoTipoTramite,
+        isnull(c2.Detalle,'') ColorCatalogoTipoTramite,
+        isnull(su.Logueo, '') Logueo,
+        t1.IdPersonaCreador,
+        UPPER(t1.AsuntoExpediente) AsuntoExpediente,
+        isnull(t1.NumeroFoliosExpediente,0)NumeroFoliosExpediente,
+        isnull(t1.ObservacionesExpediente,'') ObservacionesExpediente,
+        concat(t1.NTFechaExpediente ,' ', t1.HoraExpediente) Fecha,
+        concat(sd.AbreviaturaSerieDocumentalExpediente, right(1000000+t1.NumeroExpediente,6),'-', t1.IdPeriodo) NombreExpediente,
+        isnull(t1.NombreCompletoCreador, p.NombreCompleto) NombreCompletoCreador,
+        t1.NumeroExpediente,
+        isnull(ss.IdExpedienteSeguimiento, 0 )IdExpedienteSeguimiento,
+        NULL FechaMovimiento,
+        p.sexo
+    from Tramite.Expediente t1
+	inner join Seguridad.Usuario su
+        on su.IdUsuario = t1.IdUsuarioCreacionAuditoria
     inner join Tramite.Catalogo c1
         on c1.IdCatalogo = t1.IdCatalogoTipoPrioridad
-    left join Seguridad.Usuario su
-    on su.IdUsuario = t1.IdUsuarioCreacionAuditoria
+    inner join tmp001_serieDocumental sd
+        on sd.IdSerieDocumentalExpediente = t1.IdSerieDocumentalExpediente
     left join Tramite.Catalogo c2
         on c2.IdCatalogo = t1.IdCatalogoTipoTramite
     left join General.Persona p
         on p.IdPersona = t1.IdPersonaCreador
     left join Tramite.ExpedienteSeguimiento ss
-        on  ss.IdExpediente = t1.IdExpediente
-        and ss.IdArea    = @pIdArea
-        and ss.IdCargo   = 0
-        and ss.IdPersona = 0
+        on  ss.IdExpediente      = t1.IdExpediente
+        and ss.IdArea            = @pIdArea
+        and ss.IdCargo           = 0
+        and ss.IdPersona         = 0
         and ss.EstadoAuditoria   = 1
         and ss.IdEmpresa         = 2
-    where   t1.EstadoAuditoria   = 1
+    where   t1.IdSerieDocumentalExpediente in (1,2)
+        and t1.EstadoAuditoria   = 1
         and t1.ExpedienteAnulado = 0
-        and t1.IdSerieDocumentalExpediente in (1,2)
-        and t1.NumeroExpediente = @pBusquedaGeneral
+        and t1.NumeroExpediente  = @pBusquedaGeneral
+        and t1.IdPeriodo         = @pIdPeriodo
     order by t1.IdExpediente desc
 
     select @nroReg = count(1) from @MITABLA
 
-	;with tmp001_sep(t,r,i)as(
-	    select*from(values('|','¬','¦'))t(SepCamp,SepReg,SepLst)
-	)
+    select*into #tmp001_expedienteDatos from @MITABLA
+    ORDER BY IdExpediente DESC
+    OFFSET (@pNumeroPagina-1)*@pDimensionPagina ROWS
+    FETCH NEXT @pDimensionPagina ROWS ONLY
+
+	;with tmp001_NombreExpediente(cab1, cab2)as(
+        select '<div style="margin: 2px;padding: 2px;" class="ui blue label">', '</div>'
+    )
 	,tmp001_serieDocumental as(
         select*from(values(1,'E-'),(2,'I-'))sd(IdSerieDocumentalExpediente, AbreviaturaSerieDocumentalExpediente)
 	)
-    ,tmp001_NombreExpediente(cab1, cab2)as(
-        select '<div style="margin: 2px;padding: 2px;" class="ui blue label">', '</div>'
-    )
-    select @nroReg + stuff((select r,
-        0, t, 0, t, t, t, 0, t,
-        x.NombreExpedientesEnlazados, t,
-        case when x.NombreExpedientesEnlazados is null then 0 else 1 end, t,
-        cat.CatalogoTipoOrigen, t,
-        t.IdExpediente, t,
-        t.ExpedienteConfidencial, t,
-        t.NTFechaExpediente, t,
-        t.HoraExpediente, t,
-        t.IdCatalogoTipoPrioridad, t,
-        t.CatalogoTipoPrioridad, t,
-        t.CatalogoTipoTramite, t,
-        t.ColorCatalogoTipoTramite, t,
-        t.Logueo, t,
-        rf.RutaFotoPersona, t,
-        replace(t.AsuntoExpediente, '|', ' '), t,
-        t.NumeroFoliosExpediente, t,
-        replace(t.ObservacionesExpediente, '|', ' '), t,
-        t.Fecha, t,
-        t.NombreExpediente, t,
-        t.NombreCompletoCreador, t,
-        t.NumeroExpediente, t,
-        t.IdExpedienteSeguimiento, t, t
-    from @MITABLA t
-    outer apply (
+	select t.*, x.NombreExpedientesEnlazados into #tmp002_expedienteDatos
+	from #tmp001_expedienteDatos t
+	outer apply (
          SELECT (select cb.cab1, AbreviaturaSerieDocumentalExpediente, right(1000000+NumeroExpediente,6),'-', IdPeriodo, cb.cab2
          FROM (
              SELECT ex.NumeroExpediente, ex.IdPeriodo, s.AbreviaturaSerieDocumentalExpediente, ee.IdExpedienteEnlazado orden
@@ -177,6 +159,9 @@ set tran isolation level read uncommitted
          ORDER BY orden
          for xml path, type).value('.','varchar(max)') NombreExpedientesEnlazados
     )x
+
+    select t.*,cat.CatalogoTipoOrigen into #tmp003_expedienteDatos
+    from #tmp002_expedienteDatos t
     outer apply(
         select top 1 concat(c.Descripcion, ' ', e.NumeroExpedienteExterno) CatalogoTipoOrigen
         from Tramite.Expediente e
@@ -189,6 +174,9 @@ set tran isolation level read uncommitted
             and e.EstadoAuditoria = 1
         order by tt.IdExpedienteDocumento
     )cat
+
+    select t.*,rf.RutaFotoPersona into #tmp004_expedienteDatos
+    from #tmp003_expedienteDatos t
     outer apply(
         select top 1
             case when u.RutaArchivoFoto is null or u.RutaArchivoFoto = ''
@@ -198,16 +186,45 @@ set tran isolation level read uncommitted
             and u.EstadoAuditoria = 1
             and u.Bloqueado = 0
     )rf
-    ORDER BY IdExpediente DESC
-    OFFSET (@pNumeroPagina-1)*@pDimensionPagina ROWS
-    FETCH NEXT @pDimensionPagina ROWS ONLY
+
+
+	;with tmp001_sep(t,r,i)as(
+	    select*from(values('|','¬','¦'))t(SepCamp,SepReg,SepLst)
+	)
+    select @nroReg + stuff((select r,
+        0, t, 0, t, t, t, 0, t,
+        t.NombreExpedientesEnlazados, t,
+        case when t.NombreExpedientesEnlazados is null then 0 else 1 end, t,
+        t.CatalogoTipoOrigen, t,
+        t.IdExpediente, t,
+        t.ExpedienteConfidencial, t,
+        t.NTFechaExpediente, t,
+        t.HoraExpediente, t,
+        t.IdCatalogoTipoPrioridad, t,
+        t.CatalogoTipoPrioridad, t,
+        t.CatalogoTipoTramite, t,
+        t.ColorCatalogoTipoTramite, t,
+        t.Logueo, t,
+        t.RutaFotoPersona, t,
+        replace(t.AsuntoExpediente, '|', ' '), t,
+        t.NumeroFoliosExpediente, t,
+        replace(t.ObservacionesExpediente, '|', ' '), t,
+        t.Fecha, t,
+        t.NombreExpediente, t,
+        t.NombreCompletoCreador, t,
+        t.NumeroExpediente, t,
+        t.IdExpedienteSeguimiento, t, t
+    from #tmp004_expedienteDatos t
+    ORDER BY t.IdExpediente DESC
     for xml path, type).value('.','varchar(max)'),1,1,i)
     from tmp001_sep
+
 
 END TRY
 BEGIN CATCH
     DECLARE @ERROR_NUMBER INT, @ERROR_SEVERITY INT,@ERROR_STATE INT,@ERROR_LINE INT,@ERROR_PROCEDURE VARCHAR(MAX) ,@ERROR_MESSAGE VARCHAR(MAX)
-    SELECT @ERROR_NUMBER=ERROR_NUMBER() , @ERROR_SEVERITY=ERROR_SEVERITY() , @ERROR_STATE=ERROR_STATE() , @ERROR_PROCEDURE='Tramite.paListarExpedientePendienteJefaturaTodos',@ERROR_LINE=ERROR_LINE(),@ERROR_MESSAGE=ERROR_MESSAGE()
+    SELECT @ERROR_NUMBER=ERROR_NUMBER() , @ERROR_SEVERITY=ERROR_SEVERITY() , @ERROR_STATE=ERROR_STATE(),
+    @ERROR_PROCEDURE='Tramite.paListarExpedientePendienteJefaturaTodosFosCad',@ERROR_LINE=ERROR_LINE(),@ERROR_MESSAGE=ERROR_MESSAGE()
     EXEC Seguridad.paGuardarErroresEnTablaLog @ERROR_NUMBER , @ERROR_SEVERITY , @ERROR_STATE ,  @ERROR_PROCEDURE,@ERROR_LINE,@ERROR_MESSAGE, @pIdUsuarioAuditoria
 END CATCH
 END

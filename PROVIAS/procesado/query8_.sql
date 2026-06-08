@@ -1,4 +1,4 @@
-alter PROCEDURE Tramite.paListarExpedientePendienteEspecialistaV7_eje
+alter PROCEDURE Tramite.paListarExpedientePendienteEspecialistaV7
 	@pConFiltroFecha bit,
 	@pFechaInicio varchar(10),
 	@pFechaFin varchar(10),
@@ -35,6 +35,7 @@ BEGIN
 BEGIN TRY
 set nocount on
 set tran isolation level read uncommitted
+
 
 Declare @vIdCargo int= 0, @vIdArea int= 0, @iRegistroTotal Int, @iPaginaRegInicio Int, @iPaginaRegFinal Int, @conBus int
 select @conBus = case when @pBusquedaGeneral is null or @pBusquedaGeneral = '' then 1 else 0 end
@@ -82,6 +83,7 @@ select @iRegistroTotal = (Select Count(1) From #vTablaExpediente)
 SELECT @iPaginaRegInicio = c.iStartRow, @iPaginaRegFinal = c.iEndrow
 FROM General.fnObtenerPaginacion(@pDimensionPagina, @pNumeroPagina, @iRegistroTotal) c
 
+
 select
     '' NombrePersonaOrigen,
     t1.IdExpediente,
@@ -104,7 +106,9 @@ select
 	t.FechaMovimiento,
 	p.sexo,
 	p.IdPersona,
-	t.eNroOrden
+	t.eNroOrden,
+	Tramite.funObtenerNumeroDocumentoEnExpedienteEspecialistaV1(t.IdExpediente,@vIdArea,@vIdCargo,@pIdPersona,@pIdCatalogoSituacionMovimientoDestino) NumeroDocumento,
+	Tramite.funObtenerIdExpedienteDocumentoEnExpedienteEspecialista(t.IdExpediente,@vIdArea,@vIdCargo,@pIdPersona,@pIdCatalogoSituacionMovimientoDestino) IdExpedienteDocumento
 into #tmp001_resultset
 from #vTablaExpediente t
 inner join Tramite.Expediente t1
@@ -127,11 +131,34 @@ left join Tramite.ExpedienteSeguimiento ss
 WHERE t.eNroOrden Between @iPaginaRegInicio And @iPaginaRegFinal
 order by t.eNroOrden
 
+
 select t1.*,
-    cast(tt.EsParaAnular as bit) EsParaAnular,
-    isnull(rf.RutaFotoPersona, iif(rf.sexo = 0, 'sinfotoH.jpg', 'sinfotoM.jpg')) RutaFotoPersona
+    cast(isnull(pre.EsParaAnular, 0) as bit) EsParaAnular,
+    isnull(rf.RutaFotoPersona, iif(rf.sexo = 0, 'sinfotoH.jpg', 'sinfotoM.jpg')) RutaFotoPersona,
+    Tramite.funObtenerDiasPendienteEspecislista(t1.IdExpediente,@pIdPersona, 2,@vIdArea,@vIdCargo,@pIdCatalogoSituacionMovimientoDestino) DiasPendiente
 into #tmp002_resultset
 from #tmp001_resultset t1
+left join (
+    select t2.IdExpediente, case
+        when max(case when IdCatalogoSituacionMovimientoDestino = 4 then 1 else 0 end) = 1 then 0
+        when max(case when IdCatalogoSituacionMovimientoDestino != 4 then 1 else 0 end) = 1 then 1
+        else 0 end as EsParaAnular
+    from Tramite.ExpedienteDocumento t2
+    inner join Tramite.ExpedienteDocumentoOrigen t3
+        on t3.IdExpedienteDocumento = t2.IdExpedienteDocumento
+        and t3.IdempresaOrigen = 2
+        and t3.IdAreaOrigen    = @vIdArea
+        and t3.IdCargoOrigen   = @vIdCargo
+        and t3.IdPersonaOrigen = @pIdPersona
+        and t3.EstadoAuditoria = 1
+    inner join Tramite.ExpedienteDocumentoOrigenDestino t4
+        on t4.IdExpedienteDocumentoOrigen = t3.IdExpedienteDocumentoOrigen
+        and t4.EstadoAuditoria = 1
+        and t4.EsInicial = 1
+        and t4.FechaDestinoRecepciona is null
+    where t2.EstadoAuditoria = 1 and t2.EsVinculado = 0
+    group by t2.IdExpediente
+)pre on pre.IdExpediente = t1.IdExpediente
 outer apply(
     select top 1
         isnull(t1.sexo, 0) sexo, nullif(u.RutaArchivoFoto, '') RutaFotoPersona
@@ -141,115 +168,7 @@ outer apply(
         and u.Bloqueado = 0
     order by u.RutaArchivoFoto desc
 )rf
-outer apply(
-    select case
-        when exists(
-            select 1
-            from Tramite.ExpedienteDocumento t2
-            join Tramite.ExpedienteDocumentoOrigen t3
-                on  t3.IdExpedienteDocumento = t2.IdExpedienteDocumento
-                and t3.EstadoAuditoria = 1
-            join Tramite.ExpedienteDocumentoOrigenDestino t4
-                on  t4.IdExpedienteDocumentoOrigen = t3.IdExpedienteDocumentoOrigen
-                and t4.EstadoAuditoria = 1
-                and t4.EsInicial = 1
-                and t4.FechaDestinoRecepciona is null
-                and t4.IdCatalogoSituacionMovimientoDestino != 4
-            where t2.IdExpediente     = t1.IdExpediente
-              and t2.EstadoAuditoria  = 1
-              and t2.EsVinculado      = 0
-              and t3.IdPersonaOrigen  = @pIdPersona
-              and t3.IdAreaOrigen     = @vIdArea
-              and t3.IdCargoOrigen    = @vIdCargo
-              and t3.IdempresaOrigen  = 2
-        ) then 0
-        when exists(
-            select 1
-            from Tramite.ExpedienteDocumento t2
-            join Tramite.ExpedienteDocumentoOrigen t3
-                on  t3.IdExpedienteDocumento = t2.IdExpedienteDocumento
-                and t3.EstadoAuditoria = 1
-            join Tramite.ExpedienteDocumentoOrigenDestino t4
-                on  t4.IdExpedienteDocumentoOrigen = t3.IdExpedienteDocumentoOrigen
-                and t4.EstadoAuditoria = 1
-                and t4.EsInicial = 1
-                and t4.FechaDestinoRecepciona is null
-            where t2.IdExpediente     = t1.IdExpediente
-              and t2.EstadoAuditoria  = 1
-              and t2.EsVinculado      = 0
-              and t3.IdPersonaOrigen  = @pIdPersona
-              and t3.IdAreaOrigen     = @vIdArea
-              and t3.IdCargoOrigen    = @vIdCargo
-              and t3.IdempresaOrigen  = 2
-        ) then 1
-        else 0
-    end EsParaAnular
-) tt
 
-;with tmp001_cabComp(grupo, cab1, cab2, cab3) as(
-    select 2, '<button type="button" data-toggle="tooltip" class="btn ui blue label" onclick="MostrarDocumentoPdfExp(''',
-        ')"><i style="font-size:16px;" class="fa fa-file-text"></i></button><label style="font-size:8px">', '</label>'
-    union all
-    select 3, '<button type="button" data-toggle="tooltip" class="btn ui blue label" onclick="MostrarDocumentoPdfExp(''',
-        ')"><i style="font-size:16px;" class="fa fa-file-text"></i></button><label style="font-size:8px">', '</label>'
-    union all
-    select 1, '<button type="button" data-toggle="tooltip" title="xxx" class="btn ui blue label" onclick="MostrarDocumentoPdfExp(''',
-        ')"><i style="font-size:16px;" class="fa fa-file-text"></i></button><label style="font-size:8px">', '</label>'
-)
-,tmp001_params as(
-    select*from(values(4,1),(5,1),(112,1),(111,2),(3,2),(6,2),(116,3))t(pIdCatalogoSituacionMovimientoDestino,grupo)
-)
-select t1.*, dia.DiasPendiente, nro.NumeroDocumento, nro.IdExpedienteDocumento
-into #tmp003_resultset
-from #tmp002_resultset t1
-outer apply(
-    select top 1
-        case @pIdCatalogoSituacionMovimientoDestino
-        when 4 then iif(t4.FechaDestinoRecepciona is null, datediff(day, convert(date, t3.FechaOrigen), getdate()), 0)
-        when 5 then isnull(datediff(day, convert(date, t4.FechaDestinoRecepciona), getdate()),0) else 0 end DiasPendiente
-    from Tramite.ExpedienteDocumento t2
-    inner join Tramite.ExpedienteDocumentoOrigen t3
-        on  t3.IdExpedienteDocumento = t2.IdExpedienteDocumento
-        and t3.EstadoAuditoria = 1
-    inner join Tramite.ExpedienteDocumentoOrigenDestino t4
-        on  t4.IdExpedienteDocumentoOrigen = t3.IdExpedienteDocumentoOrigen
-        and t4.EstadoAuditoria = 1
-    where   t2.IdExpediente    = t1.IdExpediente
-        and t2.EstadoAuditoria = 1
-        and t4.IdAreaDestino   = @vIdArea
-        and t4.IdCargoDestino  = @vIdCargo
-        and t4.IdEmpresaDestino= 2
-        and t4.IdPersonaDestino= @pIdPersona
-        and t4.IdCatalogoSituacionMovimientoDestino = @pIdCatalogoSituacionMovimientoDestino
-)dia
-outer apply(
-    select top 1 t2.IdExpedienteDocumento,
-        concat(case pp.grupo when 1 then replace(g.cab1, 'xxx', isnull(t4.MotivoArchivado, '')) else g.cab1 end,
-        t2.RutaArchivoDocumento, ''',', t2.IdExpedienteDocumento, g.cab2,
-        case t2.Correlativo when 0 then concat(c.Descripcion, ' ', t2.NumeroDocumento)
-        else t2.NumeroDocumento end, g.cab3) NumeroDocumento
-    from Tramite.ExpedienteDocumento t2
-    inner join Tramite.ExpedienteDocumentoOrigen t3
-        on  t3.IdExpedienteDocumento = t2.IdExpedienteDocumento
-        and t3.EstadoAuditoria = 1
-    inner join Tramite.ExpedienteDocumentoOrigenDestino t4
-        on  t4.IdExpedienteDocumentoOrigen = t3.IdExpedienteDocumentoOrigen
-        and t4.EstadoAuditoria = 1
-    left join Tramite.Catalogo c
-        on c.IdCatalogo = t2.IdCatalogoTipoDocumento
-    left join tmp001_params pp
-        on pp.pIdCatalogoSituacionMovimientoDestino = @pIdCatalogoSituacionMovimientoDestino
-    left join tmp001_cabComp g
-        on  g.grupo = pp.grupo
-    where   t2.IdExpediente = t1.IdExpediente
-        and t2.EstadoAuditoria = 1
-        and case pp.grupo when 1 then t4.IdAreaDestino    else t3.IdAreaOrigen    end = @vIdArea
-    	and case pp.grupo when 1 then t4.IdCargoDestino   else t3.IdCargoOrigen   end = @vIdCargo
-    	and case pp.grupo when 1 then t4.IdPersonaDestino else t3.IdPersonaOrigen end = @pIdPersona
-    	and (pp.grupo != 3 or t3.IdCatalogoSituacionMovimientoOrigen  = @pIdCatalogoSituacionMovimientoDestino)
-    	and (pp.grupo != 1 or t4.IdCatalogoSituacionMovimientoDestino = @pIdCatalogoSituacionMovimientoDestino)
-    order by case pp.grupo when 3 then t3.IdExpedienteDocumentoOrigen when 2 then t4.IdExpedienteDocumentoOrigenDestino end desc
-)nro
 
 ;with tmp001_NombreExpediente(cab1, cab2)as(
     select '<div style="margin: 2px;padding: 2px;" class="ui blue label">', '</div> '
@@ -282,7 +201,7 @@ select
 	t1.NumeroExpediente,
 	t1.IdExpedienteSeguimiento,
 	t1.FechaMovimiento
-from #tmp003_resultset t1
+from #tmp002_resultset t1
 outer apply (
     SELECT (select cb.cab1, NombreExpediente, cb.cab2
     FROM (
@@ -333,21 +252,22 @@ END
 GO
 
 
-exec Tramite.paListarExpedientePendienteEspecialistaV7_eje
-    @pConFiltroFecha=0,@pFechaInicio='10/03/2026',@pFechaFin='10/03/2026',
-    @pConFiltroFechaMovimiento=0,@pFechaInicioMovimiento='10/03/2026',
-    @pFechaFinMovimiento='10/03/2026',@pIdPersona=1309,@pIdEmpleadoPerfil=3158,
-    @pIdCatalogoSituacionMovimientoDestino=3,@pTipoSituacionMovimiento=4,
-    @pIdAreaOrigen=0,@pIdAreaDestino=0,@pIdPeriodo=2026,@pIdCatalogoTipoPrioridad=0,
-    @pIdCatalogoTipoTramite=0,@pIdCatalogoTipoDocumento=0,@pNumeroExpediente='',
-    @pNumeroDocumento='',@pPersonaDesde='',@pPersonaPara='',@pIdTipoIngreso=0,
-    @pFechaDocumento='',@pEmisorExpediente='',@pAsuntoExpediente='',@pIdUsuarioAuditoria=26766,
-    @pCampoOrdenado=NULL,@pTipoOrdenacion=NULL,@pNumeroPagina=2,@pDimensionPagina=100,
-    @pBusquedaGeneral=NULL,@pFlgBusqueda=0
-
-
 
     -- exec Tramite.paListarExpedientePendienteEspecialistaV7
+    --     @pConFiltroFecha=0,@pFechaInicio='10/03/2026',@pFechaFin='10/03/2026',
+    --     @pConFiltroFechaMovimiento=0,@pFechaInicioMovimiento='10/03/2026',
+    --     @pFechaFinMovimiento='10/03/2026',@pIdPersona=1309,@pIdEmpleadoPerfil=3158,
+    --     @pIdCatalogoSituacionMovimientoDestino=3,@pTipoSituacionMovimiento=4,
+    --     @pIdAreaOrigen=0,@pIdAreaDestino=0,@pIdPeriodo=2026,@pIdCatalogoTipoPrioridad=0,
+    --     @pIdCatalogoTipoTramite=0,@pIdCatalogoTipoDocumento=0,@pNumeroExpediente='',
+    --     @pNumeroDocumento='',@pPersonaDesde='',@pPersonaPara='',@pIdTipoIngreso=0,
+    --     @pFechaDocumento='',@pEmisorExpediente='',@pAsuntoExpediente='',@pIdUsuarioAuditoria=26766,
+    --     @pCampoOrdenado=NULL,@pTipoOrdenacion=NULL,@pNumeroPagina=2,@pDimensionPagina=100,
+    --     @pBusquedaGeneral=NULL,@pFlgBusqueda=0
+
+
+
+    -- exec Tramite.paListarExpedientePendienteEspecialistaV7_new
     --     @pConFiltroFecha=0,@pFechaInicio='10/03/2026',@pFechaFin='10/03/2026',
     --     @pConFiltroFechaMovimiento=0,@pFechaInicioMovimiento='10/03/2026',
     --     @pFechaFinMovimiento='10/03/2026',@pIdPersona=1309,@pIdEmpleadoPerfil=3158,

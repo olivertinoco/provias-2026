@@ -1,7 +1,4 @@
--- execute [Tramite].[paListarDocumentoPendienteCourrierJefatura] 518024,79,349,null,null,1,25,null,0
-
--- CREATE PROCEDURE [Tramite].[paListarDocumentoPendienteCourrierJefatura]
-DECLARE
+alter PROCEDURE [Tramite].[paListarDocumentoPendienteCourrierJefatura]
     @pIdExpediente int,
     @pIdArea int,
     @pIdUsuarioAuditoria int,
@@ -12,9 +9,9 @@ DECLARE
     @pBusquedaGeneral varchar(100),
     @pVerSoloMio INT,
     @pPeriodoCourier INT
--- AS
--- BEGIN
--- BEGIN TRY
+AS
+BEGIN
+BEGIN TRY
 SET TRAN ISOLATION LEVEL READ UNCOMMITTED
 SET NOCOUNT ON
 SET LANGUAGE SPANISH
@@ -77,19 +74,6 @@ create table #tmp001_ExpedienteDatos(
     IdEmpresaEmisor int
 )
 
-
-select
-    @pIdExpediente= 518024,
-    @pIdArea= 79,
-    @pIdUsuarioAuditoria= 349,
-    @pCampoOrdenado= null,
-    @pTipoOrdenacion= null,
-    @pNumeroPagina= 1,
-    @pDimensionPagina= 25,
-    @pBusquedaGeneral= null,
-    @pVerSoloMio= 0,
-    @pPeriodoCourier= 2025
-
     DECLARE @vIdCargoJefe int=0
     DECLARE @vIdAreaJefe int=0
     DECLARE @vIdEmpresaJefe int=0
@@ -138,7 +122,7 @@ select
     CASE WHEN EE.IdEnvio IS NULL THEN t.IdCatalogoSituacionMovimientoDestino ELSE EE.IdCatalogoSituacionEnvio END IdCatalogoSituacionMovimientoDestino,
     COALESCE(CASE WHEN EE.IdEnvio IS NULL THEN t.CatalogoSituacionMovimientoDestino ELSE CSMEE.Descripcion END,'') CatalogoSituacionMovimientoDestino,
     t.IdCatalogoTipoMovimientoDestino,
-    COALESCE(t.CatalogoTipoMovimientoDestino,'') ,
+    COALESCE(t.CatalogoTipoMovimientoDestino,'') CatalogoTipoMovimientoDestino,
     COALESCE(t.IdCatalogoTipodevolucion,0) IdCatalogoTipoDevolucion,
     t.NumeroDiasAtencionSolicitado,
     COALESCE(t.FechaDestinoRecepciona,'')FechaDestinoRecepciona,
@@ -216,15 +200,31 @@ select
     select count(1) from #tmp001_ExpedienteDatos
 
 
--- END TRY
--- BEGIN CATCH
---     DECLARE @ERROR_NUMBER INT, @ERROR_SEVERITY INT,@ERROR_STATE INT,@ERROR_LINE INT,@ERROR_PROCEDURE VARCHAR(MAX) ,@ERROR_MESSAGE VARCHAR(MAX)
---     SELECT @ERROR_NUMBER=ERROR_NUMBER() , @ERROR_SEVERITY=ERROR_SEVERITY() , @ERROR_STATE=ERROR_STATE() , @ERROR_PROCEDURE='Tramite.paListarDocumentoPendienteCourrierJefatura',@ERROR_LINE=ERROR_LINE(),@ERROR_MESSAGE=ERROR_MESSAGE()
---     EXEC Seguridad.paGuardarErroresEnLog @ERROR_NUMBER , @ERROR_SEVERITY , @ERROR_STATE ,  @ERROR_PROCEDURE,@ERROR_LINE,@ERROR_MESSAGE
--- END CATCH
--- END
--- GO
+END TRY
+BEGIN CATCH
+    DECLARE @ERROR_NUMBER INT, @ERROR_SEVERITY INT,@ERROR_STATE INT,@ERROR_LINE INT,@ERROR_PROCEDURE VARCHAR(MAX) ,@ERROR_MESSAGE VARCHAR(MAX)
+    SELECT @ERROR_NUMBER=ERROR_NUMBER() , @ERROR_SEVERITY=ERROR_SEVERITY() , @ERROR_STATE=ERROR_STATE() , @ERROR_PROCEDURE='Tramite.paListarDocumentoPendienteCourrierJefatura',@ERROR_LINE=ERROR_LINE(),@ERROR_MESSAGE=ERROR_MESSAGE()
+    EXEC Seguridad.paGuardarErroresEnLog @ERROR_NUMBER , @ERROR_SEVERITY , @ERROR_STATE ,  @ERROR_PROCEDURE,@ERROR_LINE,@ERROR_MESSAGE
+END CATCH
+END
+GO
 
+
+-- execute [Tramite].[paListarDocumentoPendienteCourrierJefatura] 518024,79,349,null,null,1,25,null,0
+
+
+
+execute [Tramite].[paListarDocumentoPendienteCourrierJefatura]
+    @pIdExpediente= 518024,
+    @pIdArea= 79,
+    @pIdUsuarioAuditoria= 349,
+    @pCampoOrdenado= null,
+    @pTipoOrdenacion= null,
+    @pNumeroPagina= 1,
+    @pDimensionPagina= 25,
+    @pBusquedaGeneral= null,
+    @pVerSoloMio= 0,
+    @pPeriodoCourier= 2025
 
 
 -- CASE WHEN EDO.IdCargoOrigen IN(select IdCargo from #tmp001_cargo) and EDO.IdAreaOrigen=@vIdAreaJefe and EDO.IdEmpresaOrigen=@vIdEmpresaJefe THEN 1 ELSE 0 END,

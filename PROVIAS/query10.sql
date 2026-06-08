@@ -21,8 +21,8 @@ Declare @sp varchar(1000) =
 -- '[Tramite].[paListarExpedienteMesaParteDespachadosV1]' -- DURO 30 S
 -- '[tramite].[paObtenerEstadosExpedientesEspecialista]' -- DURO 5 S
 --  ///////////////////////////////////////////////////////////////////////////////////////////////////////
-'tramite.paListarDocumentoPendienteCourrierJefatura'
--- 'General.fnFullTextPrefijoVal'
+'tramite.funObtenerIdExpedienteDocumentoEnExpedienteEspecialista'
+-- 'General.ObtenerNumeroDiasSabadoDomingo'
 -- 'General.SplitFilas'
 -- 'General.fnFullTextBusCarEspecial'
 -- 'General.fnObtenerPaginacion'

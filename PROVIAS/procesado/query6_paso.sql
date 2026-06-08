@@ -1,4 +1,4 @@
-alter procedure tramite.paListarExpedientePendienteEspecialistaCreados_new
+alter procedure tramite.paListarExpedientePendienteEspecialistaCreados
 	@pConFiltroFecha bit,
 	@pFechaInicio varchar(10),
 	@pFechaFin varchar(10),

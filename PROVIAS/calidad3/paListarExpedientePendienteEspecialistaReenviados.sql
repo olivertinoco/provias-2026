@@ -1,4 +1,4 @@
-alter PROCEDURE Tramite.paListarExpedientePendienteEspecialistaReenviados_new
+alter PROCEDURE Tramite.paListarExpedientePendienteEspecialistaReenviados
 	@pConFiltroFecha bit,
 	@pFechaInicio varchar(10),
 	@pFechaFin varchar(10),
@@ -60,7 +60,7 @@ set tran isolation level read uncommitted
 		IdExpedienteSeguimiento int,
 		FechaMovimiento datetime,
 		sexo bit
-	);
+	)
 
 	select @vIdCargo = IdCargo, @vIdArea = IdArea
     from recursoHumano.EmpleadoPerfil
@@ -100,6 +100,11 @@ set tran isolation level read uncommitted
         and (t4.FechaDestinoEnvia is null or year(convert(date, t4.FechaDestinoEnvia)) = @pIdPeriodo)
     group by t1.IdExpediente
 
+    select *into #tmp001_TablaExpediente from @vTablaExpediente t1
+    ORDER BY t1.FechaMovimiento DESC, t1.IdExpediente desc
+    OFFSET (@pNumeroPagina-1)*@pDimensionPagina ROWS
+    FETCH NEXT @pDimensionPagina ROWS ONLY
+
     ;with tmp001_serieDocumental as(
         select*from(values(1,'E-'),(2,'I-'))sd(IdSerieDocumentalExpediente, AbreviaturaSerieDocumentalExpediente)
     )
@@ -125,7 +130,7 @@ set tran isolation level read uncommitted
   		isnull(ss.IdExpedienteSeguimiento, 0) IdExpedienteSeguimiento,
   		t.FechaMovimiento,
         p.sexo
-	from @vTablaExpediente t
+	from #tmp001_TablaExpediente t
     inner join Tramite.Expediente t1
         on  t1.IdExpediente      = t.IdExpediente
         and t1.EstadoAuditoria   = 1
@@ -148,34 +153,6 @@ set tran isolation level read uncommitted
        	and ss.IdCargo   = @vIdCargo
        	and ss.IdPersona = @pIdPersona
        	and ss.IdArea    = @vIdArea
-
-    select
-        t1.IdExpediente,
-  		t1.ExpedienteConfidencial,
-  		t1.NTFechaExpediente,
-  		t1.HoraExpediente,
-  		t1.IdCatalogoTipoPrioridad,
-  		t1.CatalogoTipoPrioridad,
-  		t1.CatalogoTipoTramite,
-  		t1.ColorCatalogoTipoTramite,
-  		t1.Logueo,
-  		t1.IdPersonaCreador,
-  		t1.AsuntoExpediente,
-  		t1.NumeroFoliosExpediente,
-  		t1.ObservacionesExpediente,
-  		t1.Fecha,
-  		t1.NombreExpediente,
-  		t1.NombreCompletoCreador,
-  		t1.NumeroExpediente,
-  		t1.IdExpedienteSeguimiento,
-  		t1.FechaMovimiento,
-        t1.sexo
-    into #tmp001_respuesta
-    from @MITABLA t1
-    ORDER BY t1.FechaMovimiento DESC, t1.IdExpediente desc
-	OFFSET (@pNumeroPagina-1)*@pDimensionPagina ROWS
-	FETCH NEXT @pDimensionPagina ROWS ONLY
-
 
     ;with tmp001_cabComp(grupo, cab1, cab2, cab3) as(
         select 2, '<button type="button" data-toggle="tooltip" class="btn ui blue label" onclick="MostrarDocumentoPdfExp(''',
@@ -222,7 +199,7 @@ set tran isolation level read uncommitted
   		t.NumeroExpediente,
   		t.IdExpedienteSeguimiento,
   		t.FechaMovimiento
-	from #tmp001_respuesta t
+	from @MITABLA t
 	outer apply(
         select top 1 t2.IdExpedienteDocumento,
             concat(case pp.grupo when 1 then replace(g.cab1, 'xxx', isnull(t4.MotivoArchivado, '')) else g.cab1 end,
@@ -306,13 +283,13 @@ set tran isolation level read uncommitted
     )
     order by t.FechaMovimiento desc, t.IdExpediente desc
 
-	select count(1) from @MITABLA
+	select count(1) from @vTablaExpediente
 
 END TRY
 BEGIN CATCH
-		DECLARE @ERROR_NUMBER INT, @ERROR_SEVERITY INT,@ERROR_STATE INT,@ERROR_LINE INT,@ERROR_PROCEDURE VARCHAR(MAX)	,@ERROR_MESSAGE VARCHAR(MAX)
-		SELECT @ERROR_NUMBER=ERROR_NUMBER() , @ERROR_SEVERITY=ERROR_SEVERITY() , @ERROR_STATE=ERROR_STATE() , @ERROR_PROCEDURE='Tramite.paListarExpedientePendienteEspecialistaReenviados',@ERROR_LINE=ERROR_LINE(),@ERROR_MESSAGE=ERROR_MESSAGE()
-		EXEC Seguridad.paGuardarErroresEnTablaLog @ERROR_NUMBER , @ERROR_SEVERITY , @ERROR_STATE ,  @ERROR_PROCEDURE,@ERROR_LINE,@ERROR_MESSAGE, @pIdUsuarioAuditoria
+	DECLARE @ERROR_NUMBER INT, @ERROR_SEVERITY INT,@ERROR_STATE INT,@ERROR_LINE INT,@ERROR_PROCEDURE VARCHAR(MAX)	,@ERROR_MESSAGE VARCHAR(MAX)
+	SELECT @ERROR_NUMBER=ERROR_NUMBER() , @ERROR_SEVERITY=ERROR_SEVERITY() , @ERROR_STATE=ERROR_STATE() , @ERROR_PROCEDURE='Tramite.paListarExpedientePendienteEspecialistaReenviados',@ERROR_LINE=ERROR_LINE(),@ERROR_MESSAGE=ERROR_MESSAGE()
+	EXEC Seguridad.paGuardarErroresEnTablaLog @ERROR_NUMBER , @ERROR_SEVERITY , @ERROR_STATE ,  @ERROR_PROCEDURE,@ERROR_LINE,@ERROR_MESSAGE, @pIdUsuarioAuditoria
  END CATCH
 END
 GO

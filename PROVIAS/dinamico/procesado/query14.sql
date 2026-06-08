@@ -33,12 +33,8 @@ create table #tmp001_expedienteHojaRuta(
     NumeroDiasAtencionSolicitado int,
     FechaDestinoRecepciona varchar(10) collate database_default,
     HoraDestinoRecepciona varchar(5) collate database_default,
-    NombreEmpresaOrigen varchar(100) collate database_default,
-    NombreAreaOrigen varchar(500) collate database_default,
-    NombreCargoOrigen varchar(200) collate database_default,
     IdPersonaOrigen int,
     NombreCompletoOrigen varchar(100) collate database_default,
-    NombreCompleto varchar(400) collate database_default,
     NumeroDiasAtencionAceptado int,
     Original bit,
     Copia bit,
@@ -46,18 +42,7 @@ create table #tmp001_expedienteHojaRuta(
     HoraDestino varchar(5) collate database_default,
     FechaDestinoEnvia varchar(10) collate database_default,
     HoraDestinoEnvia varchar(5) collate database_default,
-    NombreEmpresaDestino varchar(100) collate database_default,
-    NombreAreaDestino varchar(500) collate database_default,
-    NombreCargoDestino varchar(200) collate database_default,
-    NombrePersonaDestino varchar(800) collate database_default,
-    NombreEmpresaDestinoRecepciona varchar(100) collate database_default,
-    NombreAreaDestinoRecepciona varchar(500) collate database_default,
-    NombreCargoDestinoRecepciona varchar(200) collate database_default,
-    NombrePersonaDestinoRecepciona varchar(400) collate database_default,
-    NombreEmpresaDestinoAtencion varchar(100) collate database_default,
-    NombreAreaDestinoAtencion varchar(500) collate database_default,
-    NombreCargoDestinoAtencion varchar(200) collate database_default,
-    NombrePersonaDestinoAtencion varchar(400) collate database_default,
+    DestinatarioDestino varchar(800) collate database_default,
     ObservacionesDestinatario varchar(4000) collate database_default,
     Acciones varchar(max) collate database_default,
     CatalogoTipoDocumento varchar(400) collate database_default,
@@ -65,7 +50,22 @@ create table #tmp001_expedienteHojaRuta(
     AsuntoDocumento varchar(8000) collate database_default,
     RutaArchivoDocumento varchar(150) collate database_default,
     NumeroExpedienteExterno varchar(100) collate database_default,
-    Correlativo int
+    Correlativo int,
+    IdEmpresaOrigen int,
+    IdAreaOrigen int,
+    IdCargoOrigen int,
+    IdEmpresaDestino int,
+    IdAreaDestino int,
+    IdCargoDestino int,
+    IdPersonaDestino int,
+    IdEmpresaDestinoRecepciona int,
+    IdAreaDestinoRecepciona int,
+    IdCargoDestinoRecepciona int,
+    IdPersonaDestinoRecepciona int,
+    IdEmpresaDestinoAtencion int,
+    IdAreaDestinoAtencion int,
+    IdCargoDestinoAtencion int,
+    IdPersonaDestinoAtencion int
 )
 
     declare @vSql nvarchar(max)
@@ -75,10 +75,10 @@ create table #tmp001_expedienteHojaRuta(
 	declare @vcExpedienteDocumento varchar(100) = 'select*from Tramite.ExpedienteDocumento'
 	declare @vcExpedienteDocumentoOrigen varchar(100) = 'select*from Tramite.ExpedienteDocumentoOrigen'
 	declare @vcExpedienteDocumentoOrigenDestino varchar(100) = 'select*from Tramite.ExpedienteDocumentoOrigenDestino'
-	declare @vcExpedienteRpta varchar(2000) = ''
-	declare @vcExpedienteDocumentoRpta varchar(2000) = ''
-	declare @vcExpedienteDocumentoOrigenRpta varchar(2000) = ''
-	declare @vcExpedienteDocumentoOrigenDestinoRpta varchar(2000) = ''
+	declare @vcExpedienteRpta Nvarchar(4000) = ''
+	declare @vcExpedienteDocumentoRpta Nvarchar(4000) = ''
+	declare @vcExpedienteDocumentoOrigenRpta Nvarchar(4000) = ''
+	declare @vcExpedienteDocumentoOrigenDestinoRpta Nvarchar(4000) = ''
 	while(@vItera < @vTotalItera)begin
 	    select @vNuevoPeriodo = @pIdPeriodo + @vItera
 		if(@vNuevoPeriodo = @vAnno) begin
@@ -101,101 +101,91 @@ create table #tmp001_expedienteHojaRuta(
 	    select @vItera+=1
 	end
 
-    select @vSql = N'
-    insert into #tmp001_expedienteHojaRuta select
-    E.IdExpediente,E.CelularNotificacion,E.EmailNotificacion,E.NTFechaExpediente,ED.FechaEnvioDocumento,E.NumeroExpediente,SD.AbreviaturaSerieDocumentalExpediente,
-    E.IdPeriodo,ED.EsVinculado,ED.CorrelativoVinculado,ED.ObservacionesDocumento,ED.IdExpedienteDocumento,EDOD.IdExpedienteDocumentoOrigenDestino,EDOD.IdExpedienteDocumentoOrigen,
-    EDOD.IdCatalogoSituacionMovimientoDestino,CSM.Descripcion,EDOD.IdCatalogoTipoMovimientoDestino,CTM.Descripcion,EDO.IdCatalogoTipodevolucion,EDOD.NumeroDiasAtencionSolicitado,EDOD.FechaDestinoRecepciona,
-    EDOD.HoraDestinoRecepciona,EMO.NombreEmpresa,AO.NombreArea,CO.NombreCargo,EDO.IdPersonaOrigen,EDO.NombreCompletoOrigen,PO.NombreCompleto,EDOD.NumeroDiasAtencionAceptado,EDOD.Original,EDOD.Copia,
-    EDOD.FechaDestino,EDOD.HoraDestino,EDOD.FechaDestinoEnvia,EDOD.HoraDestinoEnvia,EMD.NombreEmpresa,AD.NombreArea,CD.NombreCargo,isnull(PD.NombreCompleto, EDOD.DestinatarioDestino),EMR.NombreEmpresa,AR.NombreArea,CR.NombreCargo,
-    PR.NombreCompleto,EMA.NombreEmpresa,AA.NombreArea,CA.NombreCargo,PA.NombreCompleto,EDOD.ObservacionesDestinatario,Tramite.funMostrarAccionesPorDestinoSoloCodigos(EDOD.IdExpedienteDocumentoOrigenDestino),
-    CTD.Descripcion,ED.NumeroDocumento,ED.AsuntoDocumento,ED.RutaArchivoDocumento,E.NumeroExpedienteExterno,ED.Correlativo
-    FROM (' + @vcExpedienteRpta + N')E
-    INNER JOIN (' + @vcExpedienteDocumentoRpta + N')ED
-        ON ED.IdExpediente=E.IdExpediente and ED.EstadoAuditoria=1
-    INNER JOIN (' + @vcExpedienteDocumentoOrigenRpta + N')EDO
-        ON EDO.IdExpedienteDocumento=ED.IdExpedienteDocumento AND EDO.EstadoAuditoria=1
-    INNER JOIN (' + @vcExpedienteDocumentoOrigenDestinoRpta + N')EDOD
-        ON EDOD.IdExpedienteDocumentoOrigen=EDO.IdExpedienteDocumentoOrigen AND EDOD.EstadoAuditoria=1
-    INNER JOIN Tramite.Catalogo CTD ON CTD.IdCatalogo=ED.IdCatalogoTipoDocumento
-    INNER JOIN Tramite.Catalogo CSM ON CSM.IdCatalogo=EDOD.IdCatalogoSituacionMovimientoDestino
-    INNER JOIN Tramite.Catalogo CTM ON CTM.IdCatalogo=EDOD.IdCatalogoTipoMovimientoDestino
-    INNER JOIN Tramite.SerieDocumentalExpediente SD ON SD.IdSerieDocumentalExpediente=E.IdSerieDocumentalExpediente
-    LEFT JOIN General.Empresa EMO ON EMO.IdEmpresa=EDO.IdEmpresaOrigen
-    LEFT JOIN General.Area AO ON AO.IdArea= EDO.IdAreaOrigen
-    LEFT JOIN General.Cargo CO ON CO.IdCargo=EDO.IdCargoOrigen
-    LEFT JOIN General.Empresa EMD ON EMD.IdEmpresa=EDOD.IdEmpresaDestino
-    LEFT JOIN General.Area AD ON AD.IdArea= EDOD.IdAreaDestino
-    LEFT JOIN General.Cargo CD ON CD.IdCargo=EDOD.IdCargoDestino
-    LEFT JOIN General.Persona PD ON PD.IdPersona=EDOD.IdPersonaDestino
-    LEFT JOIN General.Persona PO ON PO.IdPersona=EDO.IdPersonaOrigen
-    LEFT JOIN General.Empresa EMR ON EMR.IdEmpresa=EDOD.IdEmpresaDestinoRecepciona
-    LEFT JOIN General.Area AR ON AR.IdArea= EDOD.IdAreaDestinoRecepciona
-    LEFT JOIN General.Cargo CR ON CR.IdCargo=EDOD.IdCargoDestinoRecepciona
-    LEFT JOIN General.Persona PR ON PR.IdPersona=EDOD.IdPersonaDestinoRecepciona
-    LEFT JOIN General.Empresa EMA ON EMA.IdEmpresa=EDOD.IdEmpresaDestinoAtencion
-    LEFT JOIN General.Area AA ON AA.IdArea= EDOD.IdAreaDestinoAtencion
-    LEFT JOIN General.Cargo CA ON CA.IdCargo=EDOD.IdCargoDestinoAtencion
-    LEFT JOIN General.Persona PA ON PA.IdPersona=EDOD.IdPersonaDestinoAtencion
+    select @vSql = N'\
+    insert into #tmp001_expedienteHojaRuta select \
+    E.IdExpediente,E.CelularNotificacion,E.EmailNotificacion,E.NTFechaExpediente,ED.FechaEnvioDocumento,E.NumeroExpediente,SD.AbreviaturaSerieDocumentalExpediente,E.IdPeriodo,ED.EsVinculado,ED.CorrelativoVinculado,ED.ObservacionesDocumento,ED.IdExpedienteDocumento,EDOD.IdExpedienteDocumentoOrigenDestino,EDOD.IdExpedienteDocumentoOrigen,\
+    EDOD.IdCatalogoSituacionMovimientoDestino,CSM.Descripcion,EDOD.IdCatalogoTipoMovimientoDestino,CTM.Descripcion,EDO.IdCatalogoTipodevolucion,EDOD.NumeroDiasAtencionSolicitado,EDOD.FechaDestinoRecepciona,EDOD.HoraDestinoRecepciona,\
+    EDO.IdPersonaOrigen,EDO.NombreCompletoOrigen,EDOD.NumeroDiasAtencionAceptado,EDOD.Original,EDOD.Copia,EDOD.FechaDestino,EDOD.HoraDestino,EDOD.FechaDestinoEnvia,EDOD.HoraDestinoEnvia,EDOD.DestinatarioDestino,EDOD.ObservacionesDestinatario,Tramite.funMostrarAccionesPorDestinoSoloCodigos(EDOD.IdExpedienteDocumentoOrigenDestino),CTD.Descripcion,ED.NumeroDocumento,ED.AsuntoDocumento,\
+    ED.RutaArchivoDocumento,E.NumeroExpedienteExterno,ED.Correlativo,EDO.IdEmpresaOrigen,EDO.IdAreaOrigen,EDO.IdCargoOrigen,EDOD.IdEmpresaDestino,EDOD.IdAreaDestino,EDOD.IdCargoDestino,EDOD.IdPersonaDestino,EDOD.IdEmpresaDestinoRecepciona,EDOD.IdAreaDestinoRecepciona,EDOD.IdCargoDestinoRecepciona,EDOD.IdPersonaDestinoRecepciona,EDOD.IdEmpresaDestinoAtencion,EDOD.IdAreaDestinoAtencion,EDOD.IdCargoDestinoAtencion,EDOD.IdPersonaDestinoAtencion \
+    FROM (' + @vcExpedienteRpta + N')E INNER JOIN (' + @vcExpedienteDocumentoRpta + N')ED ON ED.IdExpediente=E.IdExpediente and ED.EstadoAuditoria=1 \
+    INNER JOIN (' + @vcExpedienteDocumentoOrigenRpta + N')EDO ON EDO.IdExpedienteDocumento=ED.IdExpedienteDocumento AND EDO.EstadoAuditoria=1 INNER JOIN (' + @vcExpedienteDocumentoOrigenDestinoRpta + N')EDOD ON EDOD.IdExpedienteDocumentoOrigen=EDO.IdExpedienteDocumentoOrigen AND EDOD.EstadoAuditoria=1 \
+    INNER JOIN Tramite.Catalogo CTD ON CTD.IdCatalogo=ED.IdCatalogoTipoDocumento INNER JOIN Tramite.Catalogo CSM ON CSM.IdCatalogo=EDOD.IdCatalogoSituacionMovimientoDestino INNER JOIN Tramite.Catalogo CTM ON CTM.IdCatalogo=EDOD.IdCatalogoTipoMovimientoDestino INNER JOIN Tramite.SerieDocumentalExpediente SD ON SD.IdSerieDocumentalExpediente=E.IdSerieDocumentalExpediente \
     WHERE EDOD.EstadoAuditoria=1 AND E.IdExpediente=@pIdExpediente AND E.EstadoAuditoria=1'
 
     EXEC sp_executesql @vSql,
     N'@pIdExpediente int',
     @pIdExpediente = @pIdExpediente
 
+
     select
-    IdExpediente,
-    isnull(CelularNotificacion, '') CelularNotificacion,
-    isnull(EmailNotificacion,'') EmailNotificacion,
-    isnull(NTFechaExpediente,'') NTFechaExpediente,
-    isnull(concat(convert(varchar(10), FechaEnvioDocumento, 103), ' ', convert(varchar(8), FechaEnvioDocumento, 108)),'') FechaEnvioDocumento,
-    NumeroExpediente,
-    concat(AbreviaturaSerieDocumentalExpediente, right(1000000 + NumeroExpediente, 6), '-', IdPeriodo,
-    case EsVinculado when 1 then concat('-V-', CorrelativoVinculado) else '' end) NombreExpediente,
-    isnull(ObservacionesExpediente,'') ObservacionesExpediente,
-    IdExpedienteDocumento,
-    IdExpedienteDocumentoOrigenDestino,
-    IdExpedienteDocumentoOrigen,
-    IdCatalogoSituacionMovimientoDestino,
-    CatalogoSituacionMovimientoDestino,
-    IdCatalogoTipoMovimientoDestino,
-    CatalogoTipoMovimientoDestino,
-    isnull(IdCatalogoTipoDevolucion, 0) IdCatalogoTipoDevolucion,
-    NumeroDiasAtencionSolicitado,
-    isnull(FechaDestinoRecepciona,'') FechaDestinoRecepciona,
-    isnull(HoraDestinoRecepciona,'') HoraDestinoRecepciona,
-    isnull(NombreEmpresaOrigen,'EXTERNO') NombreEmpresaOrigen,
-    isnull(NombreAreaOrigen,'') NombreAreaOrigen,
-    isnull(NombreCargoOrigen,'') NombreCargoOrigen,
-    isnull(NombreCompletoOrigen, case when IdPersonaOrigen != 0 then isnull(NombreCompleto,'') else '' end) NombrePersonaOrigen,
-    NumeroDiasAtencionAceptado,
-    Original,
-    Copia,
-    FechaDestino,
-    HoraDestino,
-    isnull(FechaDestinoEnvia,'') FechaDestinoEnvia,
-    isnull(HoraDestinoEnvia,'') HoraDestinoEnvia,
-    isnull(NombreEmpresaDestino,'') NombreEmpresaDestino,
-    isnull(NombreAreaDestino,'') NombreAreaDestino,
-    isnull(NombreCargoDestino,'') NombreCargoDestino,
-    isnull(NombrePersonaDestino,'') NombrePersonaDestino,
-    isnull(NombreEmpresaDestinoRecepciona,'EXTERNO') NombreEmpresaDestinoRecepciona,
-    isnull(NombreAreaDestinoRecepciona,'') NombreAreaDestinoRecepciona,
-    isnull(NombreCargoDestinoRecepciona,'') NombreCargoDestinoRecepciona,
-    isnull(NombrePersonaDestinoRecepciona,'') NombrePersonaDestinoRecepciona,
-    isnull(NombreEmpresaDestinoAtencion,'EXTERNO') NombreEmpresaDestinoAtencion,
-    isnull(NombreAreaDestinoAtencion,'') NombreAreaDestinoAtencion,
-    isnull(NombreCargoDestinoAtencion,'') NombreCargoDestinoAtencion,
-    isnull(NombrePersonaDestinoAtencion,'') NombrePersonaDestinoAtencion,
-    isnull(ObservacionesDestinatario,'') ObservacionesDestinatario,
-    Acciones,
-    isnull(CatalogoTipoDocumento,'') CatalogoTipoDocumento,
-    case Correlativo when 0 then concat(CatalogoTipoDocumento, ' ',NumeroDocumento) else isnull(NumeroDocumento,'') end NumeroDocumento,
-    isnull(AsuntoDocumento,'') AsuntoDocumento,
-    isnull(RutaArchivoDocumento,'') RutaArchivoDocumento,
-    isnull(NumeroExpedienteExterno,'') NumeroExpedienteExterno
-    from #tmp001_expedienteHojaRuta
-    order by convert(datetime, FechaDestino +' '+ HoraDestino)
+    t.IdExpediente,
+    isnull(t.CelularNotificacion, '') CelularNotificacion,
+    isnull(t.EmailNotificacion,'') EmailNotificacion,
+    isnull(t.NTFechaExpediente,'') NTFechaExpediente,
+    isnull(concat(convert(varchar(10), t.FechaEnvioDocumento, 103), ' ', convert(varchar(8), t.FechaEnvioDocumento, 108)),'') FechaEnvioDocumento,
+    t.NumeroExpediente,
+    concat(t.AbreviaturaSerieDocumentalExpediente, right(1000000 + t.NumeroExpediente, 6), '-', t.IdPeriodo,
+    case t.EsVinculado when 1 then concat('-V-', t.CorrelativoVinculado) else '' end) NombreExpediente,
+    isnull(t.ObservacionesExpediente,'') ObservacionesExpediente,
+    t.IdExpedienteDocumento,
+    t.IdExpedienteDocumentoOrigenDestino,
+    t.IdExpedienteDocumentoOrigen,
+    t.IdCatalogoSituacionMovimientoDestino,
+    t.CatalogoSituacionMovimientoDestino,
+    t.IdCatalogoTipoMovimientoDestino,
+    t.CatalogoTipoMovimientoDestino,
+    isnull(t.IdCatalogoTipoDevolucion, 0) IdCatalogoTipoDevolucion,
+    t.NumeroDiasAtencionSolicitado,
+    isnull(t.FechaDestinoRecepciona,'') FechaDestinoRecepciona,
+    isnull(t.HoraDestinoRecepciona,'') HoraDestinoRecepciona,
+    isnull(EMO.NombreEmpresa,'EXTERNO') NombreEmpresaOrigen,
+    isnull(AO.NombreArea,'') NombreAreaOrigen,
+    isnull(CO.NombreCargo,'') NombreCargoOrigen,
+    isnull(t.NombreCompletoOrigen, case when t.IdPersonaOrigen != 0 then isnull(PO.NombreCompleto,'') else '' end) NombrePersonaOrigen,
+    t.NumeroDiasAtencionAceptado,
+    t.Original,
+    t.Copia,
+    t.FechaDestino,
+    t.HoraDestino,
+    isnull(t.FechaDestinoEnvia,'') FechaDestinoEnvia,
+    isnull(t.HoraDestinoEnvia,'') HoraDestinoEnvia,
+    isnull(EMD.NombreEmpresa,'') NombreEmpresaDestino,
+    isnull(AD.NombreArea,'') NombreAreaDestino,
+    isnull(CD.NombreCargo,'') NombreCargoDestino,
+    COALESCE(PD.NombreCompleto,t.DestinatarioDestino,'') NombrePersonaDestino,
+    isnull(EMR.NombreEmpresa,'EXTERNO') NombreEmpresaDestinoRecepciona,
+    isnull(AR.NombreArea,'') NombreAreaDestinoRecepciona,
+    isnull(CR.NombreCargo,'') NombreCargoDestinoRecepciona,
+    isnull(PR.NombreCompleto,'') NombrePersonaDestinoRecepciona,
+    isnull(EMA.NombreEmpresa,'EXTERNO') NombreEmpresaDestinoAtencion,
+    isnull(AA.NombreArea,'') NombreAreaDestinoAtencion,
+    isnull(CA.NombreCargo,'') NombreCargoDestinoAtencion,
+    isnull(PA.NombreCompleto,'') NombrePersonaDestinoAtencion,
+    isnull(t.ObservacionesDestinatario,'') ObservacionesDestinatario,
+    t.Acciones,
+    isnull(t.CatalogoTipoDocumento,'') CatalogoTipoDocumento,
+    case t.Correlativo when 0 then concat(t.CatalogoTipoDocumento, ' ',t.NumeroDocumento) else isnull(t.NumeroDocumento,'') end NumeroDocumento,
+    isnull(t.AsuntoDocumento,'') AsuntoDocumento,
+    isnull(t.RutaArchivoDocumento,'') RutaArchivoDocumento,
+    isnull(t.NumeroExpedienteExterno,'') NumeroExpedienteExterno
+    from #tmp001_expedienteHojaRuta t
+        LEFT JOIN General.Empresa EMO ON EMO.IdEmpresa=t.IdEmpresaOrigen
+        LEFT JOIN General.Area AO ON AO.IdArea= t.IdAreaOrigen
+        LEFT JOIN General.Cargo CO ON CO.IdCargo=t.IdCargoOrigen
+        LEFT JOIN General.Empresa EMD ON EMD.IdEmpresa=t.IdEmpresaDestino
+        LEFT JOIN General.Area AD ON AD.IdArea= t.IdAreaDestino
+        LEFT JOIN General.Cargo CD ON CD.IdCargo=t.IdCargoDestino
+        LEFT JOIN General.Persona PD ON PD.IdPersona=t.IdPersonaDestino
+        LEFT JOIN General.Persona PO ON PO.IdPersona=t.IdPersonaOrigen
+        LEFT JOIN General.Empresa EMR ON EMR.IdEmpresa=t.IdEmpresaDestinoRecepciona
+        LEFT JOIN General.Area AR ON AR.IdArea= t.IdAreaDestinoRecepciona
+        LEFT JOIN General.Cargo CR ON CR.IdCargo=t.IdCargoDestinoRecepciona
+        LEFT JOIN General.Persona PR ON PR.IdPersona=t.IdPersonaDestinoRecepciona
+        LEFT JOIN General.Empresa EMA ON EMA.IdEmpresa=t.IdEmpresaDestinoAtencion
+        LEFT JOIN General.Area AA ON AA.IdArea= t.IdAreaDestinoAtencion
+        LEFT JOIN General.Cargo CA ON CA.IdCargo=t.IdCargoDestinoAtencion
+        LEFT JOIN General.Persona PA ON PA.IdPersona=t.IdPersonaDestinoAtencion
+    order by convert(datetime, t.FechaDestino +' '+ t.HoraDestino)
 
 
 END TRY
@@ -221,6 +211,19 @@ exec Tramite.paListarDocumentoHojaRuta_BusquedaGeneral_arq
 @pIdArea= 79,
 @pIdUsuarioAuditoria= 349,
 @pIdPeriodo= 2025
+
+
+EXECUTE tramite.paListarDocumentoHojaRuta_BusquedaGeneral_arq
+@pIdExpediente= 506364,
+@pIdArea= 79,
+@pIdUsuarioAuditoria= 349,
+@pIdPeriodo= 2024
+
+EXECUTE Tramite.paListarDocumentoHojaRuta_BusquedaGeneral_arq
+@pIdExpediente= 76958,
+@pIdArea= 79,
+@pIdUsuarioAuditoria= 349,
+@pIdPeriodo= 2022
 
 
 
