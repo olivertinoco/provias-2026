@@ -37,7 +37,7 @@ set tran isolation level read uncommitted
 
     declare @conBus int, @nroReg varchar(6)
     select @conBus =
-    case when @pBusquedaGeneral is null or @pBusquedaGeneral = '' or ISNUMERIC(@pBusquedaGeneral) = 0 then 1 else 0 end
+    case when nullif(trim(@pBusquedaGeneral),'0') is null or trim(@pBusquedaGeneral) = '' or ISNUMERIC(@pBusquedaGeneral) = 0 then 1 else 0 end
     if @conBus = 1 begin
         select '0¦'
     	return
@@ -213,7 +213,7 @@ set tran isolation level read uncommitted
         t.NombreExpediente, t,
         t.NombreCompletoCreador, t,
         t.NumeroExpediente, t,
-        t.IdExpedienteSeguimiento, t, t
+        t.IdExpedienteSeguimiento, t
     from #tmp004_expedienteDatos t
     ORDER BY t.IdExpediente DESC
     for xml path, type).value('.','varchar(max)'),1,1,i)

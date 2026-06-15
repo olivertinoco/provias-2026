@@ -47,7 +47,6 @@ AS
    if rtrim(ltrim(COALESCE(@pBusquedaGeneral,'')))=''
    begin
 		select '0¦'
-
 		return;
    end
 
@@ -65,7 +64,6 @@ AS
      END
     END
    END
-
 
    DECLARE @MITABLA TABLE (
 		IdExpediente int,
@@ -119,9 +117,10 @@ AS
    LEFT JOIN General.Persona PE ON PE.IdPersona=E.IdPersonaCreador
    LEFT JOIN Tramite.Catalogo CTT ON CTT.IdCatalogo=E.IdCatalogoTipoTramite
    WHERE E.IdPeriodo = @pIdPeriodo
-	and (E.NumeroExpediente = CASE WHEN ISNUMERIC(@pBusquedaGeneral)=1 THEN @pBusquedaGeneral ELSE 0 END OR @pBusquedaGeneral IS NULL OR @pBusquedaGeneral=0)
+	and (E.NumeroExpediente =
+	CASE WHEN ISNUMERIC(@pBusquedaGeneral)=1 THEN @pBusquedaGeneral ELSE 0 END
+	OR @pBusquedaGeneral IS NULL OR @pBusquedaGeneral=0)
    ORDER BY IdExpediente DESC
-
 
 	select
 			(SELECT convert(varchar,COUNT(*)) from @MITABLA)+'¦'+

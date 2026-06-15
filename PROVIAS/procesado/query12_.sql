@@ -37,7 +37,7 @@ set tran isolation level read uncommitted
 
     declare @conBus int, @nroReg varchar(6)
     select @conBus =
-    case when @pBusquedaGeneral is null or @pBusquedaGeneral = '' or ISNUMERIC(@pBusquedaGeneral) = 0 then 1 else 0 end
+    case when nullif(trim(@pBusquedaGeneral),'0') is null or trim(@pBusquedaGeneral) = '' or ISNUMERIC(@pBusquedaGeneral) = 0 then 1 else 0 end
     if @conBus = 1 begin
         select '0¦'
     	return
@@ -187,7 +187,6 @@ set tran isolation level read uncommitted
             and u.Bloqueado = 0
     )rf
 
-
 	;with tmp001_sep(t,r,i)as(
 	    select*from(values('|','¬','¦'))t(SepCamp,SepReg,SepLst)
 	)
@@ -213,7 +212,7 @@ set tran isolation level read uncommitted
         t.NombreExpediente, t,
         t.NombreCompletoCreador, t,
         t.NumeroExpediente, t,
-        t.IdExpedienteSeguimiento, t, t
+        t.IdExpedienteSeguimiento, t
     from #tmp004_expedienteDatos t
     ORDER BY t.IdExpediente DESC
     for xml path, type).value('.','varchar(max)'),1,1,i)
@@ -229,6 +228,52 @@ BEGIN CATCH
 END CATCH
 END
 GO
+
+
+-- exec Tramite.paListarExpedientePendienteJefaturaTodosFosCad
+-- @pConFiltroFecha=0,
+-- @pFechaInicio='11/06/2026',
+-- @pFechaFin='11/06/2026',
+-- @pConFiltroFechaMovimiento=1,
+-- @pFechaInicioMovimiento='11/06/2026',
+-- @pFechaFinMovimiento='11/06/2026',
+-- @pIdArea=79,
+-- @pIdCatalogoSituacionMovimientoDestino=0,
+-- @pTipoSituacionMovimiento=0,
+-- @pIdAreaOrigen=0,
+-- @pIdAreaDestino=0,
+-- @pIdPeriodo=2026,
+-- @pIdCatalogoTipoPrioridad=0,
+-- @pIdCatalogoTipoTramite=0,
+-- @pIdCatalogoTipoDocumento=0,
+-- @pNumeroExpediente='',
+-- @pNumeroDocumento='',
+-- @pPersonaDesde='',
+-- @pPersonaPara='',
+-- @pIdTipoIngreso=0,
+-- @pFechaDocumento='',
+-- @pEmisorExpediente='',
+-- @pAsuntoExpediente='',
+-- @pIdUsuarioAuditoria=349,
+-- @pCampoOrdenado=NULL,
+-- @pTipoOrdenacion=NULL,
+-- @pNumeroPagina=1,
+-- @pDimensionPagina=10,
+-- @pBusquedaGeneral='1',
+-- @pFlgBusqueda=0
+
+-- exec Tramite.paListarExpedientePendienteJefaturaTodosFosCad
+-- @pConFiltroFecha=0,@pFechaInicio='01/04/2026',@pFechaFin='01/04/2026',
+-- @pConFiltroFechaMovimiento=0,@pFechaInicioMovimiento='01/04/2026',
+-- @pFechaFinMovimiento='01/04/2026',@pIdArea=112,@pIdCatalogoSituacionMovimientoDestino=0,
+-- @pTipoSituacionMovimiento=0,@pIdAreaOrigen=0,@pIdAreaDestino=0,@pIdPeriodo=2026,
+-- @pIdCatalogoTipoPrioridad=0,@pIdCatalogoTipoTramite=0,@pIdCatalogoTipoDocumento=0,
+-- @pNumeroExpediente='',@pNumeroDocumento='',@pPersonaDesde='',@pPersonaPara='',
+-- @pIdTipoIngreso=0,@pFechaDocumento='',@pEmisorExpediente='',@pAsuntoExpediente='',
+-- @pIdUsuarioAuditoria=10367,@pCampoOrdenado=NULL,@pTipoOrdenacion=NULL,@pNumeroPagina=1,
+-- @pDimensionPagina=10,@pBusquedaGeneral='0',@pFlgBusqueda=0
+
+
 
 
 

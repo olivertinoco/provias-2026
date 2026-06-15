@@ -7,7 +7,7 @@ create function mastertable(
 )returns table as return(
   select top 1000 convert(varchar(50), @par_nombreTabla) tabla,
   convert(varchar(60), c.name) name,
-  -- c.column_id,
+  c.column_id,
   convert(varchar(10),type_name(c.system_type_id)) type,
   c.max_length,
   case

@@ -239,7 +239,8 @@ SET LANGUAGE SPANISH
  			AND ED.CorrelativoVinculado= CASE WHEN @pCorrelativoVinculado>0 THEN @pCorrelativoVinculado ELSE ED.CorrelativoVinculado END'
 
         EXEC sp_executesql @sql,
-                N'@pIdArea int,@pIdCargo int,@pIdPersona int,@pIdExpediente int,@pCorrelativoVinculado int',
+                N'@pIdArea int,@pIdCargo int,@pIdPersona int,@pIdExpediente int,@pCorrelativoVinculado int,@pIdEmpresa int',
+                @pIdEmpresa = @pIdEmpresa,
                 @pIdArea = @pIdArea,
                 @pIdCargo = @pIdCargo,
                 @pIdPersona = @pIdPersona,

@@ -1,4 +1,0 @@
-exec tramite.paListarExpedientePendienteEspecialistaArchivados_new 0,'01/04/2026','01/04/2026',0,'01/04/2026','01/04/2026',212,210,112,0,0,0,2025,0,0,0,'','','','',0,'','','',212,NULL,NULL,1,10,NULL,0
-exec tramite.paListarExpedientePendienteEspecialistaArchivados_new 0,'24/04/2026','24/04/2026',0,'24/04/2026','24/04/2026',431,1894,112,0,0,0,2026,0,0,0,'','','','',0,'','','',431,null,null,1,10,null,0
-exec tramite.paListarExpedientePendienteEspecialistaArchivados_new 0,'24/04/2026','24/04/2026',0,'24/04/2026','24/04/2026',1059,2259,112,0,0,0,2026,0,0,0,'','','','',0,'','','',1059,null,null,1,10,null,0
-exec tramite.paListarExpedientePendienteEspecialistaArchivados_new 0,'01/04/2026','01/04/2026',0,'01/04/2026','01/04/2026',927,926,112,4,0,0,2026,0,0,0,'','','','',0,'','','',927,NULL,NULL,2,10,NULL,0

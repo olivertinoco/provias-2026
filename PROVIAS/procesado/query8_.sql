@@ -253,6 +253,33 @@ GO
 
 
 
+-- exec Tramite.paListarExpedientePendienteEspecialistaV7
+-- @pConFiltroFecha=0,@pFechaInicio='01/04/2026',@pFechaFin='01/04/2026',
+-- @pConFiltroFechaMovimiento=0,@pFechaInicioMovimiento='01/04/2026',
+-- @pFechaFinMovimiento='01/04/2026',@pIdPersona=296,@pIdEmpleadoPerfil=3491,
+-- @pIdCatalogoSituacionMovimientoDestino=3,@pTipoSituacionMovimiento=4,
+-- @pIdAreaOrigen=0,@pIdAreaDestino=0,@pIdPeriodo=2025,@pIdCatalogoTipoPrioridad=0,
+-- @pIdCatalogoTipoTramite=0,@pIdCatalogoTipoDocumento=0,@pNumeroExpediente='',
+-- @pNumeroDocumento='',@pPersonaDesde='',@pPersonaPara='',@pIdTipoIngreso=0,
+-- @pFechaDocumento='',@pEmisorExpediente='',@pAsuntoExpediente='',
+-- @pIdUsuarioAuditoria=296,@pCampoOrdenado=NULL,@pTipoOrdenacion=NULL,
+-- @pNumeroPagina=1,@pDimensionPagina=100,@pBusquedaGeneral=NULL,@pFlgBusqueda=0
+
+
+-- exec Tramite.paListarExpedientePendienteEspecialistaV7_new
+-- @pConFiltroFecha=0,@pFechaInicio='01/04/2026',@pFechaFin='01/04/2026',
+-- @pConFiltroFechaMovimiento=0,@pFechaInicioMovimiento='01/04/2026',
+-- @pFechaFinMovimiento='01/04/2026',@pIdPersona=296,@pIdEmpleadoPerfil=3491,
+-- @pIdCatalogoSituacionMovimientoDestino=3,@pTipoSituacionMovimiento=4,
+-- @pIdAreaOrigen=0,@pIdAreaDestino=0,@pIdPeriodo=2025,@pIdCatalogoTipoPrioridad=0,
+-- @pIdCatalogoTipoTramite=0,@pIdCatalogoTipoDocumento=0,@pNumeroExpediente='',
+-- @pNumeroDocumento='',@pPersonaDesde='',@pPersonaPara='',@pIdTipoIngreso=0,
+-- @pFechaDocumento='',@pEmisorExpediente='',@pAsuntoExpediente='',
+-- @pIdUsuarioAuditoria=296,@pCampoOrdenado=NULL,@pTipoOrdenacion=NULL,
+-- @pNumeroPagina=1,@pDimensionPagina=100,@pBusquedaGeneral=NULL,@pFlgBusqueda=0
+
+
+
     -- exec Tramite.paListarExpedientePendienteEspecialistaV7
     --     @pConFiltroFecha=0,@pFechaInicio='10/03/2026',@pFechaFin='10/03/2026',
     --     @pConFiltroFechaMovimiento=0,@pFechaInicioMovimiento='10/03/2026',

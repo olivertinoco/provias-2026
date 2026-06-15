@@ -16,7 +16,7 @@ from seguridad.LogError order by fecha desc
 -- ========================================================
 
 
-return
+-- return
 
 SELECT
     s.session_id,
@@ -34,6 +34,8 @@ INNER JOIN sys.dm_exec_requests r
 WHERE   s.login_name = ORIGINAL_LOGIN()
     AND s.session_id != @@SPID;
 
+
+return
 
 -- SELECT
 --     r.session_id,

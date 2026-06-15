@@ -83,6 +83,7 @@ set nocount on
 
 	select @nroReg = count(1) from @vTablaExpediente
 
+
     ;with tmp001_serieDocumental as(
         select*from(values(1,'E-'),(2,'I-'))a(IdSerieDocumentalExpediente,AbreviaturaSerieDocumentalExpediente)
     )
@@ -204,4 +205,4 @@ END
 GO
 
 
-exec tramite.paListarExpedientePendienteJefaturaPorRecibirFosCad_new 0,'22/05/2026','22/05/2026',1,'22/05/2026','22/05/2026',79,4,4,0,0,2026,0,0,0,'','','','',0,'','','',349,NULL,NULL,1,10,NULL,0
+exec tramite.paListarExpedientePendienteJefaturaPorRecibirFosCad 0,'22/05/2026','22/05/2026',1,'22/05/2026','22/05/2026',79,4,4,0,0,2026,0,0,0,'','','','',0,'','','',349,NULL,NULL,1,10,NULL,0
