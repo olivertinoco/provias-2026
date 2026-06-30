@@ -8,3 +8,12 @@ PRIORIDAD DE LOS SP - para pase a produccion:
 6. Tramite.paObtenerEstadosExpedientesEspecialista
 7. Tramite.paObtenerEstadosExpedientesJefatura
 8. Tramite.paListarExpedientePendienteJefaturaPorRecibirFosCad
+
+SP QUE DEBEN PASAR A PROD
+
+1. Tramite.paListarExpedientePendienteEspecialistaCreados
+2. Tramite.paListarExpedientePendienteEspecialistaV7
+3. Tramite.paListarExpedientePendienteEspecialistaReenviados
+4. Tramite.paListarExpedientePendienteEspecialistaArchivados
+5. Tramite.paListarExpedientePendienteJefaturaTodosFosCad
+8. Tramite.paListarExpedientePendienteJefaturaPorRecibirFosCad
