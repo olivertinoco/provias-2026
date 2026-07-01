@@ -1,5 +1,3 @@
-Debido a que los primero PROCEDIMIENTOS revisados se sugiere revisar  todos los demás que son varios para no volver a onbervar.
-
 Listado de procedimientos modificados
 Luego de revisar el script de código a ejecutar en la base datos SGD,
 se evidencia  que existen 21 modificaciones a los procedimientos existentes. Los cuales se enumeran  a continuación:
