@@ -1,4 +1,4 @@
-alter PROCEDURE Tramite.paListarCarpetaDocumentosPorExpediente_arq
+create PROCEDURE Tramite.paListarCarpetaDocumentosPorExpediente_arq
 	@pIdExpediente int,
 	@pIdUsuarioAuditoria int,
 	@pIdPeriodo int

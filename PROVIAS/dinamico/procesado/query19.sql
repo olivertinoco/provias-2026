@@ -1,4 +1,4 @@
-alter PROCEDURE [Tramite].[paObtenerExpedienteDocumentoOrigenDestino_arq]
+create PROCEDURE [Tramite].[paObtenerExpedienteDocumentoOrigenDestino_arq]
     @pIdExpedienteDocumentoOrigenDestino INT,
 	@pIdPeriodo int
 AS

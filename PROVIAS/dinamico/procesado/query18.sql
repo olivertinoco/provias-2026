@@ -1,4 +1,4 @@
-alter PROCEDURE [Tramite].[paObtenerConfirmacionExpedienteDocumentoBloqueadoYPersonaVisualiza_arq]
+create PROCEDURE [Tramite].[paObtenerConfirmacionExpedienteDocumentoBloqueadoYPersonaVisualiza_arq]
     @pIdExpedienteDocumento int,
     @pIdUsuarioAuditoria int,
     @pIdPeriodo int

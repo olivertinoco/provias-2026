@@ -1,4 +1,4 @@
-alter PROCEDURE Tramite.paListarDetalleBusquedaExpedienteGeneral_arq
+create PROCEDURE Tramite.paListarDetalleBusquedaExpedienteGeneral_arq
     @pIdExpediente int,
     @pIdArea int,
     @pIdUsuarioAuditoria int,

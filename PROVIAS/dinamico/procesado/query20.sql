@@ -1,4 +1,4 @@
-ALTER PROCEDURE [Tramite].[paListarTreeExpedienteDocumentoOrigen_arq]
+create PROCEDURE [Tramite].[paListarTreeExpedienteDocumentoOrigen_arq]
     @pIdExpediente int,
     @pIdUsuarioAuditoria int,
     @pIdPeriodo int

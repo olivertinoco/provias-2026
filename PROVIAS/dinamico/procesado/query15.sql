@@ -1,4 +1,4 @@
-alter procedure Tramite.paListarExpedientePendienteCourrierJefatura_arq
+create procedure Tramite.paListarExpedientePendienteCourrierJefatura_arq
 	@pIdArea int,
 	@pIdCatalogoSituacionMovimientoDestino INT,
 	@pIdUsuarioAuditoria int,
