@@ -18,7 +18,7 @@
 -- delete t from Tramite.ExpedienteDocumentoOrigenDestino t
 -- cross apply Tramite.ExpedienteDocumentoOrigenDestino_Historico_2025 tt
 -- where t.IdExpedienteDocumentoOrigenDestino = tt.IdExpedienteDocumentoOrigenDestino
--- go 3
+-- go 4
 
 
 -- delete t from Tramite.ExpedienteDocumentoOrigenAdjunto t
@@ -91,6 +91,7 @@
 
 -- alter table Tramite.ExpedienteDocumentoOrigen add constraint fkIdExpedienteDocumentoOrigen
 -- foreign key (IdExpedienteDocumento) references Tramite.ExpedienteDocumento(IdExpedienteDocumento);
+
 
 -- alter table Tramite.ExpedienteDocumento add constraint fkIdExpedienteDocumento
 -- foreign key (IdExpediente) references Tramite.Expediente(IdExpediente);
