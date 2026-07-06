@@ -87,8 +87,7 @@ select 'insert into '+ @tabla +' select '
 insert into dbo.paListarExpedientePendienteJefaturaPorRecibirFosCad select 0,'22/05/2026','22/05/2026',1,'22/05/2026','22/05/2026',79,4,4,0,0,2026,0,0,0,'','','','',0,'','','',349,NULL,NULL,1,10,NULL,0
 insert into dbo.paListarExpedientePendienteJefaturaPorRecibirFosCad select 0,'15/04/2026','15/04/2026',0,'15/04/2026','15/04/2026',30,4,0,0,0,0,0,0,0,'','','','',0,'','','',52939,null,null,1,10,null,0
 insert into dbo.paListarExpedientePendienteJefaturaPorRecibirFosCad select 0,'15/04/2026','15/04/2026',0,'15/04/2026','15/04/2026',30,4,4,0,0,0,0,0,0,'','','','',0,'','','',52939,null,null,1,10,null,0
-
-
+insert into dbo.paListarExpedientePendienteJefaturaPorRecibirFosCad select 0,'15/04/2026','15/04/2026',0,'15/04/2026','15/04/2026',30,4,4,0,0,0,0,0,0,'','','','',0,'','','',52939,NULL,NULL,1,10,NULL,0
 
 
 exec('select*from '+ @tabla)

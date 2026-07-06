@@ -22,7 +22,7 @@ Declare @sp varchar(1000) =
 -- '[tramite].[paObtenerEstadosExpedientesEspecialista]' -- DURO 5 S
 --  ///////////////////////////////////////////////////////////////////////////////////////////////////////
 -- 'Tramite.paListarPendienteFirmaDigitalJefaturaV2'
-'Tramite.paListarPendienteFirmaDigitalJefaturaV2'
+'Tramite.paListarPendienteFirmaDigitalEspecialistaV1'
 -- 'General.ObtenerNumeroDiasSabadoDomingo'
 -- 'General.SplitFilas'
 -- 'General.fnFullTextBusCarEspecial'

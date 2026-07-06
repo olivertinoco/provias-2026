@@ -1,8 +1,5 @@
--- set statistics io on
--- set statistics time on
 
--- CREATE PROCEDURE Tramite.paListarPendienteFirmaDigitalJefaturaV2_arq
-declare
+CREATE PROCEDURE Tramite.paListarPendienteFirmaDigitalJefaturaV2_arq
 	@pIdArea int,
 	@pIdUsuarioAuditoria int,
 	@pCampoOrdenado varchar(50),
@@ -10,12 +7,11 @@ declare
 	@pNumeroPagina INT,
 	@pDimensionPagina  INT,
 	@pBusquedaGeneral varchar(20)
-
-
--- AS
--- BEGIN
--- BEGIN TRY
+AS
+BEGIN
+BEGIN TRY
 SET LANGUAGE SPANISH
+SET NOCOUNT ON
 SET TRAN ISOLATION LEVEL READ UNCOMMITTED
 
 create table #tmp001_expedienteFirma (
@@ -42,22 +38,6 @@ create table #tmp001_expedienteFirma (
     FechaCreacionAuditoria datetime,
 )
 
-SELECT
-@pIdArea=30,@pIdUsuarioAuditoria=53721,@pCampoOrdenado=NULL,@pTipoOrdenacion=NULL,@pNumeroPagina=1,@pDimensionPagina=10,@pBusquedaGeneral=NULL
-
-
-SELECT * FROM TRAMITE.Expediente_Historico_2025 WHERE NombreExpediente = 'I-070615-2025'
-
-SELECT FgEnEsperaFirmaDigital,* FROM TRAMITE.ExpedienteDocumento_Historico_2025
-WHERE IdUsuarioEnProcesoFirma =@pIdUsuarioAuditoria AND EnProcesoFirma=1 AND EstadoAuditoria=1
-
-select * from tramite.ExpedienteDocumentoFirmante_Historico_2025 EDF where EDF.IdArea = 30
-AND EDF.EstadoAuditoria=1 AND EDF.FlagFirmado=0  AND EDF.IdCargo IN(SELECT IdCargo FROM General.Cargo WHERE IdCatalogoTipoCargo in (32,33,34))
-AND EDF.NombreCompleto = 'MARIA ISABEL VASQUEZ ALDAVE'
--- return
-
-
-
     Declare @vSql nvarchar(max), @vIdPeriodo int = 2022
     declare @vAnno int = year(getdate()), @vItera int = 0, @vNuevoPeriodo int
 	declare @vTotalItera int = @vAnno - @vIdPeriodo + 1
@@ -78,17 +58,6 @@ while(@vItera < @vTotalItera)begin
     INNER JOIN Tramite.ExpedienteDocumentoFirmante'+ @vcExpedienteRpta +N' EDF ON ED.IdExpedienteDocumento=EDF.IdExpedienteDocumento AND EDF.EstadoAuditoria=1 AND EDF.FlagFirmado=0 AND EDF.IdCargo IN(SELECT IdCargo FROM General.Cargo WHERE IdCatalogoTipoCargo in (32,33,34)) AND EDF.IdArea=@pIdArea
     INNER JOIN General.Area A ON ED.IdAreaEmisor=A.IdArea
     INNER JOIN General.Persona P ON ED.IdPersonaEmisor=p.IdPersona
-    OUTER APPLY(
-		select EB.IdExpedienteBloqueado,EB.FechaHoraBloquea
-		from Tramite.ExpedienteBloqueado EB
-		where ED.IdExpediente=EB.IdExpediente and EB.EstadoAuditoria=1 and EB.EstadoBloqueo=1
-	)EB
-	OUTER APPLY(
-		select ''1'' PersonaVisualiza
-		from Tramite.ExpedienteBloqueadoPersonaVisualiza EBPV
-		inner join Seguridad.Usuario U on EBPV.IdPersonaVisualiza=U.IdPersona and U.IdUsuario=@pIdUsuarioAuditoria
-		where EB.IdExpedienteBloqueado=EBPV.IdExpedienteBloqueado and EBPV.EstadoAuditoria=1
-	)EB1
     CROSS APPLY(select(SELECT convert(varchar,count(*)) FROM Tramite.ExpedienteDocumentoFirmante'+ @vcExpedienteRpta +N' EDF
     WHERE EDF.EstadoAuditoria=1 and EDF.IdExpedienteDocumento=ED.IdExpedienteDocumento and EDF.FlagFirmado=0)+''¦''+
     (select STUFF((SELECT ''¬''+COALESCE(Ep.NombreCompleto,'''''''')
@@ -104,31 +73,60 @@ while(@vItera < @vTotalItera)begin
     select @vItera+=1
 end
 
-
 select
-IdExpediente,
-IdExpedienteDocumento,
-AbreviaturaSerieDocumentalExpediente,
-NumeroExpediente,
-IdPeriodo,
-NumeroDocumento,
-NFechaDocumento,
-AsuntoDocumento,
-NumeroFoliosDocumento,
-RutaArchivoDocumento,
-ObservacionesDocumento,
-IdExpedienteDocumentoFirmante,
-PosicionX,
-PosicionY,
-EsMiDocumento,
-IdCatalogoTipoFirmante,
-TipoFirma,
-EsLiberado,
-AreaEmisor,
-PersonaEmisor,
-FechaCreacionAuditoria
-from #tmp001_expedienteFirma
+t.IdExpediente,
+t.IdExpedienteDocumento,
+CONCAT(t.AbreviaturaSerieDocumentalExpediente +RIGHT(1000000+t.NumeroExpediente,6), '-', t.IdPeriodo) NombreExpediente,
+t.NumeroDocumento,
+t.NFechaDocumento,
+t.AsuntoDocumento,
+isnull(t.NumeroFoliosDocumento, 1) NumeroFoliosDocumento,
+t.RutaArchivoDocumento,
+isnull(t.ObservacionesDocumento, '') ObservacionesDocumento,
+t.IdExpedienteDocumentoFirmante,
+isnull(t.PosicionX, 0) PosicionX,
+isnull(t.PosicionY, 0) PosicionY,
+t.EsMiDocumento,
+CASE t.IdCatalogoTipoFirmante WHEN 296 THEN 'FIRMAR' ELSE 'VISTO BUENO' END+'¦'+t.TipoFirma TipoFirma,
+t.EsLiberado,
+t.AreaEmisor,
+t.PersonaEmisor,
+isnull(case when EB.FechaHoraBloquea is null then  '0' else
+case when EB.FechaHoraBloquea<=t.FechaCreacionAuditoria then '1' else '0' end end,'0') ExpedienteBloqueado,
+isnull(EB1.PersonaVisualiza,'0') PersonaVisualiza
+from #tmp001_expedienteFirma t
+OUTER APPLY(
+	select EB.IdExpedienteBloqueado,EB.FechaHoraBloquea
+	from Tramite.ExpedienteBloqueado EB
+	where EB.IdExpediente = t.IdExpediente and EB.EstadoAuditoria=1 and EB.EstadoBloqueo=1
+)EB
+OUTER APPLY(
+	select '1' PersonaVisualiza
+	from Tramite.ExpedienteBloqueadoPersonaVisualiza EBPV
+	inner join Seguridad.Usuario U on EBPV.IdPersonaVisualiza=U.IdPersona and U.IdUsuario=@pIdUsuarioAuditoria
+	where EB.IdExpedienteBloqueado=EBPV.IdExpedienteBloqueado and EBPV.EstadoAuditoria=1
+)EB1
+ORDER BY t.IdExpedienteDocumento DESC
+OFFSET (@pNumeroPagina-1)*@pDimensionPagina ROWS
+FETCH NEXT @pDimensionPagina ROWS ONLY
+
+select count(1) from #tmp001_expedienteFirma
+
+END TRY
+BEGIN CATCH
+	DECLARE @ERROR_NUMBER INT, @ERROR_SEVERITY INT,@ERROR_STATE INT,@ERROR_LINE INT,@ERROR_PROCEDURE VARCHAR(MAX)	,@ERROR_MESSAGE VARCHAR(MAX)
+	SELECT @ERROR_NUMBER=ERROR_NUMBER() , @ERROR_SEVERITY=ERROR_SEVERITY() , @ERROR_STATE=ERROR_STATE(),
+	@ERROR_PROCEDURE='Tramite.paListarPendienteFirmaDigitalJefaturaV2_arq',@ERROR_LINE=ERROR_LINE(),@ERROR_MESSAGE=ERROR_MESSAGE()
+	EXEC Seguridad.paGuardarErroresEnTablaLog @ERROR_NUMBER , @ERROR_SEVERITY , @ERROR_STATE ,  @ERROR_PROCEDURE,@ERROR_LINE,@ERROR_MESSAGE ,@pIdUsuarioAuditoria
+END CATCH
+END
+GO
 
 
--- set statistics io off
--- set statistics time off
+-- EXEC Tramite.paListarPendienteFirmaDigitalJefaturaV2_arq
+-- @pIdArea = 30, @pIdUsuarioAuditoria = 53721, @pCampoOrdenado = NULL,
+-- @pTipoOrdenacion = NULL, @pNumeroPagina = 1, @pDimensionPagina = 10, @pBusquedaGeneral = NULL;
+
+-- EXEC BD_SGD_ARQ.Tramite.paListarPendienteFirmaDigitalJefaturaV2
+-- @pIdArea = 30, @pIdUsuarioAuditoria = 53721, @pCampoOrdenado = NULL,
+-- @pTipoOrdenacion = NULL, @pNumeroPagina = 1, @pDimensionPagina = 10, @pBusquedaGeneral = NULL;

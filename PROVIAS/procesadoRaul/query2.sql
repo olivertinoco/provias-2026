@@ -1,3 +1,7 @@
+================================================================================
+estos SP son los que yo e modificado, revisa si tu los están modificando también
+================================================================================
+
 ALTER PROCEDURE Tramite.paGuardarExpedienteSeguimiento
 ALTER PROCEDURE Tramite.paEliminarExpedienteSeguimiento
 ALTER PROCEDURE Tramite.paListarPeriodoBusquedaDocumentoJefatura

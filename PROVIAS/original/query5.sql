@@ -171,38 +171,38 @@ END CATCH
 go
 
 
-exec Tramite.paListarExpedientePendienteJefaturaPorRecibirFosCad
-@pConFiltroFecha=0,
-@pFechaInicio='22/05/2026',
-@pFechaFin='22/05/2026',
-@pConFiltroFechaMovimiento=1,
-@pFechaInicioMovimiento='22/05/2026',
-@pFechaFinMovimiento='22/05/2026',
-@pIdArea=79,
-@pIdCatalogoSituacionMovimientoDestino=4,
-@pTipoSituacionMovimiento=4,
-@pIdAreaOrigen=0,
-@pIdAreaDestino=0,
-@pIdPeriodo=2026,
-@pIdCatalogoTipoPrioridad=0,
-@pIdCatalogoTipoTramite=0,
-@pIdCatalogoTipoDocumento=0,
-@pNumeroExpediente='',
-@pNumeroDocumento='',
-@pPersonaDesde='',
-@pPersonaPara='',
-@pIdTipoIngreso=0,
-@pFechaDocumento='',
-@pEmisorExpediente='',
-@pAsuntoExpediente='',
-@pIdUsuarioAuditoria=349,
-@pCampoOrdenado=NULL,
-@pTipoOrdenacion=NULL,
-@pNumeroPagina=1,
-@pDimensionPagina=10,
-@pBusquedaGeneral=NULL,
-@pFlgBusqueda=0
+-- exec Tramite.paListarExpedientePendienteJefaturaPorRecibirFosCad
+-- @pConFiltroFecha=0,
+-- @pFechaInicio='22/05/2026',
+-- @pFechaFin='22/05/2026',
+-- @pConFiltroFechaMovimiento=1,
+-- @pFechaInicioMovimiento='22/05/2026',
+-- @pFechaFinMovimiento='22/05/2026',
+-- @pIdArea=79,
+-- @pIdCatalogoSituacionMovimientoDestino=4,
+-- @pTipoSituacionMovimiento=4,
+-- @pIdAreaOrigen=0,
+-- @pIdAreaDestino=0,
+-- @pIdPeriodo=2026,
+-- @pIdCatalogoTipoPrioridad=0,
+-- @pIdCatalogoTipoTramite=0,
+-- @pIdCatalogoTipoDocumento=0,
+-- @pNumeroExpediente='',
+-- @pNumeroDocumento='',
+-- @pPersonaDesde='',
+-- @pPersonaPara='',
+-- @pIdTipoIngreso=0,
+-- @pFechaDocumento='',
+-- @pEmisorExpediente='',
+-- @pAsuntoExpediente='',
+-- @pIdUsuarioAuditoria=349,
+-- @pCampoOrdenado=NULL,
+-- @pTipoOrdenacion=NULL,
+-- @pNumeroPagina=1,
+-- @pDimensionPagina=10,
+-- @pBusquedaGeneral=NULL,
+-- @pFlgBusqueda=0
 
-exec tramite.paListarExpedientePendienteJefaturaPorRecibirFosCad 0,'22/05/2026','22/05/2026',1,'22/05/2026','22/05/2026',79,4,4,0,0,2026,0,0,0,'','','','',0,'','','',349,NULL,NULL,1,10,NULL,0
-exec tramite.paListarExpedientePendienteJefaturaPorRecibirFosCad 0,'15/04/2026','15/04/2026',0,'15/04/2026','15/04/2026',30,4,0,0,0,0,0,0,0,'','','','',0,'','','',52939,null,null,1,10,null,0
-exec tramite.paListarExpedientePendienteJefaturaPorRecibirFosCad 0,'15/04/2026','15/04/2026',0,'15/04/2026','15/04/2026',30,4,4,0,0,0,0,0,0,'','','','',0,'','','',52939,null,null,1,10,null,0
+-- exec tramite.paListarExpedientePendienteJefaturaPorRecibirFosCad 0,'22/05/2026','22/05/2026',1,'22/05/2026','22/05/2026',79,4,4,0,0,2026,0,0,0,'','','','',0,'','','',349,NULL,NULL,1,10,NULL,0
+-- exec tramite.paListarExpedientePendienteJefaturaPorRecibirFosCad 0,'15/04/2026','15/04/2026',0,'15/04/2026','15/04/2026',30,4,0,0,0,0,0,0,0,'','','','',0,'','','',52939,null,null,1,10,null,0
+-- exec tramite.paListarExpedientePendienteJefaturaPorRecibirFosCad 0,'15/04/2026','15/04/2026',0,'15/04/2026','15/04/2026',30,4,4,0,0,0,0,0,0,'','','','',0,'','','',52939,null,null,1,10,null,0

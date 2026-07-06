@@ -1,7 +1,5 @@
--- set statistics io on
--- set statistics time on
-
-CREATE OR ALTER PROCEDURE Tramite.paListarExpedientePendienteJefaturaPorRecibirFosCad_new
+-- CREATE OR ALTER PROCEDURE Tramite.paListarExpedientePendienteJefaturaPorRecibirFosCad_new
+declare
     @pConFiltroFecha bit,
     @pFechaInicio varchar(10),
     @pFechaFin varchar(10),
@@ -32,14 +30,46 @@ CREATE OR ALTER PROCEDURE Tramite.paListarExpedientePendienteJefaturaPorRecibirF
     @pDimensionPagina  INT,
     @pBusquedaGeneral varchar(100),
     @pFlgBusqueda int
-AS
-BEGIN
-BEGIN TRY
+-- AS
+-- BEGIN
+-- BEGIN TRY
     SET NOCOUNT ON;
     SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 
+    select
+        @pConFiltroFecha=0,
+        @pFechaInicio='15/04/2026',
+        @pFechaFin='15/04/2026',
+        @pConFiltroFechaMovimiento=0,
+        @pFechaInicioMovimiento='15/04/2026',
+        @pFechaFinMovimiento='15/04/2026',
+        @pIdArea=30,
+        @pIdCatalogoSituacionMovimientoDestino=4,
+        @pTipoSituacionMovimiento=4,
+        @pIdAreaOrigen=0,
+        @pIdAreaDestino=0,
+        @pIdPeriodo=0,
+        @pIdCatalogoTipoPrioridad=0,
+        @pIdCatalogoTipoTramite=0,
+        @pIdCatalogoTipoDocumento=0,
+        @pNumeroExpediente='',
+        @pNumeroDocumento='',
+        @pPersonaDesde='',
+        @pPersonaPara='',
+        @pIdTipoIngreso=0,
+        @pFechaDocumento='',
+        @pEmisorExpediente='',
+        @pAsuntoExpediente='',
+        @pIdUsuarioAuditoria=52939,
+        @pCampoOrdenado=NULL,
+        @pTipoOrdenacion=NULL,
+        @pNumeroPagina=1,
+        @pDimensionPagina=10,
+        @pBusquedaGeneral=NULL,
+        @pFlgBusqueda=0
 
-    DECLARE @vIdAreaJefe int = 0, @vIdEmpresaJefe int = 0;
+
+    DECLARE @vIdAreaJefe int = 0, @vIdEmpresaJefe int = 0, @vTotal int = 0;
 
     IF @pIdPeriodo = 0
         SET @pIdPeriodo = YEAR(GETDATE());
@@ -50,7 +80,20 @@ BEGIN TRY
     FROM RecursoHumano.visPersonaJefe
     WHERE IdArea = @pIdArea;
 
+
     CREATE TABLE #Expediente(
+        IdExpediente          int          NOT NULL,
+        FechaMovimiento       datetime     NULL,
+        EsParaAnular          int          NOT NULL,
+        DiasPendiente         int          NULL,
+        NombrePersonaOrigen   varchar(max) NULL,
+        NumeroDocumento       varchar(max) NULL,
+        IdExpedienteDocumento int          NULL,
+        INDEX IX_Exp_Orden CLUSTERED (FechaMovimiento DESC, IdExpediente)
+    );
+
+    CREATE TABLE #Pagina(
+        Secuencia             int IDENTITY(1,1) PRIMARY KEY,
         IdExpediente          int          NOT NULL,
         FechaMovimiento       datetime     NULL,
         EsParaAnular          int          NOT NULL,
@@ -112,24 +155,10 @@ BEGIN TRY
             AND EDOD.EstadoAuditoria  = 1
             AND EDOD.IdCargoDestino IN (SELECT IdCargo FROM Cargo_CTE)
             AND (E.NumeroExpediente = @pBusquedaGeneral OR @pBusquedaGeneral IS NULL OR @pBusquedaGeneral = 0)
-        GROUP BY E.IdExpediente
-        OPTION (RECOMPILE);
+        GROUP BY E.IdExpediente;
+
+        SET @vTotal = @@ROWCOUNT;
     END
-
-    CREATE CLUSTERED INDEX IX_Exp_Orden ON #Expediente (FechaMovimiento DESC, IdExpediente);
-
-    DECLARE @vTotal int = (SELECT COUNT(*) FROM #Expediente);
-
-    CREATE TABLE #Pagina(
-        Secuencia             int IDENTITY(1,1) PRIMARY KEY,
-        IdExpediente          int          NOT NULL,
-        FechaMovimiento       datetime     NULL,
-        EsParaAnular          int          NOT NULL,
-        DiasPendiente         int          NULL,
-        NombrePersonaOrigen   varchar(max) NULL,
-        NumeroDocumento       varchar(max) NULL,
-        IdExpedienteDocumento int          NULL
-    );
 
     INSERT INTO #Pagina
         (IdExpediente, FechaMovimiento, EsParaAnular, DiasPendiente,
@@ -141,9 +170,9 @@ BEGIN TRY
     OFFSET (@pNumeroPagina - 1) * @pDimensionPagina ROWS
     FETCH NEXT @pDimensionPagina ROWS ONLY;
 
-    SELECT
-        CONVERT(varchar, @vTotal) + '¦' +
-        ISNULL(STUFF((
+    -- SELECT
+        -- CONVERT(varchar, @vTotal) + '¦' +
+        -- ISNULL(STUFF((
             SELECT
                 '¬' + CONVERT(varchar, P.EsParaAnular),
                 '|' + CONVERT(varchar, P.DiasPendiente),
@@ -254,61 +283,26 @@ BEGIN TRY
                         FOR XML PATH('')), 1, 0, '')), '')
             ) ENS
             ORDER BY P.Secuencia
-            FOR XML PATH('')
-        ), 1, 1, ''), '');
+        --     FOR XML PATH('')
+        -- ), 1, 1, ''), '');
 
-END TRY
-BEGIN CATCH
-    DECLARE @ERROR_NUMBER int, @ERROR_SEVERITY int, @ERROR_STATE int, @ERROR_LINE int,
-            @ERROR_PROCEDURE varchar(max), @ERROR_MESSAGE varchar(max);
-    SELECT @ERROR_NUMBER    = ERROR_NUMBER(),
-            @ERROR_SEVERITY  = ERROR_SEVERITY(),
-            @ERROR_STATE     = ERROR_STATE(),
-            @ERROR_PROCEDURE = 'Tramite.paListarExpedientePendienteJefaturaPorRecibirFosCad',
-            @ERROR_LINE      = ERROR_LINE(),
-            @ERROR_MESSAGE   = ERROR_MESSAGE();
-    EXEC Seguridad.paGuardarErroresEnTablaLog
-            @ERROR_NUMBER, @ERROR_SEVERITY, @ERROR_STATE, @ERROR_PROCEDURE, @ERROR_LINE, @ERROR_MESSAGE, @pIdUsuarioAuditoria;
-END CATCH
-END
-go
-
--- set statistics io off
--- set statistics time off
+-- END TRY
+-- BEGIN CATCH
+--     DECLARE @ERROR_NUMBER int, @ERROR_SEVERITY int, @ERROR_STATE int, @ERROR_LINE int,
+--             @ERROR_PROCEDURE varchar(max), @ERROR_MESSAGE varchar(max);
+--     SELECT @ERROR_NUMBER    = ERROR_NUMBER(),
+--             @ERROR_SEVERITY  = ERROR_SEVERITY(),
+--             @ERROR_STATE     = ERROR_STATE(),
+--             @ERROR_PROCEDURE = 'Tramite.paListarExpedientePendienteJefaturaPorRecibirFosCad_new',
+--             @ERROR_LINE      = ERROR_LINE(),
+--             @ERROR_MESSAGE   = ERROR_MESSAGE();
+--     EXEC Seguridad.paGuardarErroresEnTablaLog
+--             @ERROR_NUMBER, @ERROR_SEVERITY, @ERROR_STATE, @ERROR_PROCEDURE, @ERROR_LINE, @ERROR_MESSAGE, @pIdUsuarioAuditoria;
+-- END CATCH
+-- END
+-- GO
 
 
-
--- exec Tramite.paListarExpedientePendienteJefaturaPorRecibirFosCad
---     @pConFiltroFecha=0,
---     @pFechaInicio='15/04/2026',
---     @pFechaFin='15/04/2026',
---     @pConFiltroFechaMovimiento=0,
---     @pFechaInicioMovimiento='15/04/2026',
---     @pFechaFinMovimiento='15/04/2026',
---     @pIdArea=30,
---     @pIdCatalogoSituacionMovimientoDestino=4,
---     @pTipoSituacionMovimiento=4,
---     @pIdAreaOrigen=0,
---     @pIdAreaDestino=0,
---     @pIdPeriodo=0,
---     @pIdCatalogoTipoPrioridad=0,
---     @pIdCatalogoTipoTramite=0,
---     @pIdCatalogoTipoDocumento=0,
---     @pNumeroExpediente='',
---     @pNumeroDocumento='',
---     @pPersonaDesde='',
---     @pPersonaPara='',
---     @pIdTipoIngreso=0,
---     @pFechaDocumento='',
---     @pEmisorExpediente='',
---     @pAsuntoExpediente='',
---     @pIdUsuarioAuditoria=52939,
---     @pCampoOrdenado=NULL,
---     @pTipoOrdenacion=NULL,
---     @pNumeroPagina=1,
---     @pDimensionPagina=10,
---     @pBusquedaGeneral=NULL,
---     @pFlgBusqueda=0
 
 -- exec Tramite.paListarExpedientePendienteJefaturaPorRecibirFosCad_new
 --     @pConFiltroFecha=0,
@@ -341,3 +335,36 @@ go
 --     @pDimensionPagina=10,
 --     @pBusquedaGeneral=NULL,
 --     @pFlgBusqueda=0
+
+
+--     exec Tramite.paListarExpedientePendienteJefaturaPorRecibirFosCad
+--         @pConFiltroFecha=0,
+--         @pFechaInicio='15/04/2026',
+--         @pFechaFin='15/04/2026',
+--         @pConFiltroFechaMovimiento=0,
+--         @pFechaInicioMovimiento='15/04/2026',
+--         @pFechaFinMovimiento='15/04/2026',
+--         @pIdArea=30,
+--         @pIdCatalogoSituacionMovimientoDestino=4,
+--         @pTipoSituacionMovimiento=4,
+--         @pIdAreaOrigen=0,
+--         @pIdAreaDestino=0,
+--         @pIdPeriodo=0,
+--         @pIdCatalogoTipoPrioridad=0,
+--         @pIdCatalogoTipoTramite=0,
+--         @pIdCatalogoTipoDocumento=0,
+--         @pNumeroExpediente='',
+--         @pNumeroDocumento='',
+--         @pPersonaDesde='',
+--         @pPersonaPara='',
+--         @pIdTipoIngreso=0,
+--         @pFechaDocumento='',
+--         @pEmisorExpediente='',
+--         @pAsuntoExpediente='',
+--         @pIdUsuarioAuditoria=52939,
+--         @pCampoOrdenado=NULL,
+--         @pTipoOrdenacion=NULL,
+--         @pNumeroPagina=1,
+--         @pDimensionPagina=10,
+--         @pBusquedaGeneral=NULL,
+--         @pFlgBusqueda=0
