@@ -1,6 +1,6 @@
 -- set statistics io on
 -- set statistics time on
-
+go
 CREATE OR ALTER PROCEDURE Tramite.paListarExpedientePendienteJefaturaPorRecibirFosCad_new
     @pConFiltroFecha bit,
     @pFechaInicio varchar(10),
@@ -264,7 +264,7 @@ BEGIN CATCH
     SELECT @ERROR_NUMBER    = ERROR_NUMBER(),
             @ERROR_SEVERITY  = ERROR_SEVERITY(),
             @ERROR_STATE     = ERROR_STATE(),
-            @ERROR_PROCEDURE = 'Tramite.paListarExpedientePendienteJefaturaPorRecibirFosCad',
+            @ERROR_PROCEDURE = 'Tramite.paListarExpedientePendienteJefaturaPorRecibirFosCad_new',
             @ERROR_LINE      = ERROR_LINE(),
             @ERROR_MESSAGE   = ERROR_MESSAGE();
     EXEC Seguridad.paGuardarErroresEnTablaLog
@@ -273,42 +273,9 @@ END CATCH
 END
 go
 
--- set statistics io off
--- set statistics time off
+-- set statistics io on
+-- set statistics time on
 
-
-
--- exec Tramite.paListarExpedientePendienteJefaturaPorRecibirFosCad
---     @pConFiltroFecha=0,
---     @pFechaInicio='15/04/2026',
---     @pFechaFin='15/04/2026',
---     @pConFiltroFechaMovimiento=0,
---     @pFechaInicioMovimiento='15/04/2026',
---     @pFechaFinMovimiento='15/04/2026',
---     @pIdArea=30,
---     @pIdCatalogoSituacionMovimientoDestino=4,
---     @pTipoSituacionMovimiento=4,
---     @pIdAreaOrigen=0,
---     @pIdAreaDestino=0,
---     @pIdPeriodo=0,
---     @pIdCatalogoTipoPrioridad=0,
---     @pIdCatalogoTipoTramite=0,
---     @pIdCatalogoTipoDocumento=0,
---     @pNumeroExpediente='',
---     @pNumeroDocumento='',
---     @pPersonaDesde='',
---     @pPersonaPara='',
---     @pIdTipoIngreso=0,
---     @pFechaDocumento='',
---     @pEmisorExpediente='',
---     @pAsuntoExpediente='',
---     @pIdUsuarioAuditoria=52939,
---     @pCampoOrdenado=NULL,
---     @pTipoOrdenacion=NULL,
---     @pNumeroPagina=1,
---     @pDimensionPagina=10,
---     @pBusquedaGeneral=NULL,
---     @pFlgBusqueda=0
 
 -- exec Tramite.paListarExpedientePendienteJefaturaPorRecibirFosCad_new
 --     @pConFiltroFecha=0,
@@ -341,3 +308,6 @@ go
 --     @pDimensionPagina=10,
 --     @pBusquedaGeneral=NULL,
 --     @pFlgBusqueda=0
+
+--     set statistics io off
+--     set statistics time off

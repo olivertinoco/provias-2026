@@ -33,3 +33,17 @@ U    Tramite.ExpedienteDocumentoFirmante
 
 
 Tramite.ExpedienteDocumentoVisualizacion_Historico_2022
+
+
+
+PRIMER ENTREGABLE DE SEGUNDA ORDEN 2026 (OPTIMIZAR CON IA)
+==========================================================
+
+SP: Tramite.paListarExpedientePendienteEspecialistaArchivados
+SP: Tramite.paListarExpedientePendienteEspecialistaReenviados
+SP: Tramite.paListarExpedientePendienteEspecialistaV7
+SP: Tramite.paListarExpedientePendienteJefaturaTodosFosCad
+SP: Tramite.paListarExpedientePendienteJefaturaPorRecibirFosCad  +
+SP: Tramite.paListarExpedientePendienteEspecialistaCreados
+SP: Tramite.paListarExpedienteMesaParteDespachadosV1
+SP: Tramite.paListarExpedienteMesaParteDespachadosVirtualesV1

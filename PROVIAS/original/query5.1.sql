@@ -1,9 +1,8 @@
-set statistics io on
-set statistics time on
+-- set statistics io on
+-- set statistics time on
 
-
--- CREATE OR ALTER PROCEDURE [Tramite].[paListarExpedientePendienteJefaturaPorRecibirFosCad]
-declare
+go
+CREATE OR ALTER PROCEDURE Tramite.paListarExpedientePendienteJefaturaPorRecibirFosCad_new
     @pConFiltroFecha bit,
     @pFechaInicio varchar(10),
     @pFechaFin varchar(10),
@@ -34,45 +33,11 @@ declare
     @pDimensionPagina  INT,
     @pBusquedaGeneral varchar(100),
     @pFlgBusqueda int
--- AS
--- BEGIN
+AS
+BEGIN
+BEGIN TRY
     SET NOCOUNT ON;
     SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
-
-
-    select
-        @pConFiltroFecha=0,
-        @pFechaInicio='15/04/2026',
-        @pFechaFin='15/04/2026',
-        @pConFiltroFechaMovimiento=0,
-        @pFechaInicioMovimiento='15/04/2026',
-        @pFechaFinMovimiento='15/04/2026',
-        @pIdArea=30,
-        @pIdCatalogoSituacionMovimientoDestino=4,
-        @pTipoSituacionMovimiento=4,
-        @pIdAreaOrigen=0,
-        @pIdAreaDestino=0,
-        @pIdPeriodo=0,
-        @pIdCatalogoTipoPrioridad=0,
-        @pIdCatalogoTipoTramite=0,
-        @pIdCatalogoTipoDocumento=0,
-        @pNumeroExpediente='',
-        @pNumeroDocumento='',
-        @pPersonaDesde='',
-        @pPersonaPara='',
-        @pIdTipoIngreso=0,
-        @pFechaDocumento='',
-        @pEmisorExpediente='',
-        @pAsuntoExpediente='',
-        @pIdUsuarioAuditoria=52939,
-        @pCampoOrdenado=NULL,
-        @pTipoOrdenacion=NULL,
-        @pNumeroPagina=1,
-        @pDimensionPagina=10,
-        @pBusquedaGeneral=NULL,
-        @pFlgBusqueda=0
-
-    -- BEGIN TRY
 
         DECLARE @vIdAreaJefe   int = 0, @vIdEmpresaJefe int = 0;
 
@@ -289,21 +254,60 @@ declare
                 FOR XML PATH('')
             ), 1, 1, ''), '');
 
---     END TRY
---     BEGIN CATCH
---         DECLARE @ERROR_NUMBER int, @ERROR_SEVERITY int, @ERROR_STATE int, @ERROR_LINE int,
---                 @ERROR_PROCEDURE varchar(max), @ERROR_MESSAGE varchar(max);
---         SELECT @ERROR_NUMBER = ERROR_NUMBER(),
---                @ERROR_SEVERITY = ERROR_SEVERITY(),
---                @ERROR_STATE = ERROR_STATE(),
---                @ERROR_PROCEDURE = 'Tramite.paListarExpedientePendienteJefaturaPorRecibir',
---                @ERROR_LINE = ERROR_LINE(),
---                @ERROR_MESSAGE = ERROR_MESSAGE();
---         EXEC Seguridad.paGuardarErroresEnTablaLog
---              @ERROR_NUMBER, @ERROR_SEVERITY, @ERROR_STATE, @ERROR_PROCEDURE, @ERROR_LINE, @ERROR_MESSAGE, @pIdUsuarioAuditoria;
---     END CATCH
--- END
+    END TRY
+    BEGIN CATCH
+        DECLARE @ERROR_NUMBER int, @ERROR_SEVERITY int, @ERROR_STATE int, @ERROR_LINE int,
+                @ERROR_PROCEDURE varchar(max), @ERROR_MESSAGE varchar(max);
+        SELECT @ERROR_NUMBER = ERROR_NUMBER(),
+               @ERROR_SEVERITY = ERROR_SEVERITY(),
+               @ERROR_STATE = ERROR_STATE(),
+               @ERROR_PROCEDURE = 'Tramite.paListarExpedientePendienteJefaturaPorRecibir_new',
+               @ERROR_LINE = ERROR_LINE(),
+               @ERROR_MESSAGE = ERROR_MESSAGE();
+        EXEC Seguridad.paGuardarErroresEnTablaLog
+             @ERROR_NUMBER, @ERROR_SEVERITY, @ERROR_STATE, @ERROR_PROCEDURE, @ERROR_LINE, @ERROR_MESSAGE, @pIdUsuarioAuditoria;
+    END CATCH
+END
+go
 
 
-set statistics io off
-set statistics time off
+-- set statistics io on
+-- set statistics time on
+
+
+-- exec Tramite.paListarExpedientePendienteJefaturaPorRecibirFosCad_new
+--     @pConFiltroFecha=0,
+--     @pFechaInicio='15/04/2026',
+--     @pFechaFin='15/04/2026',
+--     @pConFiltroFechaMovimiento=0,
+--     @pFechaInicioMovimiento='15/04/2026',
+--     @pFechaFinMovimiento='15/04/2026',
+--     @pIdArea=30,
+--     @pIdCatalogoSituacionMovimientoDestino=4,
+--     @pTipoSituacionMovimiento=4,
+--     @pIdAreaOrigen=0,
+--     @pIdAreaDestino=0,
+--     @pIdPeriodo=0,
+--     @pIdCatalogoTipoPrioridad=0,
+--     @pIdCatalogoTipoTramite=0,
+--     @pIdCatalogoTipoDocumento=0,
+--     @pNumeroExpediente='',
+--     @pNumeroDocumento='',
+--     @pPersonaDesde='',
+--     @pPersonaPara='',
+--     @pIdTipoIngreso=0,
+--     @pFechaDocumento='',
+--     @pEmisorExpediente='',
+--     @pAsuntoExpediente='',
+--     @pIdUsuarioAuditoria=52939,
+--     @pCampoOrdenado=NULL,
+--     @pTipoOrdenacion=NULL,
+--     @pNumeroPagina=1,
+--     @pDimensionPagina=10,
+--     @pBusquedaGeneral=NULL,
+--     @pFlgBusqueda=0
+
+
+
+-- set statistics io off
+-- set statistics time off

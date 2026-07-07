@@ -1,35 +1,97 @@
+CREATE OR ALTER PROCEDURE Tramite.paListarExpedientePendienteJefaturaPorRecibirFosCad_CargarBase
+    @pIdAreaJefe       int,
+    @pIdEmpresaJefe    int,
+    @pBusquedaGeneral  varchar(100)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
 
-CREATE OR ALTER PROCEDURE Tramite.paListarExpedientePendienteJefaturaPorRecibirFosCad_new
-    @pConFiltroFecha bit,
-    @pFechaInicio varchar(10),
-    @pFechaFin varchar(10),
-    @pConFiltroFechaMovimiento bit,
-    @pFechaInicioMovimiento varchar(10),
-    @pFechaFinMovimiento varchar(10),
-    @pIdArea int,
+    ;WITH Cargo_CTE AS
+    (
+        SELECT IdCargo
+        FROM General.Cargo
+        WHERE IdCatalogoTipoCargo IN (32,33,34)
+    )
+    INSERT INTO #Expediente
+        (IdExpediente, FechaMovimiento, EsParaAnular, DiasPendiente,
+         NombrePersonaOrigen, NumeroDocumento, IdExpedienteDocumento)
+    SELECT
+        E.IdExpediente,
+        MAX(CONVERT(datetime, EDOD.FechaDestino + ' ' + EDOD.HoraDestino))                                    AS FechaMovimiento,
+        0                                                                                                     AS EsParaAnular,
+        MAX(CASE WHEN COALESCE(EDOD.FechaDestinoRecepciona,'') = '' THEN
+                    CASE WHEN DATEDIFF(DAY, CONVERT(date, EDO.FechaOrigen), GETDATE()) <= 0 THEN 0
+                         ELSE DATEDIFF(DAY, CONVERT(date, EDOD.FechaDestino), GETDATE()) END
+                    ELSE 0 END)                                                                               AS DiasPendiente,
+        MAX(CASE WHEN COALESCE(EDO.IdempresaOrigen,0) = 0 THEN ED.NombreCompletoEmisor ELSE A.NombreArea END) AS NombrePersonaOrigen,
+        MAX('<button type="button" data-toggle="tooltip" title="'+COALESCE(EDOD.MotivoArchivado,'')+
+            '" class="btn ui blue label" onclick="MostrarDocumentoPdfExp('''+ED.RutaArchivoDocumento+''','+CONVERT(varchar,ED.IdExpedienteDocumento)+
+            ')"><i style="font-size:16px;" class="fa fa-file-text"></i></button><label style="font-size:10px;line-height:13px;padding-top:6px;">'+
+            CASE WHEN ED.Correlativo = 0 THEN CONCAT(CTD.Descripcion,' ',COALESCE(ED.NumeroDocumento,''))
+                 ELSE COALESCE(ED.NumeroDocumento,'') END+'</label>')                                        AS NumeroDocumento,
+        MAX(ED.IdExpedienteDocumento)                                                                        AS IdExpedienteDocumento
+    FROM Tramite.ExpedienteDocumentoOrigenDestino EDOD
+    INNER JOIN Tramite.ExpedienteDocumentoOrigen EDO
+            ON EDO.IdExpedienteDocumentoOrigen = EDOD.IdExpedienteDocumentoOrigen
+           AND EDO.EstadoAuditoria = 1
+    INNER JOIN Tramite.ExpedienteDocumento ED
+            ON ED.IdExpedienteDocumento = EDO.IdExpedienteDocumento
+           AND ED.EstadoAuditoria = 1
+           AND ED.FgEnEsperaFirmaDigital = 0
+    INNER JOIN Tramite.Expediente E
+            ON E.IdExpediente = ED.IdExpediente
+           AND E.EstadoAuditoria = 1
+           AND (E.ExpedienteAnulado = 0 OR E.ExpedienteAnulado IS NULL)
+    INNER JOIN Tramite.SerieDocumentalExpediente SD
+            ON SD.IdSerieDocumentalExpediente = E.IdSerieDocumentalExpediente   -- ver nota FK abajo
+    LEFT JOIN General.Area A
+            ON A.IdArea = EDO.IdAreaOrigen
+    LEFT JOIN Tramite.Catalogo CTD
+            ON CTD.IdCatalogo = ED.IdCatalogoTipoDocumento
+    WHERE EDOD.IdCatalogoSituacionMovimientoDestino = 4
+      AND EDOD.IdEmpresaDestino = @pIdEmpresaJefe     -- PARÁMETRO sniffable
+      AND EDOD.IdAreaDestino    = @pIdAreaJefe         -- PARÁMETRO sniffable
+      AND EDOD.EstadoAuditoria  = 1
+      AND EDOD.IdCargoDestino IN (SELECT IdCargo FROM Cargo_CTE)
+      AND (E.NumeroExpediente = @pBusquedaGeneral OR @pBusquedaGeneral IS NULL OR @pBusquedaGeneral = 0)
+    GROUP BY E.IdExpediente;
+END
+GO
+
+
+
+CREATE OR ALTER PROCEDURE Tramite.paListarExpedientePendienteJefaturaPorRecibirFosCad
+    @pConFiltroFecha            bit,
+    @pFechaInicio               varchar(10),
+    @pFechaFin                  varchar(10),
+    @pConFiltroFechaMovimiento  bit,
+    @pFechaInicioMovimiento     varchar(10),
+    @pFechaFinMovimiento        varchar(10),
+    @pIdArea                    int,
     @pIdCatalogoSituacionMovimientoDestino INT,
-    @pTipoSituacionMovimiento int,
-    @pIdAreaOrigen int,
-    @pIdAreaDestino int,
-    @pIdPeriodo int,
-    @pIdCatalogoTipoPrioridad int,
-    @pIdCatalogoTipoTramite int,
-    @pIdCatalogoTipoDocumento int,
-    @pNumeroExpediente varchar(100),
-    @pNumeroDocumento varchar(100),
-    @pPersonaDesde varchar(100),
-    @pPersonaPara varchar(100),
-    @pIdTipoIngreso int,
-    @pFechaDocumento  varchar(100),
-    @pEmisorExpediente varchar(100),
-    @pAsuntoExpediente  varchar(100),
-    @pIdUsuarioAuditoria int,
-    @pCampoOrdenado varchar(50),
-    @pTipoOrdenacion varchar(4),
-    @pNumeroPagina INT,
-    @pDimensionPagina  INT,
-    @pBusquedaGeneral varchar(100),
-    @pFlgBusqueda int
+    @pTipoSituacionMovimiento   int,
+    @pIdAreaOrigen              int,
+    @pIdAreaDestino             int,
+    @pIdPeriodo                 int,
+    @pIdCatalogoTipoPrioridad   int,
+    @pIdCatalogoTipoTramite     int,
+    @pIdCatalogoTipoDocumento   int,
+    @pNumeroExpediente          varchar(100),
+    @pNumeroDocumento           varchar(100),
+    @pPersonaDesde              varchar(100),
+    @pPersonaPara               varchar(100),
+    @pIdTipoIngreso             int,
+    @pFechaDocumento            varchar(100),
+    @pEmisorExpediente          varchar(100),
+    @pAsuntoExpediente          varchar(100),
+    @pIdUsuarioAuditoria        int,
+    @pCampoOrdenado             varchar(50),
+    @pTipoOrdenacion            varchar(4),
+    @pNumeroPagina              INT,
+    @pDimensionPagina           INT,
+    @pBusquedaGeneral           varchar(100),
+    @pFlgBusqueda               int
 AS
 BEGIN
 BEGIN TRY
@@ -47,72 +109,29 @@ BEGIN TRY
     FROM RecursoHumano.visPersonaJefe
     WHERE IdArea = @pIdArea;
 
-    DECLARE @Expediente TABLE(
+    CREATE TABLE #Expediente(
         IdExpediente          int          NOT NULL,
         FechaMovimiento       datetime     NULL,
         EsParaAnular          int          NOT NULL,
         DiasPendiente         int          NULL,
         NombrePersonaOrigen   varchar(max) NULL,
         NumeroDocumento       varchar(max) NULL,
-        IdExpedienteDocumento int          NULL
+        IdExpedienteDocumento int          NULL,
+        INDEX IX_Exp_Orden CLUSTERED (FechaMovimiento DESC, IdExpediente)
     );
+
 
     IF TRY_CONVERT(int, @pBusquedaGeneral) IS NOT NULL
         OR @pBusquedaGeneral IS NULL
         OR @pBusquedaGeneral = ''
     BEGIN
-        ;WITH Cargo_CTE AS
-        (
-            SELECT IdCargo
-            FROM General.Cargo
-            WHERE IdCatalogoTipoCargo IN (32,33,34)
-        )
-        INSERT INTO @Expediente
-            (IdExpediente, FechaMovimiento, EsParaAnular, DiasPendiente,
-             NombrePersonaOrigen, NumeroDocumento, IdExpedienteDocumento)
-        SELECT
-            E.IdExpediente,
-            MAX(CONVERT(datetime, EDOD.FechaDestino + ' ' + EDOD.HoraDestino))                                   AS FechaMovimiento,
-            0                                                                                                    AS EsParaAnular,
-            MAX(CASE WHEN COALESCE(EDOD.FechaDestinoRecepciona,'') = '' THEN
-                        CASE WHEN DATEDIFF(DAY, CONVERT(date, EDO.FechaOrigen), GETDATE()) <= 0 THEN 0
-                             ELSE DATEDIFF(DAY, CONVERT(date, EDOD.FechaDestino), GETDATE()) END
-                        ELSE 0 END)                                                                              AS DiasPendiente,
-            MAX(CASE WHEN COALESCE(EDO.IdempresaOrigen,0) = 0 THEN ED.NombreCompletoEmisor ELSE A.NombreArea END) AS NombrePersonaOrigen,
-            MAX('<button type="button" data-toggle="tooltip" title="'+COALESCE(EDOD.MotivoArchivado,'')+
-                '" class="btn ui blue label" onclick="MostrarDocumentoPdfExp('''+ED.RutaArchivoDocumento+''','+CONVERT(varchar,ED.IdExpedienteDocumento)+
-                ')"><i style="font-size:16px;" class="fa fa-file-text"></i></button><label style="font-size:10px;line-height:13px;padding-top:6px;">'+
-                CASE WHEN ED.Correlativo = 0 THEN CONCAT(CTD.Descripcion,' ',COALESCE(ED.NumeroDocumento,''))
-                        ELSE COALESCE(ED.NumeroDocumento,'') END+'</label>')                                     AS NumeroDocumento,
-            MAX(ED.IdExpedienteDocumento)                                                                        AS IdExpedienteDocumento
-        FROM Tramite.ExpedienteDocumentoOrigenDestino EDOD
-        INNER JOIN Tramite.ExpedienteDocumentoOrigen EDO
-                ON EDO.IdExpedienteDocumentoOrigen = EDOD.IdExpedienteDocumentoOrigen
-               AND EDO.EstadoAuditoria = 1
-        INNER JOIN Tramite.ExpedienteDocumento ED
-                ON ED.IdExpedienteDocumento = EDO.IdExpedienteDocumento
-               AND ED.EstadoAuditoria = 1
-               AND ED.FgEnEsperaFirmaDigital = 0
-        INNER JOIN Tramite.Expediente E
-                ON E.IdExpediente = ED.IdExpediente
-               AND E.EstadoAuditoria = 1
-               AND (E.ExpedienteAnulado = 0 OR E.ExpedienteAnulado IS NULL)
-        INNER JOIN Tramite.SerieDocumentalExpediente SD
-                ON SD.IdSerieDocumentalExpediente = E.IdSerieDocumentalExpediente
-        LEFT JOIN General.Area A
-                ON A.IdArea = EDO.IdAreaOrigen
-        LEFT JOIN Tramite.Catalogo CTD
-                ON CTD.IdCatalogo = ED.IdCatalogoTipoDocumento
-        WHERE EDOD.IdCatalogoSituacionMovimientoDestino = 4
-          AND EDOD.IdEmpresaDestino = @vIdEmpresaJefe
-          AND EDOD.IdAreaDestino    = @vIdAreaJefe
-          AND EDOD.EstadoAuditoria  = 1
-          AND EDOD.IdCargoDestino IN (SELECT IdCargo FROM Cargo_CTE)
-          AND (E.NumeroExpediente = @pBusquedaGeneral OR @pBusquedaGeneral IS NULL OR @pBusquedaGeneral = 0)
-        GROUP BY E.IdExpediente;
-
-        SET @vTotal = @@ROWCOUNT;
+        EXEC Tramite.paListarExpedientePendienteJefaturaPorRecibirFosCad_CargarBase
+                @pIdAreaJefe      = @vIdAreaJefe,
+                @pIdEmpresaJefe   = @vIdEmpresaJefe,
+                @pBusquedaGeneral = @pBusquedaGeneral;
     END
+
+    SET @vTotal = (SELECT COUNT(*) FROM #Expediente);
 
     SELECT
         CONVERT(varchar, @vTotal) + '¦' +
@@ -143,7 +162,7 @@ BEGIN TRY
                 '|' + CONVERT(varchar, COALESCE(E.NumeroFoliosExpediente, 0)),
                 '|' + COALESCE(REPLACE(E.ObservacionesExpediente, '|', ' '), ''),
                 '|' + CONCAT(E.NTFechaExpediente, ' ', E.HoraExpediente),
-                '|' + CONCAT(SD.AbreviaturaSerieDocumentalExpediente, RIGHT('000000' + CONVERT(varchar, E.NumeroExpediente), 6), '-', E.IdPeriodo),
+                '|' + CONCAT(SD.AbreviaturaSerieDocumentalExpediente, RIGHT('000000' + CONVERT(varchar(20), E.NumeroExpediente), 6), '-', E.IdPeriodo),
                 '|' + CASE WHEN COALESCE(E.NombreCompletoCreador, '') <> '' THEN COALESCE(E.NombreCompletoCreador, '') ELSE PE.NombreCompleto END,
                 '|' + CONVERT(varchar, E.NumeroExpediente),
                 '|' + CONVERT(varchar, COALESCE(ES.IdExpedienteSeguimiento, 0)),
@@ -151,7 +170,7 @@ BEGIN TRY
             FROM (
                 SELECT IdExpediente, FechaMovimiento, EsParaAnular, DiasPendiente,
                        NombrePersonaOrigen, NumeroDocumento, IdExpedienteDocumento
-                FROM @Expediente
+                FROM #Expediente
                 ORDER BY FechaMovimiento DESC, IdExpediente
                 OFFSET (@pNumeroPagina - 1) * @pDimensionPagina ROWS
                 FETCH NEXT @pDimensionPagina ROWS ONLY
@@ -175,7 +194,7 @@ BEGIN TRY
                     ON PE.IdPersona = E.IdPersonaCreador
             LEFT JOIN Tramite.Catalogo CTT
                     ON CTT.IdCatalogo = E.IdCatalogoTipoTramite
-            OUTER APPLY (
+            OUTER APPLY (   -- reemplaza el UDF escalar funObtenerRutaFotoPorIdPersona
                 SELECT TOP 1
                         Existe          = 1,
                         RutaArchivoFoto = COALESCE(U.RutaArchivoFoto, '')
@@ -196,7 +215,7 @@ BEGIN TRY
                 SELECT ExEnlazadoPri = ISNULL((
                     SELECT STUFF((
                         SELECT DISTINCT '<div style="margin: 2px;padding: 2px;" class="ui blue label">'+
-                               CONCAT(SD1.AbreviaturaSerieDocumentalExpediente, RIGHT('000000' + CONVERT(varchar, E1.NumeroExpediente),6), '-', E1.IdPeriodo)
+                               CONCAT(SD1.AbreviaturaSerieDocumentalExpediente, RIGHT('000000' + CONVERT(varchar(20), E1.NumeroExpediente),6), '-', E1.IdPeriodo)
                                +'</div>'
                         FROM Tramite.ExpedienteEnlazado EE
                         INNER JOIN Tramite.Expediente e1
@@ -212,7 +231,7 @@ BEGIN TRY
                 SELECT ExEnlazadoSec = ISNULL((
                     SELECT STUFF((
                         SELECT DISTINCT '<div style="margin: 2px;padding: 2px;" class="ui blue label">'+
-                               CONCAT(SD1.AbreviaturaSerieDocumentalExpediente, RIGHT('000000' + CONVERT(varchar, E1.NumeroExpediente),6), '-', E1.IdPeriodo)
+                               CONCAT(SD1.AbreviaturaSerieDocumentalExpediente, RIGHT('000000' + CONVERT(varchar(20), E1.NumeroExpediente),6), '-', E1.IdPeriodo)
                                +'</div>'
                         FROM Tramite.ExpedienteEnlazado EE
                         INNER JOIN Tramite.Expediente e1
@@ -245,42 +264,35 @@ END
 GO
 
 
--- set statistics io on
--- set statistics time on
 
-
--- exec Tramite.paListarExpedientePendienteJefaturaPorRecibirFosCad_new
---     @pConFiltroFecha=0,
---     @pFechaInicio='15/04/2026',
---     @pFechaFin='15/04/2026',
---     @pConFiltroFechaMovimiento=0,
---     @pFechaInicioMovimiento='15/04/2026',
---     @pFechaFinMovimiento='15/04/2026',
---     @pIdArea=30,
---     @pIdCatalogoSituacionMovimientoDestino=4,
---     @pTipoSituacionMovimiento=4,
---     @pIdAreaOrigen=0,
---     @pIdAreaDestino=0,
---     @pIdPeriodo=0,
---     @pIdCatalogoTipoPrioridad=0,
---     @pIdCatalogoTipoTramite=0,
---     @pIdCatalogoTipoDocumento=0,
---     @pNumeroExpediente='',
---     @pNumeroDocumento='',
---     @pPersonaDesde='',
---     @pPersonaPara='',
---     @pIdTipoIngreso=0,
---     @pFechaDocumento='',
---     @pEmisorExpediente='',
---     @pAsuntoExpediente='',
---     @pIdUsuarioAuditoria=52939,
---     @pCampoOrdenado=NULL,
---     @pTipoOrdenacion=NULL,
---     @pNumeroPagina=1,
---     @pDimensionPagina=10,
---     @pBusquedaGeneral=NULL,
---     @pFlgBusqueda=0
-
-
---     set statistics io off
---     set statistics time off
+exec Tramite.paListarExpedientePendienteJefaturaPorRecibirFosCad_new
+    @pConFiltroFecha=0,
+    @pFechaInicio='15/04/2026',
+    @pFechaFin='15/04/2026',
+    @pConFiltroFechaMovimiento=0,
+    @pFechaInicioMovimiento='15/04/2026',
+    @pFechaFinMovimiento='15/04/2026',
+    @pIdArea=30,
+    @pIdCatalogoSituacionMovimientoDestino=4,
+    @pTipoSituacionMovimiento=4,
+    @pIdAreaOrigen=0,
+    @pIdAreaDestino=0,
+    @pIdPeriodo=0,
+    @pIdCatalogoTipoPrioridad=0,
+    @pIdCatalogoTipoTramite=0,
+    @pIdCatalogoTipoDocumento=0,
+    @pNumeroExpediente='',
+    @pNumeroDocumento='',
+    @pPersonaDesde='',
+    @pPersonaPara='',
+    @pIdTipoIngreso=0,
+    @pFechaDocumento='',
+    @pEmisorExpediente='',
+    @pAsuntoExpediente='',
+    @pIdUsuarioAuditoria=52939,
+    @pCampoOrdenado=NULL,
+    @pTipoOrdenacion=NULL,
+    @pNumeroPagina=1,
+    @pDimensionPagina=10,
+    @pBusquedaGeneral=NULL,
+    @pFlgBusqueda=0

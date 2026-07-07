@@ -5,7 +5,7 @@ Declare
 @tabla varchar(200), @aux varchar(max),
 @procedures varchar(1000) =
 -- 'tramite.paListarExpedienteMesaParteDespachadosVirtualesV1'
-'tramite.paListarExpedientePendienteJefaturaPorRecibirFosCad'
+'tramite.paListarExpedientePendienteEspecialistaCreados'
 -- 'tramite.paListarExpedientePendienteEspecialistaPorRecibir'
 -- 'tramite.paListarExpedientePendienteJefaturaPorRecibirFosCad'
 -- 'tramite.paListarExpedienteMesaParteDespachadosV1'
@@ -78,16 +78,17 @@ select 'insert into '+ @tabla +' select '
 
 -- insert into dbo.paListarExpedienteMesaParteDespachadosVirtualesV1 select 56784, null, null, 1, 10, 'ENTREGA'
 
--- insert into dbo.paListarExpedientePendienteEspecialistaCreados select 0, '13/04/2026','13/04/2026',0,'13/04/2026','13/04/2026',728,727, 116, 4,0,0,2026,0,0,0,'','','','',0,'','','',728,null,null,1,10,null,0
--- insert into dbo.paListarExpedientePendienteEspecialistaCreados select 0, '23/04/2026','23/04/2026',0,'23/04/2026','23/04/2026',350,2260,116,4,0,0,2026,0,0,0,'','','','',0,'','','',350,null,null,1,10,null,0
--- insert into dbo.paListarExpedientePendienteEspecialistaCreados select 0, '23/04/2026','23/04/2026',0,'23/04/2026','23/04/2026',978,977,116,4,0,0,2026,0,0,0,'','','','',0,'','','',978,null,null,1,10,null,0
+insert into dbo.paListarExpedientePendienteEspecialistaCreados select 0, '13/04/2026','13/04/2026',0,'13/04/2026','13/04/2026',728,727, 116, 4,0,0,2026,0,0,0,'','','','',0,'','','',728,null,null,1,10,null,0
+insert into dbo.paListarExpedientePendienteEspecialistaCreados select 0, '23/04/2026','23/04/2026',0,'23/04/2026','23/04/2026',350,2260,116,4,0,0,2026,0,0,0,'','','','',0,'','','',350,null,null,1,10,null,0
+insert into dbo.paListarExpedientePendienteEspecialistaCreados select 0, '23/04/2026','23/04/2026',0,'23/04/2026','23/04/2026',978,977,116,4,0,0,2026,0,0,0,'','','','',0,'','','',978,null,null,1,10,null,0
+
 
 -- insert into dbo.paListarExpedientePendienteEspecialistaPorRecibir select 0,'13/04/2026','13/04/2026',0,'13/04/2026','13/04/2026',590,588,4,4,0,0,2026,0,0,0,'','','','',0,'','','',590,NULL,NULL,1,100,NULL,0
 --
-insert into dbo.paListarExpedientePendienteJefaturaPorRecibirFosCad select 0,'22/05/2026','22/05/2026',1,'22/05/2026','22/05/2026',79,4,4,0,0,2026,0,0,0,'','','','',0,'','','',349,NULL,NULL,1,10,NULL,0
-insert into dbo.paListarExpedientePendienteJefaturaPorRecibirFosCad select 0,'15/04/2026','15/04/2026',0,'15/04/2026','15/04/2026',30,4,0,0,0,0,0,0,0,'','','','',0,'','','',52939,null,null,1,10,null,0
-insert into dbo.paListarExpedientePendienteJefaturaPorRecibirFosCad select 0,'15/04/2026','15/04/2026',0,'15/04/2026','15/04/2026',30,4,4,0,0,0,0,0,0,'','','','',0,'','','',52939,null,null,1,10,null,0
-insert into dbo.paListarExpedientePendienteJefaturaPorRecibirFosCad select 0,'15/04/2026','15/04/2026',0,'15/04/2026','15/04/2026',30,4,4,0,0,0,0,0,0,'','','','',0,'','','',52939,NULL,NULL,1,10,NULL,0
+-- insert into dbo.paListarExpedientePendienteJefaturaPorRecibirFosCad select 0,'22/05/2026','22/05/2026',1,'22/05/2026','22/05/2026',79,4,4,0,0,2026,0,0,0,'','','','',0,'','','',349,NULL,NULL,1,10,NULL,0
+-- insert into dbo.paListarExpedientePendienteJefaturaPorRecibirFosCad select 0,'15/04/2026','15/04/2026',0,'15/04/2026','15/04/2026',30,4,0,0,0,0,0,0,0,'','','','',0,'','','',52939,null,null,1,10,null,0
+-- insert into dbo.paListarExpedientePendienteJefaturaPorRecibirFosCad select 0,'15/04/2026','15/04/2026',0,'15/04/2026','15/04/2026',30,4,4,0,0,0,0,0,0,'','','','',0,'','','',52939,null,null,1,10,null,0
+-- insert into dbo.paListarExpedientePendienteJefaturaPorRecibirFosCad select 0,'15/04/2026','15/04/2026',0,'15/04/2026','15/04/2026',30,4,4,0,0,0,0,0,0,'','','','',0,'','','',52939,NULL,NULL,1,10,NULL,0
 
 
 exec('select*from '+ @tabla)

@@ -244,34 +244,44 @@ END CATCH
 END
 GO
 
-exec Tramite.paListarExpedientePendienteJefaturaPorRecibirFosCad_new
-    @pConFiltroFecha=0,
-    @pFechaInicio='15/04/2026',
-    @pFechaFin='15/04/2026',
-    @pConFiltroFechaMovimiento=0,
-    @pFechaInicioMovimiento='15/04/2026',
-    @pFechaFinMovimiento='15/04/2026',
-    @pIdArea=30,
-    @pIdCatalogoSituacionMovimientoDestino=4,
-    @pTipoSituacionMovimiento=4,
-    @pIdAreaOrigen=0,
-    @pIdAreaDestino=0,
-    @pIdPeriodo=0,
-    @pIdCatalogoTipoPrioridad=0,
-    @pIdCatalogoTipoTramite=0,
-    @pIdCatalogoTipoDocumento=0,
-    @pNumeroExpediente='',
-    @pNumeroDocumento='',
-    @pPersonaDesde='',
-    @pPersonaPara='',
-    @pIdTipoIngreso=0,
-    @pFechaDocumento='',
-    @pEmisorExpediente='',
-    @pAsuntoExpediente='',
-    @pIdUsuarioAuditoria=52939,
-    @pCampoOrdenado=NULL,
-    @pTipoOrdenacion=NULL,
-    @pNumeroPagina=1,
-    @pDimensionPagina=10,
-    @pBusquedaGeneral=NULL,
-    @pFlgBusqueda=0
+
+
+-- set statistics io on
+-- set statistics time on
+
+
+-- exec Tramite.paListarExpedientePendienteJefaturaPorRecibirFosCad_new
+--     @pConFiltroFecha=0,
+--     @pFechaInicio='15/04/2026',
+--     @pFechaFin='15/04/2026',
+--     @pConFiltroFechaMovimiento=0,
+--     @pFechaInicioMovimiento='15/04/2026',
+--     @pFechaFinMovimiento='15/04/2026',
+--     @pIdArea=30,
+--     @pIdCatalogoSituacionMovimientoDestino=4,
+--     @pTipoSituacionMovimiento=4,
+--     @pIdAreaOrigen=0,
+--     @pIdAreaDestino=0,
+--     @pIdPeriodo=0,
+--     @pIdCatalogoTipoPrioridad=0,
+--     @pIdCatalogoTipoTramite=0,
+--     @pIdCatalogoTipoDocumento=0,
+--     @pNumeroExpediente='',
+--     @pNumeroDocumento='',
+--     @pPersonaDesde='',
+--     @pPersonaPara='',
+--     @pIdTipoIngreso=0,
+--     @pFechaDocumento='',
+--     @pEmisorExpediente='',
+--     @pAsuntoExpediente='',
+--     @pIdUsuarioAuditoria=52939,
+--     @pCampoOrdenado=NULL,
+--     @pTipoOrdenacion=NULL,
+--     @pNumeroPagina=1,
+--     @pDimensionPagina=10,
+--     @pBusquedaGeneral=NULL,
+--     @pFlgBusqueda=0
+
+
+--     set statistics io off
+--     set statistics time off
