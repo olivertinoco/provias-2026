@@ -1,3 +1,6 @@
+-- =========================
+-- ME QUEDO CON EL 6.2 FINAL
+-- =========================
 CREATE OR ALTER PROCEDURE Tramite.paListarExpedientePendienteEspecialistaCreados_new
     @pConFiltroFecha bit,
     @pFechaInicio varchar(10),

@@ -236,3 +236,71 @@ AS RETURN
     ) u
 );
 GO
+
+
+CREATE OR ALTER FUNCTION Tramite.tvfDiasPendienteEspecialista
+(
+    @pIdExpediente INT,
+    @pIdPersona    INT,
+    @pIdEmpresa    INT,
+    @pIdArea       INT,
+    @pIdCargo      INT,
+    @pSit          INT
+)
+RETURNS TABLE
+AS RETURN
+(
+    SELECT DiasPendiente = COALESCE(
+    (
+        SELECT TOP (1)
+            CASE
+                -- Rama situacion 4 (POR RECIBIR): dias desde FechaOrigen si aun no recepciona
+                WHEN @pSit = 4 THEN
+                    CASE WHEN COALESCE(EDOD.FechaDestinoRecepciona,'') = ''
+                         THEN CASE WHEN DATEDIFF(DAY, CONVERT(DATE, EDO.FechaOrigen), GETDATE()) < 0
+                                   THEN 0
+                                   ELSE DATEDIFF(DAY, CONVERT(DATE, EDO.FechaOrigen), GETDATE()) END
+                         ELSE 0 END
+                -- Rama situacion 5 (PENDIENTES): dias desde que recepciono
+                WHEN @pSit = 5 THEN
+                    CASE WHEN COALESCE(EDOD.FechaDestinoRecepciona,'') <> ''
+                         THEN DATEDIFF(DAY, CONVERT(DATE, EDOD.FechaDestinoRecepciona), GETDATE())
+                         ELSE 0 END
+                ELSE 0
+            END
+        FROM Tramite.ExpedienteDocumento ED WITH (NOLOCK)
+        INNER JOIN Tramite.ExpedienteDocumentoOrigen EDO WITH (NOLOCK)
+            ON ED.IdExpedienteDocumento = EDO.IdExpedienteDocumento AND ED.EstadoAuditoria = 1
+        INNER JOIN Tramite.ExpedienteDocumentoOrigenDestino EDOD WITH (NOLOCK)
+            ON EDO.IdExpedienteDocumentoOrigen = EDOD.IdExpedienteDocumentoOrigen
+           AND EDO.EstadoAuditoria = 1 AND EDOD.EstadoAuditoria = 1
+        WHERE @pSit IN (4,5)
+          AND ED.IdExpediente = @pIdExpediente
+          AND EDOD.IdAreaDestino    = @pIdArea
+          AND EDOD.IdCargoDestino   = @pIdCargo
+          AND EDOD.IdEmpresaDestino = @pIdEmpresa
+          AND EDOD.IdPersonaDestino = @pIdPersona
+          AND EDOD.IdCatalogoSituacionMovimientoDestino = @pSit
+    ), 0)
+);
+GO
+
+/*==========================================================================================
+  [A.2] TVF FALTANTE  -> reemplaza  Tramite.funEsPrincipalEnlace
+==========================================================================================*/
+CREATE OR ALTER FUNCTION Tramite.tvfEsPrincipalEnlace
+(
+    @pIdExpediente INT
+)
+RETURNS TABLE
+AS RETURN
+(
+    SELECT EsPrincipalEnlace =
+        CASE WHEN EXISTS
+        (
+            SELECT 1
+            FROM Tramite.ExpedienteEnlazado EE WITH (NOLOCK)
+            WHERE EE.IdExpediente = @pIdExpediente AND EE.EstadoAuditoria = 1
+        ) THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT) END
+);
+GO

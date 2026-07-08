@@ -1,4 +1,4 @@
-ALTER PROCEDURE [Tramite].[paListarExpedientePendienteEspecialistaReenviados]
+ALTER PROCEDURE Tramite.paListarExpedientePendienteEspecialistaReenviados
 	@pConFiltroFecha bit,
 	@pFechaInicio varchar(10),
 	@pFechaFin varchar(10),
@@ -31,7 +31,8 @@ ALTER PROCEDURE [Tramite].[paListarExpedientePendienteEspecialistaReenviados]
 	@pBusquedaGeneral varchar(100),
 	@pFlgBusqueda INT
 AS
-	BEGIN TRY
+BEGIN
+BEGIN TRY
 
 		DECLARE @vIdCargo int=0
 		DECLARE @vIdArea int=0
@@ -64,18 +65,16 @@ AS
 		where EP.IdEmpleadoPerfil=@pIdEmpleadoPerfil
 		    AND EP.EstadoAuditoria=1
 			AND EP.Activo=1
+
 		SET LANGUAGE 'SPANISH'
-	--	DECLARE @vTablaExpediente TABLE(IdExpediente int)
 		DECLARE @vTablaExpediente TABLE(IdExpediente int, FechaMovimiento DATETIME )
 
 		IF ISNUMERIC(@pBusquedaGeneral)=1 OR @pBusquedaGeneral IS NULL OR @pBusquedaGeneral=''
 		BEGIN
-		--print 'entr'
 			INSERT INTO @vTablaExpediente
-		SELECT EDOD.IdExpediente,MAX(CONVERT(DATETIME,edod.FechaDestinoEnvia +' ' + edod.HoraDestinoEnvia)) FechaMovimiento FROM
-			Tramite.visExpedienteCompleto EDOD
-			WHERE
-			EDOD.IdPersonaDestino=@pIdPersona
+			SELECT EDOD.IdExpediente,MAX(CONVERT(DATETIME,edod.FechaDestinoEnvia +' ' + edod.HoraDestinoEnvia)) FechaMovimiento
+			FROM Tramite.visExpedienteCompleto EDOD
+			WHERE EDOD.IdPersonaDestino=@pIdPersona
 			AND EDOD.IdAreaDestino=@vIdArea
 			AND EDOD.IdCargoDestino=@vIdCargo
 			AND EDOD.IdEmpresaDestino=@vIdEmpresa
@@ -85,7 +84,6 @@ AS
 			AND year(convert(datetime,EDOD.FechaDestinoEnvia)) = @pIdPeriodo
 			GROUP BY IdExpediente
 
-			--PRINT (SELECT COUNT(*) FROM @vTablaExpediente)
 		END
 		INSERT INTO @MITABLA
 		SELECT
@@ -107,10 +105,8 @@ AS
 			CASE WHEN COALESCE(E.NombreCompletoCreador,'')<>'' THEN COALESCE(E.NombreCompletoCreador,'') ELSE PE.NombreCompleto END NombreCompletoCreador,
 			E.NumeroExpediente,
 			COALESCE(ES.IdExpedienteSeguimiento,0)IdExpedienteSeguimiento,
-			--Tramite.funObtenerFechaMovimientoEnExpedienteEspecialista(E.IdExpediente,@vIdArea,@vIdCargo,@pIdPersona,@pIdCatalogoSituacionMovimientoDestino) FechaMovimiento
 			E1.FechaMovimiento
-			FROM
-			Tramite.Expediente E WITH (NOLOCK)
+			FROM Tramite.Expediente E WITH (NOLOCK)
 			INNER JOIN @vTablaExpediente E1 ON E1.IdExpediente=E.IdExpediente
 			INNER JOIN Seguridad.Usuario US ON US.IdUsuario=E.IdUsuarioCreacionAuditoria AND E.EstadoAuditoria=1  AND COALESCE(E.ExpedienteAnulado,0)=0
 			INNER JOIN Tramite.SerieDocumentalExpediente SD WITH (NOLOCK) ON SD.IdSerieDocumentalExpediente=E.IdSerieDocumentalExpediente
@@ -118,7 +114,7 @@ AS
 			LEFT  JOIN Tramite.ExpedienteSeguimiento ES WITH (NOLOCK) ON ES.IdExpediente= E.IdExpediente AND ES.EstadoAuditoria=1 AND ES.IdEmpresa=@vIdEmpresa AND ES.IdCargo=@vIdCargo AND ES.IdPersona=@pIdPersona AND ES.IdArea=@vIdArea
 			LEFT JOIN General.Persona PE ON PE.IdPersona=E.IdPersonaCreador
 			LEFT JOIN Tramite.Catalogo CTT ON CTT.IdCatalogo=E.IdCatalogoTipoTramite
-			WHERE E.EstadoAuditoria=1 --AND E.IdExpediente IN (SELECT * from @vTablaExpediente)
+			WHERE E.EstadoAuditoria=1
 			ORDER BY FechaMovimiento	DESC
 			OFFSET (@pNumeroPagina-1)*@pDimensionPagina ROWS
 			FETCH NEXT @pDimensionPagina ROWS ONLY
@@ -149,7 +145,10 @@ AS
 			WHERE E.EstadoAuditoria=1
 	END TRY
 	BEGIN CATCH
-			DECLARE @ERROR_NUMBER INT, @ERROR_SEVERITY INT,@ERROR_STATE INT,@ERROR_LINE INT,@ERROR_PROCEDURE VARCHAR(MAX)	,@ERROR_MESSAGE VARCHAR(MAX)
-			SELECT @ERROR_NUMBER=ERROR_NUMBER() , @ERROR_SEVERITY=ERROR_SEVERITY() , @ERROR_STATE=ERROR_STATE() , @ERROR_PROCEDURE='Tramite.paListarExpedientePendienteEspecialistaReenviados',@ERROR_LINE=ERROR_LINE(),@ERROR_MESSAGE=ERROR_MESSAGE()
-			EXEC Seguridad.paGuardarErroresEnTablaLog @ERROR_NUMBER , @ERROR_SEVERITY , @ERROR_STATE ,  @ERROR_PROCEDURE,@ERROR_LINE,@ERROR_MESSAGE, @pIdUsuarioAuditoria
+		DECLARE @ERROR_NUMBER INT, @ERROR_SEVERITY INT,@ERROR_STATE INT,@ERROR_LINE INT,@ERROR_PROCEDURE VARCHAR(MAX)	,@ERROR_MESSAGE VARCHAR(MAX)
+		SELECT @ERROR_NUMBER=ERROR_NUMBER() , @ERROR_SEVERITY=ERROR_SEVERITY() , @ERROR_STATE=ERROR_STATE(),
+		@ERROR_PROCEDURE='Tramite.paListarExpedientePendienteEspecialistaReenviados',@ERROR_LINE=ERROR_LINE(),@ERROR_MESSAGE=ERROR_MESSAGE()
+		EXEC Seguridad.paGuardarErroresEnTablaLog @ERROR_NUMBER , @ERROR_SEVERITY , @ERROR_STATE ,  @ERROR_PROCEDURE,@ERROR_LINE,@ERROR_MESSAGE, @pIdUsuarioAuditoria
 	 END CATCH
+END
+GO

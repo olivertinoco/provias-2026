@@ -1,4 +1,7 @@
-ALTER PROCEDURE Tramite.paListarExpedientePendienteEspecialistaV7
+-- =========================
+-- ME QUEDO CON EL 8.6 FINAL
+-- =========================
+CREATE OR ALTER PROCEDURE Tramite.paListarExpedientePendienteEspecialistaV7_new
 	@pConFiltroFecha bit,
 	@pFechaInicio varchar(10),
 	@pFechaFin varchar(10),
@@ -32,6 +35,9 @@ ALTER PROCEDURE Tramite.paListarExpedientePendienteEspecialistaV7
 	@pFlgBusqueda INT
 AS
 BEGIN
+	SET NOCOUNT ON;                                        -- [MOD 1]
+	SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;      -- [MOD 3]
+
 	BEGIN TRY
 
 		DECLARE @vIdCargo int=0, @vIdArea int=0, @vIdEmpresa int=0,
@@ -40,8 +46,8 @@ BEGIN
 		SELECT @vIdCargo=EP.IdCargo,
 			@vIdArea=EP.IdArea,
 			@vIdEmpresa=ES.IdEmpresa
-		FROM RecursoHumano.EmpleadoPerfil EP With(NoLock)
-			INNER JOIN General.EmpresaSede ES With(NoLock) ON ES.IdEmpresaSede=EP.IdEmpresaSede
+		FROM RecursoHumano.EmpleadoPerfil EP
+			INNER JOIN General.EmpresaSede ES  ON ES.IdEmpresaSede=EP.IdEmpresaSede
 		where EP.IdEmpleadoPerfil=@pIdEmpleadoPerfil AND EP.EstadoAuditoria=1 AND EP.Activo=1
 
 		SET LANGUAGE 'SPANISH'
@@ -61,10 +67,10 @@ BEGIN
 						SELECT E.IdExpediente,
 							MAX(CONVERT(DATETIME,edod.FechaDestinoEnvia +' ' + edod.HoraDestinoEnvia)) FechaMovimiento
 						FROM
-							Tramite.Expediente E WITH (NOLOCK)
-							INNER JOIN Tramite.ExpedienteDocumento ED WITH (NOLOCK) ON  E.IdExpediente=ED.IdExpediente AND ED.EstadoAuditoria=E.EstadoAuditoria
-							INNER JOIN Tramite.ExpedienteDocumentoOrigen EDO WITH (NOLOCK) ON EDO.IdExpedienteDocumento=ED.IdExpedienteDocumento AND EDO.EstadoAuditoria=E.EstadoAuditoria
-							INNER JOIN Tramite.ExpedienteDocumentoOrigenDestino EDOD WITH (NOLOCK) ON EDOD.IdExpedienteDocumentoOrigen=EDO.IdExpedienteDocumentoOrigen AND EDOD.EstadoAuditoria=E.EstadoAuditoria
+							Tramite.Expediente E
+							INNER JOIN Tramite.ExpedienteDocumento ED  ON  E.IdExpediente=ED.IdExpediente AND ED.EstadoAuditoria=E.EstadoAuditoria
+							INNER JOIN Tramite.ExpedienteDocumentoOrigen EDO  ON EDO.IdExpedienteDocumento=ED.IdExpedienteDocumento AND EDO.EstadoAuditoria=E.EstadoAuditoria
+							INNER JOIN Tramite.ExpedienteDocumentoOrigenDestino EDOD  ON EDOD.IdExpedienteDocumentoOrigen=EDO.IdExpedienteDocumentoOrigen AND EDOD.EstadoAuditoria=E.EstadoAuditoria
 						WHERE
 							E.EstadoAuditoria = 1
 							AND E.ExpedienteAnulado=0
@@ -93,10 +99,10 @@ BEGIN
 						SELECT E.IdExpediente,
 							MAX(CONVERT(DATETIME,edod.FechaDestinoEnvia +' ' + edod.HoraDestinoEnvia)) FechaMovimiento
 						FROM
-							Tramite.Expediente E WITH (NOLOCK)
-							INNER JOIN Tramite.ExpedienteDocumento ED WITH (NOLOCK) ON  E.IdExpediente=ED.IdExpediente AND ED.EstadoAuditoria=E.EstadoAuditoria
-							INNER JOIN Tramite.ExpedienteDocumentoOrigen EDO WITH (NOLOCK) ON EDO.IdExpedienteDocumento=ED.IdExpedienteDocumento AND EDO.EstadoAuditoria=E.EstadoAuditoria
-							INNER JOIN Tramite.ExpedienteDocumentoOrigenDestino EDOD WITH (NOLOCK) ON EDOD.IdExpedienteDocumentoOrigen=EDO.IdExpedienteDocumentoOrigen AND EDOD.EstadoAuditoria=E.EstadoAuditoria
+							Tramite.Expediente E
+							INNER JOIN Tramite.ExpedienteDocumento ED  ON  E.IdExpediente=ED.IdExpediente AND ED.EstadoAuditoria=E.EstadoAuditoria
+							INNER JOIN Tramite.ExpedienteDocumentoOrigen EDO  ON EDO.IdExpedienteDocumento=ED.IdExpedienteDocumento AND EDO.EstadoAuditoria=E.EstadoAuditoria
+							INNER JOIN Tramite.ExpedienteDocumentoOrigenDestino EDOD  ON EDOD.IdExpedienteDocumentoOrigen=EDO.IdExpedienteDocumentoOrigen AND EDOD.EstadoAuditoria=E.EstadoAuditoria
 						WHERE
 							E.EstadoAuditoria = 1
 							AND E.ExpedienteAnulado=0
@@ -123,7 +129,6 @@ BEGIN
 			FROM General.fnObtenerPaginacion(@pDimensionPagina, @pNumeroPagina, @iRegistroTotal) c
 		End
 		--
-		--Select @pIdPersona,@vIdEmpresa,@vIdArea,@vIdCargo
 		SELECT
 			Tramite.funParaAnularEspecialista(E.IdExpediente,@pIdPersona,@vIdEmpresa,@vIdArea,@vIdCargo) EsParaAnular,
 			Tramite.funObtenerDiasPendienteEspecislista(E.IdExpediente,@pIdPersona, @vIdEmpresa,@vIdArea,@vIdCargo,@pIdCatalogoSituacionMovimientoDestino) DiasPendiente,
@@ -153,16 +158,16 @@ BEGIN
 			COALESCE(ES.IdExpedienteSeguimiento,0)IdExpedienteSeguimiento,
 			EX.FechaMovimiento
 		FROM
-			Tramite.Expediente E WITH (NOLOCK)
+			Tramite.Expediente E
 			INNER JOIN #vTablaExpediente EX ON EX.IDEXPEDIENTE=E.IDEXPEDIENTE
-			INNER JOIN Seguridad.Usuario US ON US.IdUsuario=E.IdUsuarioCreacionAuditoria
-			INNER JOIN Tramite.Catalogo CTP ON CTP.IdCatalogo=E.IdCatalogoTipoPrioridad
-			INNER JOIN Tramite.Catalogo CTT ON CTT.IdCatalogo=E.IdCatalogoTipoTramite
-			LEFT JOIN General.Persona PE ON PE.IdPersona=E.IdPersonaCreador
-			LEFT  JOIN Tramite.ExpedienteSeguimiento ES WITH (NOLOCK) ON ES.IdExpediente= E.IdExpediente AND ES.EstadoAuditoria=1 AND ES.IdEmpresa=@vIdEmpresa AND ES.IdCargo=@vIdCargo AND ES.IdPersona=@pIdPersona AND ES.IdArea=@vIdArea
+			INNER JOIN Seguridad.Usuario US  ON US.IdUsuario=E.IdUsuarioCreacionAuditoria           -- [MOD] NOLOCK
+			INNER JOIN Tramite.Catalogo CTP  ON CTP.IdCatalogo=E.IdCatalogoTipoPrioridad            -- [MOD] NOLOCK
+			INNER JOIN Tramite.Catalogo CTT  ON CTT.IdCatalogo=E.IdCatalogoTipoTramite              -- [MOD] NOLOCK
+			LEFT JOIN General.Persona PE  ON PE.IdPersona=E.IdPersonaCreador                        -- [MOD] NOLOCK
+			LEFT  JOIN Tramite.ExpedienteSeguimiento ES  ON ES.IdExpediente= E.IdExpediente AND ES.EstadoAuditoria=1 AND ES.IdEmpresa=@vIdEmpresa AND ES.IdCargo=@vIdCargo AND ES.IdPersona=@pIdPersona AND ES.IdArea=@vIdArea
 			OUTER APPLY(
 			    SELECT TOP 1 FU.RutaArchivoFoto
-                FROM Seguridad.Usuario FU
+                FROM Seguridad.Usuario FU                                                           -- [MOD] NOLOCK
                 WHERE FU.IdPersona = PE.IdPersona And FU.EstadoAuditoria=1 AND FU.Bloqueado=0
                 ORDER BY FU.RutaArchivoFoto DESC
             ) SFU
@@ -173,13 +178,30 @@ BEGIN
 		SELECT @iRegistroTotal
 
 
-	END TRY
-	BEGIN CATCH
-			DECLARE @ERROR_NUMBER INT, @ERROR_SEVERITY INT,@ERROR_STATE INT,@ERROR_LINE INT,@ERROR_PROCEDURE VARCHAR(MAX)	,@ERROR_MESSAGE VARCHAR(MAX)
-			SELECT @ERROR_NUMBER=ERROR_NUMBER() , @ERROR_SEVERITY=ERROR_SEVERITY() , @ERROR_STATE=ERROR_STATE() ,
-			@ERROR_PROCEDURE='Tramite.paListarExpedientePendienteEspecialistaV7',@ERROR_LINE=ERROR_LINE(),@ERROR_MESSAGE=ERROR_MESSAGE()
-			EXEC Seguridad.paGuardarErroresEnTablaLog @ERROR_NUMBER , @ERROR_SEVERITY , @ERROR_STATE ,  @ERROR_PROCEDURE,@ERROR_LINE,@ERROR_MESSAGE, @pIdUsuarioAuditoria
-
-	 END CATCH
+END TRY
+BEGIN CATCH
+	DECLARE @ERROR_NUMBER INT, @ERROR_SEVERITY INT,@ERROR_STATE INT,@ERROR_LINE INT,@ERROR_PROCEDURE VARCHAR(MAX)	,@ERROR_MESSAGE VARCHAR(MAX)
+	SELECT @ERROR_NUMBER=ERROR_NUMBER() , @ERROR_SEVERITY=ERROR_SEVERITY() , @ERROR_STATE=ERROR_STATE() ,
+	@ERROR_PROCEDURE='Tramite.paListarExpedientePendienteEspecialistaV7_new',@ERROR_LINE=ERROR_LINE(),@ERROR_MESSAGE=ERROR_MESSAGE()
+	EXEC Seguridad.paGuardarErroresEnTablaLog @ERROR_NUMBER , @ERROR_SEVERITY , @ERROR_STATE ,  @ERROR_PROCEDURE,@ERROR_LINE,@ERROR_MESSAGE, @pIdUsuarioAuditoria
+END CATCH
 END
 GO
+
+
+-- set statistics io on
+-- set statistics time on
+
+-- exec tramite.paListarExpedientePendienteEspecialistaV7
+-- 0,'10/03/2026','10/03/2026',0,'10/03/2026','10/03/2026',1309,3158,3,4,0,0,2026,0,0,0,'','','','',0,'','','',26766,NULL,NULL,2,100,NULL,0
+
+
+
+-- set statistics io off
+-- set statistics time off
+
+
+
+
+-- exec tramite.paListarExpedientePendienteEspecialistaV7_new
+-- 0,'10/03/2026','10/03/2026',0,'10/03/2026','10/03/2026',1309,3158,3,4,0,0,2026,0,0,0,'','','','',0,'','','',26766,NULL,NULL,2,100,NULL,0
