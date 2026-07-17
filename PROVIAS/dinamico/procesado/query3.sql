@@ -1,30 +1,39 @@
-create PROCEDURE [Tramite].[paListarMisDocumentosGeneradosEspecialistaV1_arq]
-@pIdPersona int,
-@pIdCatalogoTipoDocumento int,
-@pIdPeriodo int,
-@pAsuntoDocumento varchar(500),
-@pNumeroDocumento varchar(200),
-@pFechaDocumento varchar(30),
-@pIdUsuarioAuditoria int,
-@pCampoOrdenado varchar(50),
-@pTipoOrdenacion varchar(4),
-@pNumeroPagina INT,
-@pDimensionPagina  INT,
-@pBusquedaGeneral varchar(100)
+create OR ALTER PROCEDURE Tramite.paListarMisDocumentosGeneradosEspecialistaV1_arq
+    @pIdPersona int,
+    @pIdCatalogoTipoDocumento int,
+    @pIdPeriodo int,
+    @pAsuntoDocumento varchar(500),
+    @pNumeroDocumento varchar(200),
+    @pFechaDocumento varchar(30),
+    @pIdUsuarioAuditoria int,
+    @pCampoOrdenado varchar(50),
+    @pTipoOrdenacion varchar(4),
+    @pNumeroPagina INT,
+    @pDimensionPagina  INT,
+    @pBusquedaGeneral varchar(100)
 AS
 BEGIN TRY
-set language 'spanish'
-        DECLARE @Consulta Nvarchar(max)=''
-        DECLARE @ConsultaTotal Nvarchar(max)=''
-        DECLARE @Filtros varchar(max)=''
-        DECLARE @Offset NVARCHAR(MAX)='';
-        DECLARE @Fetch NVARCHAR(MAX)='';
-        DECLARE @Orden NVARCHAR(MAX)='';
-        DECLARE @Parametros NVARCHAR(MAX)='';
-        DECLARE @pTotalRegistros  INT;
-        DECLARE @vFiltroDocumento NVARCHAR(MAX)='';
+set tran isolation level read uncommitted
+set language spanish
+set nocount on
 
-	  declare @vFechaInicial varchaR(10)
+if @pIdPeriodo = year(getdate())begin
+    RAISERROR('El periodo no debe ser el actual o vacio', 10, 1) with nowait;
+    return;
+end;
+
+    Declare @vIdPeriodo char(4) = convert(varchar, @pIdPeriodo)
+
+    DECLARE @Consulta Nvarchar(max)=''
+    DECLARE @ConsultaTotal Nvarchar(max)=''
+    DECLARE @Filtros varchar(max)=''
+    DECLARE @Offset NVARCHAR(MAX)='';
+    DECLARE @Fetch NVARCHAR(MAX)='';
+    DECLARE @Orden NVARCHAR(MAX)='';
+    DECLARE @pTotalRegistros  INT;
+    DECLARE @vFiltroDocumento NVARCHAR(MAX)='';
+
+	declare @vFechaInicial varchaR(10)
 	declare @vFechaFinal varchaR(10)
 
 	IF COALESCE(@pFechaDocumento,'')<>''
@@ -34,9 +43,8 @@ set language 'spanish'
 	end
 
 
-	IF COALESCE(@pIdPeriodo,0)<>0 BEGIN
-	    SET  @vFiltroDocumento=' AND X.IdPeriodo ='+CONVERT(VARCHAR,@pIdPeriodo)
-	END
+	SET  @vFiltroDocumento= concat(' AND X.IdPeriodo =',@vIdPeriodo)
+
 	IF COALESCE(@pIdCatalogoTipoDocumento,0)<>0 BEGIN
 	    SET @vFiltroDocumento =@vFiltroDocumento+ ' AND X.IdCatalogoTipoDocumento ='+CONVERT(VARCHAR,@pIdCatalogoTipoDocumento)
 	END
@@ -59,39 +67,18 @@ set language 'spanish'
         '%'' or X.NumeroDocumento LIKE ''%'+@pBusquedaGeneral +'%'' or X.ObservacionesDocumento LIKE ''%'+@pBusquedaGeneral +
         '%'' or X.NFechaDocumento LIKE ''%'+@pBusquedaGeneral +'%'')'
 
-	 -- PRINT @pBusquedaGeneral
-	 -- PRINT @Filtros
         SET @ConsultaTotal = N'
-        SELECT @vpTotalRegistros = count(*)
-        FROM(
-        SELECT DISTINCT
-    		COALESCE(EM.NombreEmpresa,''EXTERNO'')NombreEmpresa,
-    		COALESCE(A.NombreArea,'''')NombreArea,
-    		COALESCE(C.NombreCargo,'''')NombreCargo,
-    		E.IdPeriodo,
-    		E.IdExpediente ,
-    		CONCAT(SD.AbreviaturaSerieDocumentalExpediente +RIGHT(''000000''+CONVERT(VARCHAR,E.NumeroExpediente),6), ''-'', E.IdPeriodo) NombreExpediente,
-    		E.ExpedienteAnulado,
-    		COALESCE(ED.NumeroDocumento,'''') NumeroDocumento,
-    		ED.NFechaDocumento,
-    		UPPER(COALESCE(ED.AsuntoDocumento,'''')) AsuntoDocumento,
-    		COALESCE(ED.RutaArchivoDocumento,'''') RutaArchivoDocumento,
-    		COALESCE(ED.ObservacionesDocumento,'''') ObservacionesDocumento,
-    		''''Destinatario,
-    		ED.IdExpedienteDocumento,
-    		CTD.Descripcion CatalogoTipoDocumento,
-    		COALESCE(ED.Correlativo,'''')Correlativo,
-    		ED.IdCatalogoTipoDocumento,
-    		COALESCE(ES.IdExpedienteSeguimiento,0) IdExpedienteSeguimiento
-		FROM Tramite.Expediente_Historico_' + cast(@pIdPeriodo as varchar) + N' E
+        SELECT @vpTotalRegistros = count(1) FROM(SELECT DISTINCT
+    		ED.IdExpedienteDocumento, COALESCE(ES.IdExpedienteSeguimiento,0) IdExpedienteSeguimiento
+		FROM Tramite.Expediente_Historico_' + @vIdPeriodo + N' E
 		INNER JOIN Tramite.SerieDocumentalExpediente SD
 		    ON SD.IdSerieDocumentalExpediente=E.IdSerieDocumentalExpediente
-		INNER JOIN Tramite.ExpedienteDocumento_Historico_' + cast(@pIdPeriodo as varchar) + N' ED
+		INNER JOIN Tramite.ExpedienteDocumento_Historico_' + @vIdPeriodo + N' ED
 		    ON ED.IdExpediente=E.IdExpediente
-		INNER JOIN Tramite.ExpedienteDocumentoOrigen_Historico_' + cast(@pIdPeriodo as varchar) + N' EDO
+		INNER JOIN Tramite.ExpedienteDocumentoOrigen_Historico_' + @vIdPeriodo + N' EDO
 		    ON EDO.IdExpedienteDocumento=ED.IdExpedienteDocumento
 			AND ED.EstadoAuditoria=1
-		INNER JOIN Tramite.ExpedienteDocumentoOrigenDestino_Historico_' + cast(@pIdPeriodo as varchar) + N' EDOD
+		INNER JOIN Tramite.ExpedienteDocumentoOrigenDestino_Historico_' + @vIdPeriodo + N' EDOD
 		    ON EDOD.IdExpedienteDocumentoOrigen=EDO.IdExpedienteDocumentoOrigen
 			AND EDO.EstadoAuditoria=1
 			AND edod.EsInicial<>0
@@ -101,22 +88,14 @@ set language 'spanish'
 		    ON ES.IdExpediente= E.IdExpediente
 			AND ES.EstadoAuditoria=1
 			AND ES.IdEmpresa=2
-			AND ES.IdPersona='+CONVERT(VARCHAR,@pIdPersona)+'
-		LEFT JOIN General.Cargo C
-		    ON C.IdCargo=ED.IdCargoEmisor
-		LEFT JOIN General.Area A
-		    ON A.IdArea=ED.IdAreaEmisor
-		LEFT JOIN General.Empresa EM
-		    ON EM.IdEmpresa=ED.IdEmpresaEmisor
+			AND ES.IdPersona=@pIdPersona
 		WHERE EDOD.EstadoAuditoria=1
-		    AND ED.IdPersonaEmisor='+CONVERT(VARCHAR,@pIdPersona)+
-		')X WHERE 1=1 '+
+		    AND ED.IdPersonaEmisor=@pIdPersona
+		)X WHERE 1=1 '+
 		@vFiltroDocumento + @Filtros
 
-        SET @Parametros = N'@vpTotalRegistros int OUTPUT';
-
-        EXECUTE sp_executesql @ConsultaTotal,
-            @Parametros,
+        EXECUTE sp_executesql @ConsultaTotal, N'@pIdPersona int, @vpTotalRegistros int OUTPUT',
+            @pIdPersona = @pIdPersona,
             @vpTotalRegistros = @pTotalRegistros OUTPUT
 
         SET @Consulta= N'
@@ -127,7 +106,7 @@ set language 'spanish'
     		COALESCE(C.NombreCargo,'''')NombreCargo,
     		E.IdPeriodo,
     		E.IdExpediente ,
-    		CONCAT(SD.AbreviaturaSerieDocumentalExpediente +RIGHT(''000000''+CONVERT(VARCHAR,E.NumeroExpediente),6), ''-'', E.IdPeriodo) NombreExpediente,
+    		CONCAT(SD.AbreviaturaSerieDocumentalExpediente, RIGHT(1000000+E.NumeroExpediente,6), ''-'', E.IdPeriodo) NombreExpediente,
     		E.ExpedienteAnulado,
     		COALESCE(ED.NumeroDocumento,'''') NumeroDocumento,
     		ED.NFechaDocumento,
@@ -140,15 +119,15 @@ set language 'spanish'
     		COALESCE(ED.Correlativo,'''')Correlativo,
     		ED.IdCatalogoTipoDocumento,
     		COALESCE(ES.IdExpedienteSeguimiento,0) IdExpedienteSeguimiento
-		FROM Tramite.Expediente_Historico_' + cast(@pIdPeriodo as varchar) + N' E
+		FROM Tramite.Expediente_Historico_' + @vIdPeriodo + N' E
 		INNER JOIN Tramite.SerieDocumentalExpediente SD
 		    ON SD.IdSerieDocumentalExpediente=E.IdSerieDocumentalExpediente
-		INNER JOIN Tramite.ExpedienteDocumento_Historico_' + cast(@pIdPeriodo as varchar) + N' ED
+		INNER JOIN Tramite.ExpedienteDocumento_Historico_' + @vIdPeriodo + N' ED
 		    ON ED.IdExpediente=E.IdExpediente
-		INNER JOIN Tramite.ExpedienteDocumentoOrigen_Historico_' + cast(@pIdPeriodo as varchar) + N' EDO
+		INNER JOIN Tramite.ExpedienteDocumentoOrigen_Historico_' + @vIdPeriodo + N' EDO
 		    ON EDO.IdExpedienteDocumento=ED.IdExpedienteDocumento
 			AND ED.EstadoAuditoria=1
-		INNER JOIN Tramite.ExpedienteDocumentoOrigenDestino_Historico_' + cast(@pIdPeriodo as varchar) + N' EDOD
+		INNER JOIN Tramite.ExpedienteDocumentoOrigenDestino_Historico_' + @vIdPeriodo + N' EDOD
 		    ON EDOD.IdExpedienteDocumentoOrigen=EDO.IdExpedienteDocumentoOrigen
 			AND EDO.EstadoAuditoria=1
 			AND edod.EsInicial<>0
@@ -158,26 +137,29 @@ set language 'spanish'
 		    ON ES.IdExpediente= E.IdExpediente
 			AND ES.EstadoAuditoria=1
 			AND ES.IdEmpresa=2
-			AND ES.IdPersona='+ CONVERT(VARCHAR,@pIdPersona) +N'
+			AND ES.IdPersona=@pIdPersona
 		LEFT JOIN General.Cargo C
 		    ON C.IdCargo=ED.IdCargoEmisor
 		LEFT JOIN General.Area A
 		    ON A.IdArea=ED.IdAreaEmisor
 		LEFT JOIN General.Empresa EM
 		    ON EM.IdEmpresa=ED.IdEmpresaEmisor
-		WHERE EDOD.EstadoAuditoria=1 AND ED.IdPersonaEmisor='+CONVERT(VARCHAR,@pIdPersona)+
-		')X WHERE 1=1 '+@vFiltroDocumento
+		WHERE EDOD.EstadoAuditoria=1 AND ED.IdPersonaEmisor=@pIdPersona
+		)X WHERE 1=1 '+@vFiltroDocumento
         +@Filtros
         +@Orden
         +@Offset
         +@Fetch
-        print @Consulta
-        EXECUTE sp_executesql @Consulta
+
+        EXECUTE sp_executesql @Consulta, N'@pIdPersona int', @pIdPersona
+
         select @pTotalRegistros
 
 END TRY
 BEGIN CATCH
-            DECLARE @ERROR_NUMBER INT, @ERROR_SEVERITY INT,@ERROR_STATE INT,@ERROR_LINE INT,@ERROR_PROCEDURE VARCHAR(MAX) ,@ERROR_MESSAGE VARCHAR(MAX)
-            SELECT @ERROR_NUMBER=ERROR_NUMBER() , @ERROR_SEVERITY=ERROR_SEVERITY() , @ERROR_STATE=ERROR_STATE() , @ERROR_PROCEDURE='Tramite.paListarMisDocumentosGeneradosEspecialista',@ERROR_LINE=ERROR_LINE(),@ERROR_MESSAGE=ERROR_MESSAGE()
-            EXEC Seguridad.paGuardarErroresEnLog @ERROR_NUMBER , @ERROR_SEVERITY , @ERROR_STATE ,  @ERROR_PROCEDURE,@ERROR_LINE,@ERROR_MESSAGE
+    DECLARE @ERROR_NUMBER INT, @ERROR_SEVERITY INT,@ERROR_STATE INT,@ERROR_LINE INT,@ERROR_PROCEDURE VARCHAR(MAX) ,@ERROR_MESSAGE VARCHAR(MAX)
+    SELECT @ERROR_NUMBER=ERROR_NUMBER() , @ERROR_SEVERITY=ERROR_SEVERITY() , @ERROR_STATE=ERROR_STATE() ,
+    @ERROR_PROCEDURE='Tramite.paListarMisDocumentosGeneradosEspecialista',@ERROR_LINE=ERROR_LINE(),@ERROR_MESSAGE=ERROR_MESSAGE()
+    EXEC Seguridad.paGuardarErroresEnLog @ERROR_NUMBER , @ERROR_SEVERITY , @ERROR_STATE ,  @ERROR_PROCEDURE,@ERROR_LINE,@ERROR_MESSAGE
 END CATCH
+GO

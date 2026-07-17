@@ -1,4 +1,4 @@
-create PROCEDURE [Tramite].[paListarTreeExpedienteDocumentoOrigen_arq]
+create OR ALTER PROCEDURE Tramite.paListarTreeExpedienteDocumentoOrigen_arq
     @pIdExpediente int,
     @pIdUsuarioAuditoria int,
     @pIdPeriodo int
@@ -7,6 +7,11 @@ BEGIN
 BEGIN TRY
 SET NOCOUNT ON
 SET TRAN ISOLATION LEVEL READ UNCOMMITTED
+
+if @pIdPeriodo = year(getdate())begin
+    RAISERROR('El periodo no debe ser el actual o vacio', 10, 1) with nowait;
+    return;
+end;
 
 create table #tmp001_expediente001(
     NumeroExpediente int,
@@ -26,8 +31,7 @@ create table #tmp001_expediente001(
     Hijos int
 )
 
-    DECLARE @vSql nvarchar(max),@vExpediente varchar(50)='',@vAnno int = year(getdate())
-    if(@vAnno != @pIdPeriodo)select @vExpediente = concat('_historico_', @pIdPeriodo)
+    DECLARE @vSql nvarchar(max),@vIdPeriodo varchar(4)= convert(varchar, @pIdPeriodo)
 
     select @vSql = N'\
     ;with tmp001_serieDocumental as(
@@ -49,13 +53,13 @@ create table #tmp001_expediente001(
         o.FechaOrigen,
         o.HoraOrigen,
         d.Hijos
-    from Tramite.Expediente'+ @vExpediente +N' e
-        INNER JOIN Tramite.ExpedienteDocumento'+ @vExpediente +N' ed ON ed.IdExpediente = e.IdExpediente and ed.EstadoAuditoria = 1
-        INNER JOIN Tramite.ExpedienteDocumentoOrigen'+ @vExpediente +N' o ON o.IdExpedienteDocumento = ed.IdExpedienteDocumento and o.EstadoAuditoria=1 and o.EsCabecera = 1
+    from Tramite.Expediente_historico_'+ @vIdPeriodo +N' e
+        INNER JOIN Tramite.ExpedienteDocumento_historico_'+ @vIdPeriodo +N' ed ON ed.IdExpediente = e.IdExpediente and ed.EstadoAuditoria = 1
+        INNER JOIN Tramite.ExpedienteDocumentoOrigen_historico_'+ @vIdPeriodo +N' o ON o.IdExpedienteDocumento = ed.IdExpedienteDocumento and o.EstadoAuditoria=1 and o.EsCabecera = 1
         INNER JOIN tmp001_serieDocumental SD ON SD.IdSerieDocumentalExpediente=E.IdSerieDocumentalExpediente
     outer apply(
         select count(1) Hijos
-        from Tramite.ExpedienteDocumentoOrigenDestino'+ @vExpediente +N' edod where edod.IdExpedienteDocumentoOrigen = o.IdExpedienteDocumentoOrigen and edod.EstadoAuditoria=1
+        from Tramite.ExpedienteDocumentoOrigenDestino_historico_'+ @vIdPeriodo +N' edod where edod.IdExpedienteDocumentoOrigen = o.IdExpedienteDocumentoOrigen and edod.EstadoAuditoria=1
     )d where e.IdExpediente=@pIdExpediente and e.EstadoAuditoria=1'
 
     EXEC sp_executesql @vSql, N'@pIdExpediente int', @pIdExpediente = @pIdExpediente

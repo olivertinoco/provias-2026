@@ -1,4 +1,4 @@
-create PROCEDURE Tramite.paListarDetalleBusquedaExpedienteGeneral_arq
+CREATE OR ALTER PROCEDURE Tramite.paListarDetalleBusquedaExpedienteGeneral_arq
     @pIdExpediente int,
     @pIdArea int,
     @pIdUsuarioAuditoria int,
@@ -15,6 +15,11 @@ BEGIN TRY
 SET TRAN ISOLATION LEVEL READ UNCOMMITTED
 SET NOCOUNT ON
 SET LANGUAGE SPANISH
+
+if @pIdPeriodo = year(getdate())begin
+    RAISERROR('El periodo no debe ser el actual o vacio', 10, 1) with nowait;
+    return;
+end;
 
 create table #tmp001_dato_expediente01 (
     FgEnEsperaFirmaDigital bit,
@@ -55,6 +60,7 @@ create table #tmp001_dato_expediente01 (
     HoraDestinoEnvia varchar(5) collate database_default,
     DestinatarioDestino varchar(800) collate database_default,
     ObservacionesDestinatario varchar(4000) collate database_default,
+    Acciones varchar(max) collate database_default,
     IdExpedienteDocumentoOrigenDestino int,
     NumeroDocumento varchar(200) collate database_default,
     AsuntoDocumento varchar(8000) collate database_default,
@@ -62,6 +68,7 @@ create table #tmp001_dato_expediente01 (
     FechaArchivado varchar(10) collate database_default,
     HoraArchivado varchar(5) collate database_default,
     Descripciondevolucion varchar(4000) collate database_default,
+    EsExtornable int,
     EsInicial int,
     MotivoArchivado varchar(8000) collate database_default,
     CorrelativoVinculado int,
@@ -93,87 +100,76 @@ create table #tmp001_dato_expediente01 (
 	WHERE EstadoAuditoria=1 and IdPersona=@vIdPersonaActual AND IdTipoFormulario=3 and
 	convert(date, GETDATE() )between convert(date,FechaInicioPersmiso) and convert(date,FechaFinPersmiso)
 
-	declare @vAnno int = year(getdate()), @vItera int = 0, @vNuevoPeriodo int
-	declare @vTotalItera int = @vAnno - @pIdPeriodo + 1
-	declare @vcExpediente varchar(100) = 'select*from Tramite.Expediente'
-	declare @vcExpedienteDocumento varchar(100) = 'select*from Tramite.ExpedienteDocumento'
-	declare @vcExpedienteDocumentoOrigen varchar(100) = 'select*from Tramite.ExpedienteDocumentoOrigen'
-	declare @vcExpedienteDocumentoOrigenDestino varchar(100) = 'select*from Tramite.ExpedienteDocumentoOrigenDestino'
-	declare @vcExpedienteRpta varchar(2000) = ''
-	declare @vcExpedienteDocumentoRpta varchar(2000) = ''
-	declare @vcExpedienteDocumentoOrigenRpta varchar(2000) = ''
-	declare @vcExpedienteDocumentoOrigenDestinoRpta varchar(2000) = ''
-	while(@vItera < @vTotalItera)begin
-	    select @vNuevoPeriodo = @pIdPeriodo + @vItera
-		if(@vNuevoPeriodo = @vAnno) begin
-		     select @vcExpedienteRpta+=@vcExpediente
-            select @vcExpedienteDocumentoRpta+=@vcExpedienteDocumento
-            select @vcExpedienteDocumentoOrigenRpta+=@vcExpedienteDocumentoOrigen
-            select @vcExpedienteDocumentoOrigenDestinoRpta+=@vcExpedienteDocumentoOrigenDestino
-		end else begin
-			select @vcExpedienteRpta+=concat(@vcExpediente,'_historico_',@vNuevoPeriodo)
-            select @vcExpedienteDocumentoRpta+=concat(@vcExpedienteDocumento,'_historico_',@vNuevoPeriodo)
-            select @vcExpedienteDocumentoOrigenRpta+=concat(@vcExpedienteDocumentoOrigen,'_historico_',@vNuevoPeriodo)
-            select @vcExpedienteDocumentoOrigenDestinoRpta+=concat(@vcExpedienteDocumentoOrigenDestino,'_historico_',@vNuevoPeriodo)
-		end
-		if(@vItera < @vTotalItera-1)begin
-		    select @vcExpedienteRpta+=' union all '
-            select @vcExpedienteDocumentoRpta+=' union all '
-            select @vcExpedienteDocumentoOrigenRpta+=' union all '
-            select @vcExpedienteDocumentoOrigenDestinoRpta+=' union all '
-		end
-	    select @vItera+=1
-	end
-
+	Declare @vPeriodo varchar(4)=null, @cta int = 0, @tot int = year(getdate()) - 2022
 
 	IF @vIdTipoFormulario>0
 	BEGIN
 		SET @vSiPariticipo=1
 	END ELSE BEGIN
-	    IF(SELECT COUNT(*) FROM RecursoHumano.visPersonaJefe WHERE IdPersona = @vIdPersonaActual AND IdArea=@pIdArea)>0
+	    IF(SELECT COUNT(1) FROM RecursoHumano.visPersonaJefe WHERE IdPersona = @vIdPersonaActual AND IdArea=@pIdArea)>0
   		BEGIN
       		SELECT @vIdCargoJefeEsMio=IdCargo, @vIdAreaJefeEsMio=IdArea,@vIdEmpresaJefeEsMio=IdEmpresa
       		FROM RecursoHumano.visPersonaJefe where IdArea=@pIdArea AND IdPersona = @vIdPersonaActual
+            select @vSiPariticipo = 0, @Consulta = null
 
-            select @Consulta = N'
-       	    SET @vSiPariticipo=(select COUNT(ED.IdPersonaEmisor)
-      		FROM (' + @vcExpedienteDocumentoRpta + N')ED
-      		INNER JOIN (' + @vcExpedienteDocumentoOrigenRpta + N')EDO
-      		ON EDO.IdExpedienteDocumento=ED.IdExpedienteDocumento AND ED.EstadoAuditoria=1
-      		INNER JOIN (' + @vcExpedienteDocumentoOrigenDestinoRpta + N')EDOD
-      		ON EDOD.IdExpedienteDocumentoOrigen=EDO.IdExpedienteDocumentoOrigen  AND EDO.EstadoAuditoria=1
-      		WHERE ED.IdExpediente=@pIdExpediente
-      		AND((EDOD.IdCargoDestino = @vIdCargoJefeEsMio and EDOD.IdAreaDestino=@vIdAreaJefeEsMio)
-      		OR (EDO.IdCargoOrigen=@vIdCargoJefeEsMio or EDO.IdAreaOrigen=@vIdAreaJefeEsMio)))'
+            select @cta = 0, @vPeriodo = null
+            while @cta < @tot begin
+                select @vPeriodo = 2022 + @cta
 
-            exec sp_executesql @Consulta,
-                N'@pIdExpediente int, @vIdCargoJefeEsMio int, @vIdAreaJefeEsMio int, @vSiPariticipo int output',
-                @pIdExpediente = @pIdExpediente,
-                @vIdCargoJefeEsMio = @vIdCargoJefeEsMio,
-                @vIdAreaJefeEsMio = @vIdAreaJefeEsMio,
-                @vSiPariticipo = @vSiPariticipo output
+                select @Consulta = N'\
+           	    SET @vSiPariticipo += (select COUNT(ED.IdPersonaEmisor)
+          		FROM Tramite.ExpedienteDocumento_historico_' + @vPeriodo + N' ED
+          		INNER JOIN Tramite.ExpedienteDocumentoOrigen_historico_' + @vPeriodo + N' EDO
+          		ON EDO.IdExpedienteDocumento=ED.IdExpedienteDocumento AND ED.EstadoAuditoria=1
+          		INNER JOIN Tramite.ExpedienteDocumentoOrigenDestino_historico_' + @vPeriodo + N' EDOD
+          		ON EDOD.IdExpedienteDocumentoOrigen=EDO.IdExpedienteDocumentoOrigen  AND EDO.EstadoAuditoria=1
+          		WHERE ED.IdExpediente=@pIdExpediente
+          		AND((EDOD.IdCargoDestino = @vIdCargoJefeEsMio and EDOD.IdAreaDestino=@vIdAreaJefeEsMio)
+          		OR (EDO.IdCargoOrigen=@vIdCargoJefeEsMio or EDO.IdAreaOrigen=@vIdAreaJefeEsMio)))'
+
+                exec sp_executesql @Consulta,
+                    N'@pIdExpediente int, @vIdCargoJefeEsMio int, @vIdAreaJefeEsMio int, @vSiPariticipo int output',
+                    @pIdExpediente = @pIdExpediente,
+                    @vIdCargoJefeEsMio = @vIdCargoJefeEsMio,
+                    @vIdAreaJefeEsMio = @vIdAreaJefeEsMio,
+                    @vSiPariticipo = @vSiPariticipo output
+
+                select @cta+=1
+            end
+
   		END ELSE BEGIN
-            select @Consulta = N'
- 			SET @vSiPariticipo=(select COUNT(ED.IdPersonaEmisor)
- 			FROM (' + @vcExpedienteDocumentoRpta + N')ED
- 			INNER JOIN (' + @vcExpedienteDocumentoOrigenRpta + N')EDO
- 			ON EDO.IdExpedienteDocumento=ED.IdExpedienteDocumento AND ED.EstadoAuditoria=1
- 			INNER JOIN (' + @vcExpedienteDocumentoOrigenDestinoRpta + N')EDOD
- 			ON EDOD.IdExpedienteDocumentoOrigen=EDO.IdExpedienteDocumentoOrigen  AND EDO.EstadoAuditoria=1
- 			WHERE ED.IdExpediente=@pIdExpediente
- 			AND (EDOD.IdPersonaDestino = @vIdPersonaActual OR EDO.IdPersonaOrigen=@vIdPersonaActual))'
+            select @vSiPariticipo = 0, @Consulta = null
 
-            exec sp_executesql @Consulta,
-                N'@pIdExpediente int, @vIdPersonaActual int, @vSiPariticipo int output',
-                @pIdExpediente = @pIdExpediente,
-                @vIdPersonaActual = @vIdPersonaActual,
-                @vSiPariticipo = @vSiPariticipo output
+            select @cta = 0, @vPeriodo = null
+            while @cta < @tot begin
+                select @vPeriodo = 2022 + @cta
+
+                select @Consulta = N'\
+     			SET @vSiPariticipo += (select COUNT(ED.IdPersonaEmisor)
+     			FROM Tramite.ExpedienteDocumento_historico_' + @vPeriodo + N' ED
+     			INNER JOIN Tramite.ExpedienteDocumentoOrigen_historico_' + @vPeriodo + N' EDO
+     			ON EDO.IdExpedienteDocumento=ED.IdExpedienteDocumento AND ED.EstadoAuditoria=1
+     			INNER JOIN Tramite.ExpedienteDocumentoOrigenDestino_historico_' + @vPeriodo + N' EDOD
+     			ON EDOD.IdExpedienteDocumentoOrigen=EDO.IdExpedienteDocumentoOrigen  AND EDO.EstadoAuditoria=1
+     			WHERE ED.IdExpediente=@pIdExpediente
+     			AND (EDOD.IdPersonaDestino = @vIdPersonaActual OR EDO.IdPersonaOrigen=@vIdPersonaActual))'
+
+                exec sp_executesql @Consulta,
+                    N'@pIdExpediente int, @vIdPersonaActual int, @vSiPariticipo int output',
+                    @pIdExpediente = @pIdExpediente,
+                    @vIdPersonaActual = @vIdPersonaActual,
+                    @vSiPariticipo = @vSiPariticipo output
+
+                select @cta+=1
+            end
+
         END
 	END
 
+
     IF @pCorrelativoVinculado>=0
 	BEGIN
-		SET @vCondicionVinculado=' AND ED.CorrelativoVinculado ='+CONVERT(Nvarchar,@pCorrelativoVinculado)
+		SET @vCondicionVinculado=concat(' AND ED.CorrelativoVinculado =',@pCorrelativoVinculado)
 	END
     SET @Orden=' ORDER BY CONVERT(DATETIME,EDO.FechaOrigen+'' ''+EDO.HoraOrigen)  DESC '
     SET @Offset= ' OFFSET ' +CONVERT(VARCHAR(10),(@pNumeroPagina-1)*@pDimensionPagina) + ' ROWS '
@@ -181,29 +177,49 @@ create table #tmp001_dato_expediente01 (
 
     IF isnull(@pBusquedaGeneral,'')<>'' SET @Filtros =' AND (CSM.Descripcion LIKE ''%'+@pBusquedaGeneral +'%'')'
 
-    select @Consulta = null
-    select @Consulta= N'
-    insert into #tmp001_dato_expediente01 SELECT
-    ED.FgEnEsperaFirmaDigital,EDO.EsVinculado,E.ExpedienteAnulado,E.IdExpediente,ED.IdExpedienteDocumento,EDOD.IdExpedienteDocumentoOrigen,EDOD.IdCatalogoSituacionMovimientoDestino,
-    EDOD.IdCatalogoTipoMovimientoDestino,EDO.IdCatalogoTipodevolucion,EDOD.NumeroDiasAtencionSolicitado,EDOD.FechaDestinoRecepciona,
-    EDOD.HoraDestinoRecepciona,EDO.IdEmpresaOrigen,EDO.IdAreaOrigen,EDO.IdCargoOrigen,EDOD.IdEmpresaDestino,EDOD.IdAreaDestino,EDOD.IdCargoDestino,EDOD.IdEmpresaDestinoRecepciona,EDOD.IdAreaDestinoRecepciona,
-    EDOD.IdCargoDestinoRecepciona,EDOD.IdPersonaDestinoRecepciona,EDOD.IdEmpresaDestinoAtencion,EDOD.IdAreaDestinoAtencion,EDOD.IdCargoDestinoAtencion,EDOD.IdPersonaDestinoAtencion,
-    EDOD.IdPersonaDestino,EDO.IdPersonaOrigen,EDO.NombreCompletoOrigen,EDOD.NumeroDiasAtencionAceptado,EDOD.Original,EDOD.Copia,EDOD.FechaDestino,EDOD.HoraDestino,EDOD.FechaDestinoEnvia,EDOD.HoraDestinoEnvia,
-    EDOD.DestinatarioDestino,EDOD.ObservacionesDestinatario,EDOD.IdExpedienteDocumentoOrigenDestino,ED.NumeroDocumento,ED.AsuntoDocumento,ED.RutaArchivoDocumento,EDOD.FechaArchivado,EDOD.HoraArchivado,
-    EDO.Descripciondevolucion,EDOD.EsInicial,EDOD.MotivoArchivado,ED.CorrelativoVinculado,ED.FgEsObligatorioFirmaDigital,ED.FlagParaDespacho,ED.IdExpedienteVirtual,EDO.FechaOrigen,EDO.HoraOrigen,ED.IdCatalogoTipoDocumento,CSM.Descripcion
-    FROM (' + @vcExpedienteRpta + N')E
-    INNER JOIN (' + @vcExpedienteDocumentoRpta + N')ED ON ED.IdExpediente=E.IdExpediente
-    INNER JOIN (' + @vcExpedienteDocumentoOrigenRpta + N')EDO ON EDO.IdExpedienteDocumento=ED.IdExpedienteDocumento AND ED.EstadoAuditoria=1
-    INNER JOIN (' + @vcExpedienteDocumentoOrigenDestinoRpta + N')EDOD ON EDOD.IdExpedienteDocumentoOrigen=EDO.IdExpedienteDocumentoOrigen  AND EDO.EstadoAuditoria=1
-    INNER JOIN Tramite.Catalogo CSM ON CSM.IdCatalogo=EDOD.IdCatalogoSituacionMovimientoDestino
-    WHERE EDOD.EstadoAuditoria=1 AND E.IdExpediente=@pIdExpediente'
-    +@vCondicionVinculado
-    +@Filtros
 
-    EXECUTE sp_executesql @Consulta,
-    N'@pIdExpediente int, @vIdPersonaActual int',
-    @pIdExpediente = @pIdExpediente,
-    @vIdPersonaActual = @vIdPersonaActual
+    select @cta = 0, @vPeriodo = null
+    while @cta < @tot begin
+        select @vPeriodo = 2022 + @cta
+
+        select @Consulta = null
+        select @Consulta= N'\
+        insert into #tmp001_dato_expediente01 SELECT
+        ED.FgEnEsperaFirmaDigital,EDO.EsVinculado,E.ExpedienteAnulado,E.IdExpediente,ED.IdExpedienteDocumento,EDOD.IdExpedienteDocumentoOrigen,EDOD.IdCatalogoSituacionMovimientoDestino,
+        EDOD.IdCatalogoTipoMovimientoDestino,EDO.IdCatalogoTipodevolucion,EDOD.NumeroDiasAtencionSolicitado,EDOD.FechaDestinoRecepciona,
+        EDOD.HoraDestinoRecepciona,EDO.IdEmpresaOrigen,EDO.IdAreaOrigen,EDO.IdCargoOrigen,EDOD.IdEmpresaDestino,EDOD.IdAreaDestino,EDOD.IdCargoDestino,EDOD.IdEmpresaDestinoRecepciona,EDOD.IdAreaDestinoRecepciona,
+        EDOD.IdCargoDestinoRecepciona,EDOD.IdPersonaDestinoRecepciona,EDOD.IdEmpresaDestinoAtencion,EDOD.IdAreaDestinoAtencion,EDOD.IdCargoDestinoAtencion,EDOD.IdPersonaDestinoAtencion,
+        EDOD.IdPersonaDestino,EDO.IdPersonaOrigen,EDO.NombreCompletoOrigen,EDOD.NumeroDiasAtencionAceptado,EDOD.Original,EDOD.Copia,EDOD.FechaDestino,EDOD.HoraDestino,EDOD.FechaDestinoEnvia,EDOD.HoraDestinoEnvia,
+        EDOD.DestinatarioDestino,EDOD.ObservacionesDestinatario,MAXDES.Acciones,EDOD.IdExpedienteDocumentoOrigenDestino,ED.NumeroDocumento,ED.AsuntoDocumento,ED.RutaArchivoDocumento,EDOD.FechaArchivado,EDOD.HoraArchivado,
+        EDO.Descripciondevolucion,ESEXTOR.EsExtornable,EDOD.EsInicial,EDOD.MotivoArchivado,ED.CorrelativoVinculado,ED.FgEsObligatorioFirmaDigital,ED.FlagParaDespacho,ED.IdExpedienteVirtual,EDO.FechaOrigen,EDO.HoraOrigen,ED.IdCatalogoTipoDocumento,CSM.Descripcion
+        FROM Tramite.Expediente_historico_' + @vPeriodo + N' E
+        INNER JOIN Tramite.ExpedienteDocumento_historico_' + @vPeriodo + N' ED ON ED.IdExpediente=E.IdExpediente
+        INNER JOIN Tramite.ExpedienteDocumentoOrigen_historico_' + @vPeriodo + N' EDO ON EDO.IdExpedienteDocumento=ED.IdExpedienteDocumento AND ED.EstadoAuditoria=1
+        INNER JOIN Tramite.ExpedienteDocumentoOrigenDestino_historico_' + @vPeriodo + N' EDOD ON EDOD.IdExpedienteDocumentoOrigen=EDO.IdExpedienteDocumentoOrigen  AND EDO.EstadoAuditoria=1
+        INNER JOIN Tramite.Catalogo CSM ON CSM.IdCatalogo=EDOD.IdCatalogoSituacionMovimientoDestino
+        OUTER APPLY (
+            SELECT STRING_AGG(RTRIM(CA1.Descripcion), '', '') WITHIN GROUP(ORDER BY A1.IdExpedienteDocumentoOrigenDestinoAccion) AS Acciones
+            FROM Tramite.ExpedienteDocumentoOrigenDestinoAccion_Historico_' + @vPeriodo + N' A1
+            INNER JOIN Tramite.Catalogo CA1 ON CA1.IdCatalogo = A1.IdCatalogoTipoAccion
+            WHERE A1.IdExpedienteDocumentoOrigenDestino = EDOD.IdExpedienteDocumentoOrigenDestino AND A1.EstadoAuditoria = 1
+        ) MAXDES
+        OUTER APPLY(
+            SELECT CASE WHEN EXISTS (
+                SELECT 1 FROM Tramite.ExpedienteDocumentoOrigenDestino_historico_' + @vPeriodo + N' edod3
+                WHERE edod3.IdExpedienteDocumentoOrigenDestinoAnterior = EDOD.IdExpedienteDocumentoOrigenDestino
+                    AND edod3.EstadoAuditoria = 1
+                    AND edod3.FechaDestinoRecepciona IS NOT NULL
+                    AND edod3.FechaDestinoRecepciona <> ''''
+            ) THEN 0 ELSE 1 END AS EsExtornable
+        ) ESEXTOR
+        WHERE EDOD.EstadoAuditoria=1 AND E.IdExpediente=@pIdExpediente '
+        +@vCondicionVinculado
+        +@Filtros
+
+        EXEC sp_executesql @Consulta, N'@pIdExpediente int, @vIdPersonaActual int', @pIdExpediente, @vIdPersonaActual
+
+        select @cta+=1
+    end
 
     select
     cast(case when t.FgEnEsperaFirmaDigital=1 then 0 else @vSiPariticipo end as int) SiPariticipo,
@@ -248,7 +264,7 @@ create table #tmp001_dato_expediente01 (
     isnull(CA.NombreCargo,'') NombreCargoDestinoAtencion,
     isnull(PA.NombreCompleto,'') NombrePersonaDestinoAtencion,
     isnull(t.ObservacionesDestinatario,'') ObservacionesDestinatario,
-    Tramite.funMostrarAccionesPorDestino(t.IdExpedienteDocumentoOrigenDestino) Acciones,
+    isnull(Acciones, '') Acciones,
     t.IdExpedienteDocumento,
     isnull(CTD.Descripcion,'') CatalogoTipoDocumento,
     isnull(t.NumeroDocumento,'') NumeroDocumento,
@@ -256,7 +272,7 @@ create table #tmp001_dato_expediente01 (
     isnull(t.RutaArchivoDocumento,'') RutaArchivoDocumento,
     isnull(t.FechaArchivado,'') +' '+ isnull(t.HoraArchivado,'') FechaArchivado,
     isnull(t.Descripciondevolucion,'') Descripciondevolucion,
-    Tramite.funEsExtornable(t.IdExpedienteDocumentoOrigen,t.IdExpedienteDocumentoOrigenDestino) EsExtornable,
+    EsExtornable,
     t.EsInicial,
     isnull(t.Descripciondevolucion,'') Descripciondevolucion,
     isnull(t.MotivoArchivado,'') MotivoArchivado,
@@ -311,7 +327,7 @@ GO
 
 EXECUTE Tramite.paListarDetalleBusquedaExpedienteGeneral_arq 797442,79,349,null,null,1,25,null,-1, 2025
 EXECUTE Tramite.paListarDetalleBusquedaExpedienteGeneral_arq 506369,79,349,null,null,1,25,null,-1, 2025
-
+EXECUTE Tramite.paListarDetalleBusquedaExpedienteGeneral_arq 506369,79,349,null,null,1,25,null,-1, 2026
 
 
 -- SELECT
@@ -330,7 +346,7 @@ EXECUTE Tramite.paListarDetalleBusquedaExpedienteGeneral_arq 506369,79,349,null,
 
 
 
-EXECUTE Tramite.paListarDetalleBusquedaExpedienteGeneral 727733,79,349,null,null,1,25,null,-1
+-- EXECUTE Tramite.paListarDetalleBusquedaExpedienteGeneral 727733,79,349,null,null,1,25,null,-1
 -- EXECUTE Tramite.paListarDetalleBusquedaExpedienteGeneral_arq 727733,79,349,null,null,1,25,null,-1, 2025
 
 

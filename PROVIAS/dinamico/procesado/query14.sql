@@ -1,4 +1,4 @@
-create PROCEDURE Tramite.paListarDocumentoHojaRuta_BusquedaGeneral_arq
+create OR ALTER PROCEDURE Tramite.paListarDocumentoHojaRuta_BusquedaGeneral_arq
 	@pIdExpediente int,
 	@pIdArea int,
 	@pIdUsuarioAuditoria int,
@@ -9,6 +9,11 @@ BEGIN TRY
 SET TRAN ISOLATION LEVEL READ UNCOMMITTED
 SET NOCOUNT ON
 SET LANGUAGE SPANISH
+
+if @pIdPeriodo = year(getdate())begin
+    RAISERROR('El periodo no debe ser el actual o vacio', 10, 1) with nowait;
+    return;
+end;
 
 create table #tmp001_expedienteHojaRuta(
     IdExpediente int,
@@ -69,53 +74,34 @@ create table #tmp001_expedienteHojaRuta(
 )
 
     declare @vSql nvarchar(max)
-    declare @vAnno int = year(getdate()), @vItera int = 0, @vNuevoPeriodo int
-	declare @vTotalItera int = @vAnno - @pIdPeriodo + 1
-	declare @vcExpediente varchar(100) = 'select*from Tramite.Expediente'
-	declare @vcExpedienteDocumento varchar(100) = 'select*from Tramite.ExpedienteDocumento'
-	declare @vcExpedienteDocumentoOrigen varchar(100) = 'select*from Tramite.ExpedienteDocumentoOrigen'
-	declare @vcExpedienteDocumentoOrigenDestino varchar(100) = 'select*from Tramite.ExpedienteDocumentoOrigenDestino'
-	declare @vcExpedienteRpta Nvarchar(4000) = ''
-	declare @vcExpedienteDocumentoRpta Nvarchar(4000) = ''
-	declare @vcExpedienteDocumentoOrigenRpta Nvarchar(4000) = ''
-	declare @vcExpedienteDocumentoOrigenDestinoRpta Nvarchar(4000) = ''
-	while(@vItera < @vTotalItera)begin
-	    select @vNuevoPeriodo = @pIdPeriodo + @vItera
-		if(@vNuevoPeriodo = @vAnno) begin
-		    select @vcExpedienteRpta+=@vcExpediente
-            select @vcExpedienteDocumentoRpta+=@vcExpedienteDocumento
-            select @vcExpedienteDocumentoOrigenRpta+=@vcExpedienteDocumentoOrigen
-            select @vcExpedienteDocumentoOrigenDestinoRpta+=@vcExpedienteDocumentoOrigenDestino
-		end else begin
-			select @vcExpedienteRpta+=concat(@vcExpediente,'_historico_',@vNuevoPeriodo)
-            select @vcExpedienteDocumentoRpta+=concat(@vcExpedienteDocumento,'_historico_',@vNuevoPeriodo)
-            select @vcExpedienteDocumentoOrigenRpta+=concat(@vcExpedienteDocumentoOrigen,'_historico_',@vNuevoPeriodo)
-            select @vcExpedienteDocumentoOrigenDestinoRpta+=concat(@vcExpedienteDocumentoOrigenDestino,'_historico_',@vNuevoPeriodo)
-		end
-		if(@vItera < @vTotalItera-1)begin
-		    select @vcExpedienteRpta+=' union all '
-            select @vcExpedienteDocumentoRpta+=' union all '
-            select @vcExpedienteDocumentoOrigenRpta+=' union all '
-            select @vcExpedienteDocumentoOrigenDestinoRpta+=' union all '
-		end
-	    select @vItera+=1
-	end
+    Declare @vPeriodo varchar(4)=null, @cta int = 0, @tot int = year(getdate()) - 2022
 
-    select @vSql = N'\
-    insert into #tmp001_expedienteHojaRuta select \
-    E.IdExpediente,E.CelularNotificacion,E.EmailNotificacion,E.NTFechaExpediente,ED.FechaEnvioDocumento,E.NumeroExpediente,SD.AbreviaturaSerieDocumentalExpediente,E.IdPeriodo,ED.EsVinculado,ED.CorrelativoVinculado,ED.ObservacionesDocumento,ED.IdExpedienteDocumento,EDOD.IdExpedienteDocumentoOrigenDestino,EDOD.IdExpedienteDocumentoOrigen,\
-    EDOD.IdCatalogoSituacionMovimientoDestino,CSM.Descripcion,EDOD.IdCatalogoTipoMovimientoDestino,CTM.Descripcion,EDO.IdCatalogoTipodevolucion,EDOD.NumeroDiasAtencionSolicitado,EDOD.FechaDestinoRecepciona,EDOD.HoraDestinoRecepciona,\
-    EDO.IdPersonaOrigen,EDO.NombreCompletoOrigen,EDOD.NumeroDiasAtencionAceptado,EDOD.Original,EDOD.Copia,EDOD.FechaDestino,EDOD.HoraDestino,EDOD.FechaDestinoEnvia,EDOD.HoraDestinoEnvia,EDOD.DestinatarioDestino,EDOD.ObservacionesDestinatario,Tramite.funMostrarAccionesPorDestinoSoloCodigos(EDOD.IdExpedienteDocumentoOrigenDestino),CTD.Descripcion,ED.NumeroDocumento,ED.AsuntoDocumento,\
-    ED.RutaArchivoDocumento,E.NumeroExpedienteExterno,ED.Correlativo,EDO.IdEmpresaOrigen,EDO.IdAreaOrigen,EDO.IdCargoOrigen,EDOD.IdEmpresaDestino,EDOD.IdAreaDestino,EDOD.IdCargoDestino,EDOD.IdPersonaDestino,EDOD.IdEmpresaDestinoRecepciona,EDOD.IdAreaDestinoRecepciona,EDOD.IdCargoDestinoRecepciona,EDOD.IdPersonaDestinoRecepciona,EDOD.IdEmpresaDestinoAtencion,EDOD.IdAreaDestinoAtencion,EDOD.IdCargoDestinoAtencion,EDOD.IdPersonaDestinoAtencion \
-    FROM (' + @vcExpedienteRpta + N')E INNER JOIN (' + @vcExpedienteDocumentoRpta + N')ED ON ED.IdExpediente=E.IdExpediente and ED.EstadoAuditoria=1 \
-    INNER JOIN (' + @vcExpedienteDocumentoOrigenRpta + N')EDO ON EDO.IdExpedienteDocumento=ED.IdExpedienteDocumento AND EDO.EstadoAuditoria=1 INNER JOIN (' + @vcExpedienteDocumentoOrigenDestinoRpta + N')EDOD ON EDOD.IdExpedienteDocumentoOrigen=EDO.IdExpedienteDocumentoOrigen AND EDOD.EstadoAuditoria=1 \
-    INNER JOIN Tramite.Catalogo CTD ON CTD.IdCatalogo=ED.IdCatalogoTipoDocumento INNER JOIN Tramite.Catalogo CSM ON CSM.IdCatalogo=EDOD.IdCatalogoSituacionMovimientoDestino INNER JOIN Tramite.Catalogo CTM ON CTM.IdCatalogo=EDOD.IdCatalogoTipoMovimientoDestino INNER JOIN Tramite.SerieDocumentalExpediente SD ON SD.IdSerieDocumentalExpediente=E.IdSerieDocumentalExpediente \
-    WHERE EDOD.EstadoAuditoria=1 AND E.IdExpediente=@pIdExpediente AND E.EstadoAuditoria=1'
+	select @cta = 0, @vPeriodo = null
+    while @cta < @tot begin
+        select @vPeriodo = 2022 + @cta
 
-    EXEC sp_executesql @vSql,
-    N'@pIdExpediente int',
-    @pIdExpediente = @pIdExpediente
+        select @vSql = null
+        select @vSql = N'\
+        insert into #tmp001_expedienteHojaRuta select
+        E.IdExpediente,E.CelularNotificacion,E.EmailNotificacion,E.NTFechaExpediente,ED.FechaEnvioDocumento,E.NumeroExpediente,SD.AbreviaturaSerieDocumentalExpediente,E.IdPeriodo,ED.EsVinculado,ED.CorrelativoVinculado,ED.ObservacionesDocumento,ED.IdExpedienteDocumento,EDOD.IdExpedienteDocumentoOrigenDestino,EDOD.IdExpedienteDocumentoOrigen,
+        EDOD.IdCatalogoSituacionMovimientoDestino,CSM.Descripcion,EDOD.IdCatalogoTipoMovimientoDestino,CTM.Descripcion,EDO.IdCatalogoTipodevolucion,EDOD.NumeroDiasAtencionSolicitado,EDOD.FechaDestinoRecepciona,EDOD.HoraDestinoRecepciona,
+        EDO.IdPersonaOrigen,EDO.NombreCompletoOrigen,EDOD.NumeroDiasAtencionAceptado,EDOD.Original,EDOD.Copia,EDOD.FechaDestino,EDOD.HoraDestino,EDOD.FechaDestinoEnvia,EDOD.HoraDestinoEnvia,EDOD.DestinatarioDestino,EDOD.ObservacionesDestinatario,ACS.Acciones,CTD.Descripcion,ED.NumeroDocumento,ED.AsuntoDocumento,
+        ED.RutaArchivoDocumento,E.NumeroExpedienteExterno,ED.Correlativo,EDO.IdEmpresaOrigen,EDO.IdAreaOrigen,EDO.IdCargoOrigen,EDOD.IdEmpresaDestino,EDOD.IdAreaDestino,EDOD.IdCargoDestino,EDOD.IdPersonaDestino,EDOD.IdEmpresaDestinoRecepciona,EDOD.IdAreaDestinoRecepciona,EDOD.IdCargoDestinoRecepciona,EDOD.IdPersonaDestinoRecepciona,EDOD.IdEmpresaDestinoAtencion,EDOD.IdAreaDestinoAtencion,EDOD.IdCargoDestinoAtencion,EDOD.IdPersonaDestinoAtencion
+        FROM Tramite.Expediente_historico_' + @vPeriodo + N' E INNER JOIN Tramite.ExpedienteDocumento_historico_' + @vPeriodo + N' ED ON ED.IdExpediente=E.IdExpediente and ED.EstadoAuditoria=1
+        INNER JOIN Tramite.ExpedienteDocumentoOrigen_historico_' + @vPeriodo + N' EDO ON EDO.IdExpedienteDocumento=ED.IdExpedienteDocumento AND EDO.EstadoAuditoria=1 INNER JOIN Tramite.ExpedienteDocumentoOrigenDestino_historico_' + @vPeriodo + N' EDOD ON EDOD.IdExpedienteDocumentoOrigen=EDO.IdExpedienteDocumentoOrigen AND EDOD.EstadoAuditoria=1
+        INNER JOIN Tramite.Catalogo CTD ON CTD.IdCatalogo=ED.IdCatalogoTipoDocumento INNER JOIN Tramite.Catalogo CSM ON CSM.IdCatalogo=EDOD.IdCatalogoSituacionMovimientoDestino INNER JOIN Tramite.Catalogo CTM ON CTM.IdCatalogo=EDOD.IdCatalogoTipoMovimientoDestino INNER JOIN Tramite.SerieDocumentalExpediente SD ON SD.IdSerieDocumentalExpediente=E.IdSerieDocumentalExpediente
+        OUTER APPLY(
+            SELECT string_agg(CONCAT(''('',case when CA2.OrdenItem=''22'' then ''2'' else CA2.OrdenItem end,'')''), '', '')within group(order by A2.IdExpedienteDocumentoOrigenDestino) Acciones
+            from  Tramite.ExpedienteDocumentoOrigenDestinoAccion_Historico_' + @vPeriodo + N' A2
+            INNER JOIN Tramite.Catalogo CA2 ON CA2.IdCatalogo=A2.IdCatalogoTipoAccion
+            where A2.IdExpedienteDocumentoOrigenDestino=EDOD.IdExpedienteDocumentoOrigenDestino and A2.EstadoAuditoria=1
+        )ACS
+        WHERE EDOD.EstadoAuditoria=1 AND E.IdExpediente=@pIdExpediente AND E.EstadoAuditoria=1'
 
+        EXEC sp_executesql @vSql, N'@pIdExpediente int', @pIdExpediente
+
+        select @cta+=1
+    end
 
     select
     t.IdExpediente,
@@ -206,24 +192,37 @@ go
 
 
 
-exec Tramite.paListarDocumentoHojaRuta_BusquedaGeneral_arq
-@pIdExpediente= 727733,
-@pIdArea= 79,
-@pIdUsuarioAuditoria= 349,
-@pIdPeriodo= 2025
+-- exec Tramite.paListarDocumentoHojaRuta_BusquedaGeneral_arq
+-- @pIdExpediente= 727733,
+-- @pIdArea= 79,
+-- @pIdUsuarioAuditoria= 349,
+-- @pIdPeriodo= 2025
 
 
-EXECUTE tramite.paListarDocumentoHojaRuta_BusquedaGeneral_arq
-@pIdExpediente= 506364,
-@pIdArea= 79,
-@pIdUsuarioAuditoria= 349,
-@pIdPeriodo= 2024
+-- EXECUTE tramite.paListarDocumentoHojaRuta_BusquedaGeneral_arq
+-- @pIdExpediente= 506364,
+-- @pIdArea= 79,
+-- @pIdUsuarioAuditoria= 349,
+-- @pIdPeriodo= 2024
 
 EXECUTE Tramite.paListarDocumentoHojaRuta_BusquedaGeneral_arq
 @pIdExpediente= 76958,
 @pIdArea= 79,
 @pIdUsuarioAuditoria= 349,
 @pIdPeriodo= 2022
+
+EXECUTE BD_SGD_ARQ.Tramite.paListarDocumentoHojaRuta_BusquedaGeneral
+@pIdExpediente= 76958,
+@pIdArea= 79,
+@pIdUsuarioAuditoria= 349
+
+
+
+-- EXECUTE Tramite.paListarDocumentoHojaRuta_BusquedaGeneral_arq
+-- @pIdExpediente= 76958,
+-- @pIdArea= 79,
+-- @pIdUsuarioAuditoria= 349,
+-- @pIdPeriodo= 2026
 
 
 

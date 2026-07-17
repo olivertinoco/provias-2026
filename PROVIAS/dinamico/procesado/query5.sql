@@ -1,4 +1,4 @@
-create PROCEDURE [Tramite].[paListarExpedienteDocumentoHojaRuta_arq]
+create OR ALTER PROCEDURE Tramite.paListarExpedienteDocumentoHojaRuta_arq
 	@pIdExpediente int,
 	@pIdUsuarioAuditoria int,
 	@pCampoOrdenado varchar(50),
@@ -9,16 +9,22 @@ create PROCEDURE [Tramite].[paListarExpedienteDocumentoHojaRuta_arq]
 	@pIdPeriodo int
 AS
 BEGIN
+BEGIN TRY
 SET TRAN ISOLATION LEVEL READ UNCOMMITTED
 SET NOCOUNT ON
-BEGIN TRY
+
+if @pIdPeriodo = year(getdate())begin
+    RAISERROR('El periodo no debe ser el actual o vacio', 10, 1) with nowait;
+    return;
+end;
+
+        DECLARE  @vIdPeriodo varchar(4) = convert(varchar, @pIdPeriodo)
 		DECLARE @Consulta Nvarchar(max)=''
 		DECLARE @ConsultaTotal Nvarchar(max)=''
 		DECLARE @Filtros varchar(max)=''
 		DECLARE @Offset NVARCHAR(MAX)='';
 		DECLARE @Fetch NVARCHAR(MAX)='';
 		DECLARE @Orden NVARCHAR(MAX)='';
-		DECLARE @Parametros NVARCHAR(MAX)='';
 		DECLARE @pTotalRegistros  INT;
 
 		SET @Orden = ' ORDER BY ' + COALESCE(@pCampoOrdenado,'1') + ' ' + COALESCE(@pTipoOrdenacion,'ASC')
@@ -29,13 +35,13 @@ BEGIN TRY
 		    SET @Filtros ='AND (ED.NumeroDocumento LIKE ''%'+@pBusquedaGeneral +'%'' or ED.AsuntoDocumento LIKE ''%'+ @pBusquedaGeneral +'%'')'
 		SET @ConsultaTotal = N'
 		SELECT @vpTotalRegistros = count(distinct ED.IdExpedienteDocumento)
-		FROM Tramite.Expediente_Historico_' + cast(@pIdPeriodo as varchar) + N' E
-		INNER JOIN Tramite.ExpedienteDocumento_Historico_' + cast(@pIdPeriodo as varchar) + N' ED
+		FROM Tramite.Expediente_Historico_' + @vIdPeriodo + N' E
+		INNER JOIN Tramite.ExpedienteDocumento_Historico_' + @vIdPeriodo + N' ED
 		    ON ED.IdExpediente=E.IdExpediente
-		INNER JOIN Tramite.ExpedienteDocumentoOrigen_Historico_' + cast(@pIdPeriodo as varchar) + N' EDO
+		INNER JOIN Tramite.ExpedienteDocumentoOrigen_Historico_' + @vIdPeriodo + N' EDO
 		    ON EDO.IdExpedienteDocumento=ED.IdExpedienteDocumento
 			and ED.EstadoAuditoria=1
-		INNER JOIN Tramite.ExpedienteDocumentoOrigenDestino_Historico_' + cast(@pIdPeriodo as varchar) + N' EDOD
+		INNER JOIN Tramite.ExpedienteDocumentoOrigenDestino_Historico_' + @vIdPeriodo + N' EDOD
 		    ON EDOD.IdExpedienteDocumentoOrigen=EDO.IdExpedienteDocumentoOrigen
 			and EDO.EstadoAuditoria=1
 			and EDOd.EstadoAuditoria=1
@@ -49,12 +55,13 @@ BEGIN TRY
 		    ON a.IdArea=EDO.IdAreaOrigen
 		LEFT JOIN General.Empresa em
 		    ON em.IdEmpresa=EDO.IdEmpresaOrigen
-		WHERE E.IdExpediente='+LTRIM(@pIdExpediente)+
-		' AND EDOD.IdExpedienteDocumentoOrigenDestinoAnterior=0 AND EDOD.IdExpedienteDocumentoOrigenAnterior=0 AND E.EstadoAuditoria=1 AND ED.EstadoAuditoria=1'
+		WHERE E.IdExpediente=@pIdExpediente
+		AND EDOD.IdExpedienteDocumentoOrigenDestinoAnterior=0 AND EDOD.IdExpedienteDocumentoOrigenAnterior=0 AND E.EstadoAuditoria=1 AND ED.EstadoAuditoria=1'
 		+@Filtros
 
-		SET @Parametros = N'@vpTotalRegistros int OUTPUT';
-		EXECUTE sp_executesql @ConsultaTotal,@Parametros, @vpTotalRegistros = @pTotalRegistros OUTPUT
+		EXECUTE sp_executesql @ConsultaTotal, N'@pIdExpediente int, @vpTotalRegistros int OUTPUT',
+		    @pIdExpediente = @pIdExpediente,
+		    @vpTotalRegistros = @pTotalRegistros OUTPUT
 
 		SET @Consulta= N'
 		select distinct
@@ -69,13 +76,13 @@ BEGIN TRY
     		CASE WHEN ED.Correlativo=0 THEN  CONCAT( CTD.Descripcion,'' '', COALESCE(ED.NumeroDocumento,'''')) ELSE COALESCE(ED.NumeroDocumento,'''') END  NumeroDocumento,
     		ED.AsuntoDocumento,
     		COALESCE(ED.CorrelativoVinculado,'''')CorrelativoVinculado
-		FROM Tramite.Expediente_Historico_' + cast(@pIdPeriodo as varchar) + N' E
-		INNER JOIN Tramite.ExpedienteDocumento_Historico_' + cast(@pIdPeriodo as varchar) + N' ED
+		FROM Tramite.Expediente_Historico_' + @vIdPeriodo + N' E
+		INNER JOIN Tramite.ExpedienteDocumento_Historico_' + @vIdPeriodo + N' ED
 		    ON ED.IdExpediente=E.IdExpediente
-		INNER JOIN Tramite.ExpedienteDocumentoOrigen_Historico_' + cast(@pIdPeriodo as varchar) + N' EDO
+		INNER JOIN Tramite.ExpedienteDocumentoOrigen_Historico_' + @vIdPeriodo + N' EDO
 		    ON EDO.IdExpedienteDocumento=ED.IdExpedienteDocumento
 			and ED.EstadoAuditoria=1
-		INNER JOIN Tramite.ExpedienteDocumentoOrigenDestino_Historico_' + cast(@pIdPeriodo as varchar) + N' EDOD
+		INNER JOIN Tramite.ExpedienteDocumentoOrigenDestino_Historico_' + @vIdPeriodo + N' EDOD
 		    ON EDOD.IdExpedienteDocumentoOrigen=EDO.IdExpedienteDocumentoOrigen
 			and EDO.EstadoAuditoria=1
 			and EDOd.EstadoAuditoria=1
@@ -89,13 +96,14 @@ BEGIN TRY
 		    ON a.IdArea=EDO.IdAreaOrigen
 		LEFT JOIN General.Empresa em
 		    ON em.IdEmpresa=EDO.IdEmpresaOrigen
-		WHERE E.IdExpediente='+LTRIM(@pIdExpediente)+
-		' AND EDOD.IdExpedienteDocumentoOrigenDestinoAnterior=0 AND EDOD.IdExpedienteDocumentoOrigenAnterior=0 AND E.EstadoAuditoria=1 AND ED.EstadoAuditoria=1'
+		WHERE E.IdExpediente=@pIdExpediente
+		AND EDOD.IdExpedienteDocumentoOrigenDestinoAnterior=0 AND EDOD.IdExpedienteDocumentoOrigenAnterior=0 AND E.EstadoAuditoria=1 AND ED.EstadoAuditoria=1'
 		+@Filtros
 		+@Orden
 		+@Offset
 		+@Fetch
-		EXECUTE sp_executesql @Consulta
+		EXECUTE sp_executesql @Consulta, N'@pIdExpediente int', @pIdExpediente
+
 		select @pTotalRegistros
 
 END TRY
@@ -108,4 +116,5 @@ END CATCH
 END
 GO
 
--- EXEC Tramite.paListarExpedienteDocumentoHojaRuta_arq 570251,1059,NULL,NULL,1,10,NULL, 2025
+EXEC Tramite.paListarExpedienteDocumentoHojaRuta_arq 570251,1059,NULL,NULL,1,10,NULL, 2025
+EXEC Tramite.paListarExpedienteDocumentoHojaRuta_arq 570251,1059,NULL,NULL,1,10,NULL, 2026

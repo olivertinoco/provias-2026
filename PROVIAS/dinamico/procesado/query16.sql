@@ -1,4 +1,4 @@
-alter PROCEDURE [Tramite].[paListarDocumentoPendienteCourrierJefatura]
+CREATE OR ALTER PROCEDURE Tramite.paListarDocumentoPendienteCourrierJefatura
     @pIdExpediente int,
     @pIdArea int,
     @pIdUsuarioAuditoria int,
@@ -15,6 +15,11 @@ BEGIN TRY
 SET TRAN ISOLATION LEVEL READ UNCOMMITTED
 SET NOCOUNT ON
 SET LANGUAGE SPANISH
+
+if @pPeriodoCourier = year(getdate())begin
+    RAISERROR('El periodo no debe ser el actual o vacio', 10, 1) with nowait;
+    return;
+end;
 
 create table #tmp001_ExpedienteDatos(
     ExpedienteAnulado bit,
@@ -71,22 +76,19 @@ create table #tmp001_ExpedienteDatos(
     CatalogoTipoMovimientoDestino varchar(400) collate database_default,
     IdCargoEmisor int,
     IdAreaEmisor int,
-    IdEmpresaEmisor int
+    IdEmpresaEmisor int,
+    Acciones varchar(max) collate database_default
 )
 
     DECLARE @vIdCargoJefe int=0
     DECLARE @vIdAreaJefe int=0
     DECLARE @vIdEmpresaJefe int=0
-    DECLARE @vPeriodoAno int = year(getdate()), @vPeriodoCourier varchar(50)
-    if(@pPeriodoCourier = @vPeriodoAno) select @vPeriodoCourier = ''
-    else select @vPeriodoCourier = concat('_historico_',@pPeriodoCourier)
+    DECLARE @vPeriodoCourier varchar(4) = convert(varchar, @pPeriodoCourier)
 
     SELECT @vIdCargoJefe=IdCargo, @vIdAreaJefe=IdArea,@vIdEmpresaJefe=IdEmpresa FROM RecursoHumano.visPersonaJefe where IdArea=@pIdArea
     SELECT IdCargo into #tmp001_cargo FROM General.Cargo WHERE IdCatalogoTipoCargo in (32,33,34)
 
-    DECLARE @Consulta Nvarchar(max)=''
-    DECLARE @Filtros Nvarchar(max)=''
-    DECLARE @Parametros NVARCHAR(MAX)='';
+    DECLARE @Consulta Nvarchar(max)='', @Filtros Nvarchar(max)=''
 
     IF COALESCE(@pBusquedaGeneral,'')<>'' SET @Filtros =' AND (CSM.Descripcion LIKE ''%'+@pBusquedaGeneral +'%'')'
 
@@ -98,14 +100,20 @@ create table #tmp001_ExpedienteDatos(
     EDOD.NumeroDiasAtencionSolicitado,EDOD.FechaDestinoRecepciona,EDOD.HoraDestinoRecepciona,EDOD.IdPersonaDestino,EDOD.NumeroDiasAtencionAceptado,EDOD.Original,EDOD.Copia,EDOD.FechaDestino,EDOD.HoraDestino,EDOD.FechaDestinoEnvia,
     EDOD.HoraDestinoEnvia,EDOD.DestinatarioDestino,EDOD.ObservacionesDestinatario,EDOD.IdCargoDestino,EDOD.IdAreaDestino,EDOD.IdEmpresaDestino,EDOD.FechaArchivado,EDOD.EsInicial,EDOD.MotivoArchivado,EDO.IdEmpresaOrigen,EDOD.IdEmpresaDestinoRecepciona,
     EDOD.IdAreaDestinoRecepciona,EDOD.IdCargoDestinoRecepciona,EDOD.IdPersonaDestinoRecepciona,EDOD.IdEmpresaDestinoAtencion,EDOD.IdAreaDestinoAtencion,EDOD.IdCargoDestinoAtencion,EDOD.IdPersonaDestinoAtencion,
-    CTD.Descripcion CatalogoTipoDocumento,CSM.Descripcion CatalogoSituacionMovimientoDestino,CTM.Descripcion CatalogoTipoMovimientoDestino,ED.IdCargoEmisor,ED.IdAreaEmisor,ED.IdEmpresaEmisor
-    FROM Tramite.Expediente'+ @vPeriodoCourier +N' E
-    INNER JOIN Tramite.ExpedienteDocumento'+ @vPeriodoCourier +N' ED ON ED.IdExpediente=E.IdExpediente
-    INNER JOIN Tramite.ExpedienteDocumentoOrigen'+ @vPeriodoCourier +N' EDO ON EDO.IdExpedienteDocumento=ED.IdExpedienteDocumento AND ED.EstadoAuditoria=1
-    INNER JOIN Tramite.ExpedienteDocumentoOrigenDestino'+ @vPeriodoCourier +N' EDOD ON EDOD.IdExpedienteDocumentoOrigen=EDO.IdExpedienteDocumentoOrigen  AND EDO.EstadoAuditoria=1
+    CTD.Descripcion CatalogoTipoDocumento,CSM.Descripcion CatalogoSituacionMovimientoDestino,CTM.Descripcion CatalogoTipoMovimientoDestino,ED.IdCargoEmisor,ED.IdAreaEmisor,ED.IdEmpresaEmisor,MAXDES.Acciones
+    FROM Tramite.Expediente_historico_'+ @vPeriodoCourier +N' E
+    INNER JOIN Tramite.ExpedienteDocumento_historico_'+ @vPeriodoCourier +N' ED ON ED.IdExpediente=E.IdExpediente
+    INNER JOIN Tramite.ExpedienteDocumentoOrigen_historico_'+ @vPeriodoCourier +N' EDO ON EDO.IdExpedienteDocumento=ED.IdExpedienteDocumento AND ED.EstadoAuditoria=1
+    INNER JOIN Tramite.ExpedienteDocumentoOrigenDestino_historico_'+ @vPeriodoCourier +N' EDOD ON EDOD.IdExpedienteDocumentoOrigen=EDO.IdExpedienteDocumentoOrigen  AND EDO.EstadoAuditoria=1
     INNER JOIN Tramite.Catalogo CTD ON CTD.IdCatalogo=ED.IdCatalogoTipoDocumento
     INNER JOIN Tramite.Catalogo CSM ON CSM.IdCatalogo=EDOD.IdCatalogoSituacionMovimientoDestino
     INNER JOIN Tramite.Catalogo CTM ON CTM.IdCatalogo=EDOD.IdCatalogoTipoMovimientoDestino
+    OUTER APPLY (
+        SELECT STRING_AGG(RTRIM(CA1.Descripcion), '', '') WITHIN GROUP(ORDER BY A1.IdExpedienteDocumentoOrigenDestinoAccion) AS Acciones
+        FROM Tramite.ExpedienteDocumentoOrigenDestinoAccion_Historico_' + @vPeriodoCourier + N' A1
+        INNER JOIN Tramite.Catalogo CA1 ON CA1.IdCatalogo = A1.IdCatalogoTipoAccion
+        WHERE A1.IdExpedienteDocumentoOrigenDestino = EDOD.IdExpedienteDocumentoOrigenDestino AND A1.EstadoAuditoria = 1
+    ) MAXDES
 	WHERE EDOD.EstadoAuditoria=1 AND EDOD.IdCatalogoTipoMovimientoDestino=72 AND E.IdExpediente=@pIdExpediente AND EDO.IdAreaOrigenEnvia=@pIdArea'
     +@Filtros
 
@@ -155,7 +163,7 @@ create table #tmp001_ExpedienteDatos(
     COALESCE(CA.NombreCargo,'') NombreCargoDestinoAtencion,
     COALESCE(PA.NombreCompleto,'') NombrePersonaDestinoAtencion,
     COALESCE(t.ObservacionesDestinatario,'') +' '+ CASE WHEN CU.NombreCompletoCourriers IS NULL THEN '' ELSE ' Courrier: ' END   +''+ COALESCE(CU.NombreCompletoCourriers,'') ObservacionesDestinatario,
-    Tramite.funMostrarAccionesPorDestino(t.IdExpedienteDocumentoOrigenDestino) Acciones,
+    isnull(Acciones, '') Acciones,
     CASE WHEN t.IdCargoDestino IN(select IdCargo from #tmp001_cargo) and t.IdAreaDestino=@vIdAreaJefe and t.IdEmpresaDestino=@vIdEmpresaJefe THEN 1 ELSE 0 END EsPropio,
     CASE WHEN t.IdCargoEmisor IN(select IdCargo from #tmp001_cargo) and t.IdAreaEmisor=@vIdAreaJefe and t.IdEmpresaEmisor=@vIdEmpresaJefe THEN 1 ELSE 0 END EsMiDocumento,
     CASE WHEN t.IdCargoOrigen IN(select IdCargo from #tmp001_cargo) and t.IdAreaOrigen=@vIdAreaJefe and t.IdEmpresaOrigen=@vIdEmpresaJefe THEN 1 ELSE 0 END EsOrigen,
@@ -196,35 +204,35 @@ create table #tmp001_ExpedienteDatos(
     OFFSET (@pNumeroPagina-1)*@pDimensionPagina ROWS
     FETCH NEXT @pDimensionPagina ROWS ONLY
 
-
     select count(1) from #tmp001_ExpedienteDatos
-
 
 END TRY
 BEGIN CATCH
     DECLARE @ERROR_NUMBER INT, @ERROR_SEVERITY INT,@ERROR_STATE INT,@ERROR_LINE INT,@ERROR_PROCEDURE VARCHAR(MAX) ,@ERROR_MESSAGE VARCHAR(MAX)
-    SELECT @ERROR_NUMBER=ERROR_NUMBER() , @ERROR_SEVERITY=ERROR_SEVERITY() , @ERROR_STATE=ERROR_STATE() , @ERROR_PROCEDURE='Tramite.paListarDocumentoPendienteCourrierJefatura',@ERROR_LINE=ERROR_LINE(),@ERROR_MESSAGE=ERROR_MESSAGE()
+    SELECT @ERROR_NUMBER=ERROR_NUMBER() , @ERROR_SEVERITY=ERROR_SEVERITY() , @ERROR_STATE=ERROR_STATE(),
+    @ERROR_PROCEDURE='Tramite.paListarDocumentoPendienteCourrierJefatura',@ERROR_LINE=ERROR_LINE(),@ERROR_MESSAGE=ERROR_MESSAGE()
     EXEC Seguridad.paGuardarErroresEnLog @ERROR_NUMBER , @ERROR_SEVERITY , @ERROR_STATE ,  @ERROR_PROCEDURE,@ERROR_LINE,@ERROR_MESSAGE
 END CATCH
 END
 GO
 
 
--- execute [Tramite].[paListarDocumentoPendienteCourrierJefatura] 518024,79,349,null,null,1,25,null,0
+execute [Tramite].[paListarDocumentoPendienteCourrierJefatura] 518024,79,349,null,null,1,25,null,0, 2025
+execute [Tramite].[paListarDocumentoPendienteCourrierJefatura] 518024,79,349,null,null,1,25,null,0, 2026
 
 
 
-execute [Tramite].[paListarDocumentoPendienteCourrierJefatura]
-    @pIdExpediente= 518024,
-    @pIdArea= 79,
-    @pIdUsuarioAuditoria= 349,
-    @pCampoOrdenado= null,
-    @pTipoOrdenacion= null,
-    @pNumeroPagina= 1,
-    @pDimensionPagina= 25,
-    @pBusquedaGeneral= null,
-    @pVerSoloMio= 0,
-    @pPeriodoCourier= 2025
+-- execute [Tramite].[paListarDocumentoPendienteCourrierJefatura]
+--     @pIdExpediente= 518024,
+--     @pIdArea= 79,
+--     @pIdUsuarioAuditoria= 349,
+--     @pCampoOrdenado= null,
+--     @pTipoOrdenacion= null,
+--     @pNumeroPagina= 1,
+--     @pDimensionPagina= 25,
+--     @pBusquedaGeneral= null,
+--     @pVerSoloMio= 0,
+--     @pPeriodoCourier= 2025
 
 
 -- CASE WHEN EDO.IdCargoOrigen IN(select IdCargo from #tmp001_cargo) and EDO.IdAreaOrigen=@vIdAreaJefe and EDO.IdEmpresaOrigen=@vIdEmpresaJefe THEN 1 ELSE 0 END,

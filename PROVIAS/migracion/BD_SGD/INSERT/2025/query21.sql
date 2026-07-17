@@ -31,15 +31,20 @@
 -- WHERE t.FechaCreacionAuditoria >= '20250101'
 --     AND t.FechaCreacionAuditoria <  '20260101'
 
+
+
 -- insert into Tramite.ExpedienteEnlazado_Historico_2025
 -- select t.* from Tramite.ExpedienteEnlazado t
 -- WHERE t.FechaCreacionAuditoria >= '20250101'
 --     AND t.FechaCreacionAuditoria <  '20260101'
 
+
 -- insert into Tramite.ExpedienteSeguimiento_Historico_2025
 -- select t.* from Tramite.ExpedienteSeguimiento t
 -- WHERE t.FechaCreacionAuditoria >= '20250101'
 --     AND t.FechaCreacionAuditoria <  '20260101'
+
+
 
 -- insert into Tramite.NumeracionSeparada_Historico_2025
 -- select t.* from Tramite.NumeracionSeparada t
@@ -55,15 +60,21 @@
 -- WHERE t.FechaCreacionAuditoria >= '20250101'
 --     AND t.FechaCreacionAuditoria <  '20260101'
 
+
+
 -- insert into Tramite.ExpedienteDocumentoAdjunto_Historico_2025
 -- select t.* from Tramite.ExpedienteDocumentoAdjunto t
 -- WHERE t.FechaCreacionAuditoria >= '20250101'
 --     AND t.FechaCreacionAuditoria <  '20260101'
 
+
+
 -- insert into Tramite.ExpedienteDocumentoAdjuntoFirmante_Historico_2025
 -- select t.* from Tramite.ExpedienteDocumentoAdjuntoFirmante t
 -- WHERE t.FechaCreacionAuditoria >= '20250101'
 --     AND t.FechaCreacionAuditoria <  '20260101'
+
+
 
 -- insert into Tramite.ExpedienteDocumentoAdjuntoTemporal_Historico_2025
 -- select t.* from Tramite.ExpedienteDocumentoAdjuntoTemporal t
@@ -87,6 +98,7 @@
 -- select t.* from Tramite.ExpedienteDocumentoOrigenDestinoAccion t
 -- WHERE t.FechaCreacionAuditoria >= '20250101'
 --     AND t.FechaCreacionAuditoria <  '20260101'
+
 
 -- insert into Tramite.ExpedienteDocumentoOrigenDestinoTemporal_Historico_2025
 -- select t.* from Tramite.ExpedienteDocumentoOrigenDestinoTemporal t

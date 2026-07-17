@@ -1,4 +1,4 @@
-create PROCEDURE Tramite.paListarCarpetaDocumentosPorExpediente_arq
+create or alter PROCEDURE Tramite.paListarCarpetaDocumentosPorExpediente_arq
 	@pIdExpediente int,
 	@pIdUsuarioAuditoria int,
 	@pIdPeriodo int
@@ -8,6 +8,11 @@ BEGIN TRY
 SET TRAN ISOLATION LEVEL READ UNCOMMITTED
 SET NOCOUNT ON
 
+if @pIdPeriodo = year(getdate())begin
+    RAISERROR('El periodo no debe ser el actual o vacio', 10, 1) with nowait;
+    return;
+end;
+
 create table #tmp001_expedienteTramite(
     NumeroExpediente int,
     IdPeriodo int,
@@ -15,25 +20,25 @@ create table #tmp001_expedienteTramite(
     IdExpedienteDocumento int,
     IdExpediente int,
     IdCatalogoTipoDocumento int,
-    NFechaDocumento varchar(10),
+    NFechaDocumento varchar(10) collate database_default,
     FechaCreacionAuditoria8 datetime,
-    AsuntoDocumento varchar(8000),
+    AsuntoDocumento varchar(8000) collate database_default,
     Correlativo int,
-    NumeroDocumento varchar(200),
+    NumeroDocumento varchar(200) collate database_default,
     FgEsObligatorioFirmaDigital bit,
-    RutaArchivoDocumento varchar(150),
-    DescripcionDocumentoAdjunto varchar(4000),
-    RutaArchivoDocumentoAdjunto varchar(200),
+    RutaArchivoDocumento varchar(150) collate database_default,
+    DescripcionDocumentoAdjunto varchar(4000) collate database_default,
+    RutaArchivoDocumentoAdjunto varchar(200) collate database_default,
     IdExpedienteDocumentoAdjunto int,
     FechaCreacionAuditoria datetime,
     IdExpedienteDocumentoOrigenAdjunto int,
-    DescripcionDocumentoAdjuntoEDO varchar(4000),
-    RutaArchivoDocumentoAdjuntoEDO varchar(50),
-    PeriodoCreadoDocumento varchar(4)
+    DescripcionDocumentoAdjuntoEDO varchar(4000) collate database_default,
+    RutaArchivoDocumentoAdjuntoEDO varchar(50) collate database_default,
+    PeriodoCreadoDocumento varchar(4) collate database_default,
+    IdCatalogoTipoAdjunto int
 )
 
-    DECLARE @vSql nvarchar(max),@vExpediente varchar(50)='',@vAnno int = year(getdate())
-    if(@vAnno != @pIdPeriodo)select @vExpediente = concat('_historico_', @pIdPeriodo)
+    DECLARE @vSql nvarchar(max),@vIdPeriodo varchar(4)= convert(varchar,@pIdPeriodo)
 
 	DECLARE @vIdPersonaActual int=0
 	SELECT @vIdPersonaActual=IdPersona from Seguridad.Usuario where IdUsuario=@pIdUsuarioAuditoria AND EstadoAuditoria=1 AND Bloqueado=0
@@ -60,27 +65,27 @@ create table #tmp001_expedienteTramite(
 	EDOA.IdExpedienteDocumentoOrigenAdjunto,
 	EDOA.DescripcionDocumentoAdjuntoEDO,
 	EDOA.RutaArchivoDocumentoAdjuntoEDO,
-	Tramite.funDevolverPeriodoDocumento(GETDATE(),ED.FechaCreacionAuditoria)
-	FROM Tramite.ExpedienteDocumento'+ @vExpediente +N' ED
-	INNER JOIN Tramite.Expediente'+ @vExpediente +N' EX ON EX.IdExpediente=ED.IdExpediente
-	INNER JOIN Tramite.ExpedienteDocumentoOrigen'+ @vExpediente +N' EDO ON EDO.IdExpedienteDocumento=ED.IdExpedienteDocumento AND EDO.EstadoAuditoria=1 AND ED.EstadoAuditoria=1
-	LEFT JOIN Tramite.ExpedienteDocumentoAdjunto'+ @vExpediente +N' EDA ON EDA.IdExpedienteDocumento=ED.IdExpedienteDocumento AND EDA.EstadoAuditoria=1 AND ED.EstadoAuditoria=1
-	LEFT JOIN Tramite.ExpedienteDocumentoOrigenAdjunto'+ @vExpediente +N' EDOA ON EDOA.IdExpedienteDocumentoOrigenEDO=EDO.IdExpedienteDocumentoOrigen AND EDO.EstadoAuditoria=1 AND EDOA.EstadoAuditoria=1
+	Tramite.funDevolverPeriodoDocumento(GETDATE(),ED.FechaCreacionAuditoria),
+	EDA.IdCatalogoTipoAdjunto
+	FROM Tramite.ExpedienteDocumento_historico_'+ @vIdPeriodo +N' ED
+	INNER JOIN Tramite.Expediente_historico_'+ @vIdPeriodo +N' EX ON EX.IdExpediente=ED.IdExpediente
+	INNER JOIN Tramite.ExpedienteDocumentoOrigen_historico_'+ @vIdPeriodo +N' EDO ON EDO.IdExpedienteDocumento=ED.IdExpedienteDocumento AND EDO.EstadoAuditoria=1 AND ED.EstadoAuditoria=1
+	LEFT JOIN Tramite.ExpedienteDocumentoAdjunto_historico_'+ @vIdPeriodo +N' EDA ON EDA.IdExpedienteDocumento=ED.IdExpedienteDocumento AND EDA.EstadoAuditoria=1 AND ED.EstadoAuditoria=1
+	LEFT JOIN Tramite.ExpedienteDocumentoOrigenAdjunto_historico_'+ @vIdPeriodo +N' EDOA ON EDOA.IdExpedienteDocumentoOrigenEDO=EDO.IdExpedienteDocumentoOrigen AND EDO.EstadoAuditoria=1 AND EDOA.EstadoAuditoria=1
 	WHERE ED.IdExpediente=@pIdExpediente
     and not (ED.FgEnEsperaFirmaDigital=1
 	and not exists(
 	    select 1
-        from Tramite.ExpedienteDocumentoFirmante'+ @vExpediente +N' EDF
+        from Tramite.ExpedienteDocumentoFirmante_historico_'+ @vIdPeriodo +N' EDF
         where EDF.IdExpedienteDocumento=ED.IdExpedienteDocumento and EDF.IdPersona=@vIdPersonaActual and EDF.EstadoAuditoria=1))'
 
-    exec sp_executesql @vSql, N'@pIdExpediente int,@vIdPersonaActual int',
-    @pIdExpediente = @pIdExpediente, @vIdPersonaActual = @vIdPersonaActual
+    exec sp_executesql @vSql, N'@pIdExpediente int,@vIdPersonaActual int', @pIdExpediente = @pIdExpediente, @vIdPersonaActual = @vIdPersonaActual
 
     ;with tmp001_serieDocumental as(
         select*from(values(1,'E-'),(2,'I-'))sd(IdSerieDocumentalExpediente, AbreviaturaSerieDocumentalExpediente)
     )
     select
-    CONCAT(SD.AbreviaturaSerieDocumentalExpediente,RIGHT(CONCAT('000000',t.NumeroExpediente),6), '-', t.IdPeriodo) NombreExpediente,
+    CONCAT(SD.AbreviaturaSerieDocumentalExpediente,RIGHT(1000000+t.NumeroExpediente,6), '-', t.IdPeriodo) NombreExpediente,
 	t.IdExpedienteDocumento,
 	t.IdExpediente,
 	t.NFechaDocumento,
@@ -99,10 +104,12 @@ create table #tmp001_expedienteTramite(
 	t.IdPeriodo,
 	SD.AbreviaturaSerieDocumentalExpediente,
 	t.PeriodoCreadoDocumento,
-	t.FgEsObligatorioFirmaDigital
+	t.FgEsObligatorioFirmaDigital,
+	isnull(TC.Descripcion,'') Descripcion
     from #tmp001_expedienteTramite t
     inner join tmp001_serieDocumental SD ON SD.IdSerieDocumentalExpediente=t.IdSerieDocumentalExpediente
     left join Tramite.Catalogo CTD ON CTD.IdCatalogo=t.IdCatalogoTipoDocumento
+    left join Tramite.Catalogo TC ON TC.IdCatalogo = t.IdCatalogoTipoAdjunto
     OUTER APPLY(
     	select EB.IdExpedienteBloqueado,EB.FechaHoraBloquea
     	from Tramite.ExpedienteBloqueado EB
@@ -127,4 +134,6 @@ END CATCH
 END
 GO
 
+
 exec Tramite.paListarCarpetaDocumentosPorExpediente_arq 629834,1059, 2025
+exec Tramite.paListarCarpetaDocumentosPorExpediente_arq 831321,1059,2026

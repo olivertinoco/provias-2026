@@ -1,4 +1,4 @@
-create PROCEDURE [Tramite].[paObtenerConfirmacionExpedienteDocumentoBloqueadoYPersonaVisualiza_arq]
+create or alter PROCEDURE Tramite.paObtenerConfirmacionExpedienteDocumentoBloqueadoYPersonaVisualiza_arq
     @pIdExpedienteDocumento int,
     @pIdUsuarioAuditoria int,
     @pIdPeriodo int
@@ -8,17 +8,16 @@ begin try
 set nocount on
 set tran isolation level read uncommitted
 
-select
-    @pIdExpedienteDocumento= 311858,
-    @pIdUsuarioAuditoria= 389,
-    @pIdPeriodo= 2023
+if @pIdPeriodo = year(getdate())begin
+    RAISERROR('El periodo no debe ser el actual o vacio', 10, 1) with nowait;
+    return;
+end;
 
-    declare @vAnno int = year(getdate()), @vExpediente varchar(50)='', @vSql Nvarchar(max)
-    if(@pIdPeriodo != @vAnno) select @vExpediente = concat('_historico_',@pIdPeriodo)
+    declare @vIdPeriodo varchar(4)= convert(varchar, @pIdPeriodo), @vSql Nvarchar(max)
 
     select @vSql = N'
 	select concat(isnull(case when EB.FechaHoraBloquea is null then 0 else case when EB.FechaHoraBloquea<=ED.FechaCreacionAuditoria then 1 else 0 end end, 0),''|'',isnull(EB1.PersonaVisualiza,0))
-	from Tramite.ExpedienteDocumento'+ @vExpediente +N' ED
+	from Tramite.ExpedienteDocumento_historico_'+ @vIdPeriodo +N' ED
 	OUTER APPLY(
 		select EB.IdExpedienteBloqueado,EB.FechaHoraBloquea
 		from Tramite.ExpedienteBloqueado EB where ED.IdExpediente=EB.IdExpediente and EB.EstadoAuditoria=1 and EB.EstadoBloqueo=1
@@ -51,6 +50,10 @@ END
 GO
 
 
-
 EXECUTE Tramite.paObtenerConfirmacionExpedienteDocumentoBloqueadoYPersonaVisualiza_arq 311858,389, 2023
-EXECUTE Tramite.paObtenerConfirmacionExpedienteDocumentoBloqueadoYPersonaVisualiza 311858,389
+EXECUTE Tramite.paObtenerConfirmacionExpedienteDocumentoBloqueadoYPersonaVisualiza_arq 311858,389, 2026
+
+-- select
+--     @pIdExpedienteDocumento= 311858,
+--     @pIdUsuarioAuditoria= 389,
+--     @pIdPeriodo= 2023

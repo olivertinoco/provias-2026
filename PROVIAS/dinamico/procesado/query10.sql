@@ -1,4 +1,4 @@
-create PROCEDURE [Tramite].[paListarExpedienteBusquedaPendiente_arq]
+create OR ALTER PROCEDURE Tramite.paListarExpedienteBusquedaPendiente_arq
 	@pIdUsuarioAuditoria int,
 	@pCampoOrdenado varchar(50),
 	@pTipoOrdenacion varchar(4),
@@ -29,6 +29,11 @@ BEGIN TRY
 SET TRAN ISOLATION LEVEL READ UNCOMMITTED
 SET NOCOUNT ON
 SET LANGUAGE SPANISH
+
+if @pIdPeriodo = year(getdate())begin
+    RAISERROR('El periodo no debe ser el actual o vacio', 10, 1) with nowait;
+    return;
+end;
 
 	DECLARE @vIdPeriodo varchar(4)= convert(varchar, @pIdPeriodo)
 	DECLARE @Consulta Nvarchar(max)=''
@@ -74,8 +79,9 @@ SET LANGUAGE SPANISH
 	DECLARE @vIdPersonaU int
 	SELECT @vIdPersonaU=IdPersona FROM Seguridad.Usuario WHERE IdUsuario= @pIdUsuarioAuditoria
 
-	IF COALESCE(@pIdPeriodo,0)<>0 BEGIN
-	SET @FiltroExpediente =@FiltroExpediente+ ' AND E.IdPeriodo ='+CONVERT(VARCHAR,@pIdPeriodo) END
+
+	SET @FiltroExpediente =CONCAT(@FiltroExpediente,' AND E.IdPeriodo =',@VIdPeriodo)
+
 	IF COALESCE(@pIdSerieDocumental,0)<>0 BEGIN
 	SET @FiltroExpediente =@FiltroExpediente+ ' AND E.IdSerieDocumentalExpediente ='+CONVERT(VARCHAR,@pIdSerieDocumental) END
 	IF COALESCE(@pIdCatategoriaExpediente,0)<>0 BEGIN
@@ -108,7 +114,7 @@ SET LANGUAGE SPANISH
 	else
 	begin
 		IF COALESCE(@pBusquedaGeneral,'')<>''
-		SET @Filtros ='AND (CONCAT(SD.AbreviaturaSerieDocumentalExpediente +RIGHT(''000000''+CONVERT(VARCHAR,E.NumeroExpediente),6), ''-'', E.IdPeriodo) LIKE ''%'+
+		SET @Filtros ='AND (CONCAT(SD.AbreviaturaSerieDocumentalExpediente,RIGHT(1000000+E.NumeroExpediente,6), ''-'', E.IdPeriodo) LIKE ''%'+
 		@pBusquedaGeneral +'%''  OR E.AsuntoExpediente LIKE ''%'+@pBusquedaGeneral +'%'' or PD.NombreCompleto LIKE ''%'+
 		@pBusquedaGeneral +'%'' or  E.NombreCompletoCreador LIKE ''%'+@pBusquedaGeneral +'%'')'
 	end
@@ -172,7 +178,7 @@ SET LANGUAGE SPANISH
 	case when COALESCE(PD.NombreCompleto,'''')='''' then COALESCE(NombreCompletoCreador,'''') else  COALESCE(PD.NombreCompleto,'''') END +'': ''+CASE WHEN COALESCE(E.AsuntoExpediente,'''')='''' THEN ''SIN ASUNTO'' ELSE E.AsuntoExpediente END AsuntoExpediente,
 	E.NumeroFoliosExpediente, COALESCE(E.ObservacionesExpediente,'''') ObservacionesExpediente,
 	CONVERT(DATETIME,E.NTFechaExpediente +'' ''+ E.HoraExpediente) Fecha,
-	CONCAT(SD.AbreviaturaSerieDocumentalExpediente +RIGHT(''000000''+CONVERT(VARCHAR,E.NumeroExpediente),6), ''-'', E.IdPeriodo) NombreExpediente,
+	CONCAT(SD.AbreviaturaSerieDocumentalExpediente,RIGHT(1000000+E.NumeroExpediente,6), ''-'', E.IdPeriodo) NombreExpediente,
 	COALESCE(ED.documento,'''') NumeroDocumento
 	FROM Tramite.Expediente_Historico_' + @vIdPeriodo + N' E
 	INNER JOIN @vTablaExpediente E1 ON E.IdExpediente=E1.IdExpediente
@@ -194,13 +200,13 @@ SET LANGUAGE SPANISH
 END TRY
 BEGIN CATCH
     DECLARE @ERROR_NUMBER INT, @ERROR_SEVERITY INT,@ERROR_STATE INT,@ERROR_LINE INT,@ERROR_PROCEDURE VARCHAR(MAX)	,@ERROR_MESSAGE VARCHAR(MAX)
-    SELECT @ERROR_NUMBER=ERROR_NUMBER() , @ERROR_SEVERITY=ERROR_SEVERITY() , @ERROR_STATE=ERROR_STATE() , @ERROR_PROCEDURE='Tramite.paListarExpedienteBusquedaPendiente',@ERROR_LINE=ERROR_LINE(),@ERROR_MESSAGE=ERROR_MESSAGE()
+    SELECT @ERROR_NUMBER=ERROR_NUMBER() , @ERROR_SEVERITY=ERROR_SEVERITY() , @ERROR_STATE=ERROR_STATE(),
+    @ERROR_PROCEDURE='Tramite.paListarExpedienteBusquedaPendiente_arq',@ERROR_LINE=ERROR_LINE(),@ERROR_MESSAGE=ERROR_MESSAGE()
     EXEC Seguridad.paGuardarErroresEnLog @ERROR_NUMBER , @ERROR_SEVERITY , @ERROR_STATE ,  @ERROR_PROCEDURE,@ERROR_LINE,@ERROR_MESSAGE
 END CATCH
 END
 GO
 
 
-
-
 EXECUTE Tramite.paListarExpedienteBusquedaPendiente_arq 349,null,null,1,10,null,2025,0,'','','','',0,0,'','',0,'',0,0,0,0,'',''
+EXECUTE Tramite.paListarExpedienteBusquedaPendiente_arq 349,null,null,1,10,null,2026,0,'','','','',0,0,'','',0,'',0,0,0,0,'',''

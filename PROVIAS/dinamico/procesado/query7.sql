@@ -1,4 +1,4 @@
-create PROCEDURE Tramite.paListarDocumentoOrigenDestinoHojaRuta_arq
+CREATE OR ALTER PROCEDURE Tramite.paListarDocumentoOrigenDestinoHojaRuta_arq
 	@pIdExpediente int,
 	@pIdArea int,
 	@pEsVinculado int,
@@ -11,6 +11,11 @@ BEGIN TRY
 SET LANGUAGE SPANISH
 set nocount on
 set tran isolation level read uncommitted
+
+if @pIdPeriodo = year(getdate())begin
+    RAISERROR('El periodo no debe ser el actual o vacio', 10, 1) with nowait;
+    return;
+end;
 
 create table #tmp001_Expediente(
     IdExpediente int,
@@ -67,117 +72,52 @@ Declare @vSql nvarchar(max), @vIdPeriodo varchar(4) = convert(varchar, @pIdPerio
 
     select @vSql = N'
     insert into #tmp001_Expediente
-	SELECT
-	E.IdExpediente,
-	E.CelularNotificacion,
-	E.EmailNotificacion,
-	E.NumeroExpediente,
-	E.NTFechaExpediente,
-	CONCAT(SD.AbreviaturaSerieDocumentalExpediente, RIGHT(''000000''+CONVERT(VARCHAR,E.NumeroExpediente),6), ''-'', E.IdPeriodo,
-	CASE WHEN ED.EsVinculado=1 THEN CONCAT(''- V-'',ED.CorrelativoVinculado) else '''' END)NombreExpediente,
-	ED.ObservacionesDocumento,
-	ED.IdExpedienteDocumento,
-	EDOD.IdExpedienteDocumentoOrigenDestino,
-	EDOD.IdExpedienteDocumentoOrigen,
-	EDOD.IdCatalogoSituacionMovimientoDestino,
-	CSM.Descripcion,
-	EDOD.IdCatalogoTipoMovimientoDestino,
-	CTM.Descripcion,
-	EDO.IdCatalogoTipodevolucion,
-	EDOD.NumeroDiasAtencionSolicitado,
-	EDOD.FechaDestinoRecepciona,
-	EDOD.HoraDestinoRecepciona,
-	EMO.NombreEmpresa,
-	AO.NombreArea,
-	CO.NombreCargo,
-	CASE WHEN EDO.IdPersonaOrigen = 0 THEN ISNULL(EDO.NombreCompletoOrigen, '''') ELSE
-	COALESCE(NULLIF(EDO.NombreCompletoOrigen, ''''), PO.NombreCompleto, '''') END,
-	EDOD.NumeroDiasAtencionAceptado,
-	EDOD.Original,
-	EDOD.Copia,
-	EDOD.FechaDestino,
-	EDOD.HoraDestino,
-	EDOD.FechaDestinoEnvia,
-	EDOD.HoraDestinoEnvia,
-	EMD.NombreEmpresa,
-	AD.NombreArea,
-	CD.NombreCargo,
-	COALESCE(PD.NombreCompleto,EDOD.DestinatarioDestino,''''),
-	EMR.NombreEmpresa,
-	AR.NombreArea,
-	CR.NombreCargo,
-	PR.NombreCompleto,
-	EMA.NombreEmpresa,
-	AA.NombreArea,
-	CA.NombreCargo,
-	PA.NombreCompleto,
-	EDOD.ObservacionesDestinatario,
-	Tramite.funMostrarAccionesPorDestinoSoloCodigos(EDOD.IdExpedienteDocumentoOrigenDestino),
-	CTD.Descripcion,
-	ED.NumeroDocumento,
-	ED.AsuntoDocumento,
-	ED.RutaArchivoDocumento,
-	e.NumeroExpedienteExterno,
-	ED.Correlativo
+	SELECT E.IdExpediente, E.CelularNotificacion, E.EmailNotificacion, E.NumeroExpediente, E.NTFechaExpediente, CONCAT(SD.AbreviaturaSerieDocumentalExpediente, RIGHT(1000000+E.NumeroExpediente,6), ''-'', E.IdPeriodo,
+	CASE WHEN ED.EsVinculado=1 THEN CONCAT(''- V-'',ED.CorrelativoVinculado) else '''' END)NombreExpediente, ED.ObservacionesDocumento, ED.IdExpedienteDocumento, EDOD.IdExpedienteDocumentoOrigenDestino, EDOD.IdExpedienteDocumentoOrigen, EDOD.IdCatalogoSituacionMovimientoDestino,
+	CSM.Descripcion, EDOD.IdCatalogoTipoMovimientoDestino, CTM.Descripcion, EDO.IdCatalogoTipodevolucion, EDOD.NumeroDiasAtencionSolicitado, EDOD.FechaDestinoRecepciona, EDOD.HoraDestinoRecepciona, EMO.NombreEmpresa,
+	AO.NombreArea, CO.NombreCargo, CASE WHEN EDO.IdPersonaOrigen = 0 THEN ISNULL(EDO.NombreCompletoOrigen, '''') ELSE COALESCE(NULLIF(EDO.NombreCompletoOrigen, ''''), PO.NombreCompleto, '''') END, EDOD.NumeroDiasAtencionAceptado,
+	EDOD.Original, EDOD.Copia, EDOD.FechaDestino, EDOD.HoraDestino, EDOD.FechaDestinoEnvia, EDOD.HoraDestinoEnvia, EMD.NombreEmpresa, AD.NombreArea, CD.NombreCargo, COALESCE(PD.NombreCompleto,EDOD.DestinatarioDestino,''''),
+	EMR.NombreEmpresa, AR.NombreArea, CR.NombreCargo, PR.NombreCompleto, EMA.NombreEmpresa, AA.NombreArea, CA.NombreCargo, PA.NombreCompleto, EDOD.ObservacionesDestinatario,ACS.Acciones,
+	CTD.Descripcion, ED.NumeroDocumento, ED.AsuntoDocumento, ED.RutaArchivoDocumento, e.NumeroExpedienteExterno, ED.Correlativo
 	FROM Tramite.Expediente_Historico_' + @vIdPeriodo + N' E
 	INNER JOIN Tramite.ExpedienteDocumento_Historico_' + @vIdPeriodo + N' ED
-	    ON ED.IdExpediente = E.IdExpediente
-		AND ED.EstadoAuditoria = 1
+	    ON ED.IdExpediente = E.IdExpediente AND ED.EstadoAuditoria = 1
 	INNER JOIN Tramite.ExpedienteDocumentoOrigen_Historico_' + @vIdPeriodo + N' EDO
-	    ON EDO.IdExpedienteDocumento = ED.IdExpedienteDocumento
-		AND EDO.EstadoAuditoria = 1
+	    ON EDO.IdExpedienteDocumento = ED.IdExpedienteDocumento AND EDO.EstadoAuditoria = 1
 	INNER JOIN Tramite.ExpedienteDocumentoOrigenDestino_Historico_' + @vIdPeriodo + N' EDOD
-	    ON EDOD.IdExpedienteDocumentoOrigen = EDO.IdExpedienteDocumentoOrigen
-		AND EDOD.EstadoAuditoria = 1
-	INNER JOIN Tramite.Catalogo CTD
-	    ON CTD.IdCatalogo=ED.IdCatalogoTipoDocumento
-	INNER JOIN Tramite.Catalogo CSM
-	    ON CSM.IdCatalogo=EDOD.IdCatalogoSituacionMovimientoDestino
-	INNER JOIN Tramite.Catalogo CTM
-	    ON CTM.IdCatalogo=EDOD.IdCatalogoTipoMovimientoDestino
-	INNER JOIN Tramite.SerieDocumentalExpediente SD
-	    ON SD.IdSerieDocumentalExpediente=E.IdSerieDocumentalExpediente
-	LEFT JOIN General.Empresa EMO
-	    ON EMO.IdEmpresa=EDO.IdEmpresaOrigen
-	LEFT JOIN General.Area AO
-	    ON AO.IdArea= EDO.IdAreaOrigen
-	LEFT JOIN General.Cargo CO
-	    ON CO.IdCargo=EDO.IdCargoOrigen
-	LEFT JOIN General.Empresa EMD
-	    ON EMD.IdEmpresa=EDOD.IdEmpresaDestino
-	LEFT JOIN General.Area AD
-	    ON AD.IdArea= EDOD.IdAreaDestino
-	LEFT JOIN General.Cargo CD
-	    ON CD.IdCargo=EDOD.IdCargoDestino
-	LEFT JOIN General.Persona PD
-	    ON PD.IdPersona=EDOD.IdPersonaDestino
-	LEFT JOIN General.Persona PO
-	    ON PO.IdPersona=EDO.IdPersonaOrigen
-	LEFT JOIN General.Empresa EMR
-	    ON EMR.IdEmpresa=EDOD.IdEmpresaDestinoRecepciona
-	LEFT JOIN General.Area AR
-	    ON AR.IdArea= EDOD.IdAreaDestinoRecepciona
-	LEFT JOIN General.Cargo CR
-	    ON CR.IdCargo=EDOD.IdCargoDestinoRecepciona
-	LEFT JOIN General.Persona PR
-	    ON PR.IdPersona=EDOD.IdPersonaDestinoRecepciona
-	LEFT JOIN General.Empresa EMA
-	    ON EMA.IdEmpresa=EDOD.IdEmpresaDestinoAtencion
-	LEFT JOIN General.Area AA
-	    ON AA.IdArea= EDOD.IdAreaDestinoAtencion
-	LEFT JOIN General.Cargo CA
-	    ON CA.IdCargo=EDOD.IdCargoDestinoAtencion
-	LEFT JOIN General.Persona PA
-	    ON PA.IdPersona=EDOD.IdPersonaDestinoAtencion
-	WHERE E.EstadoAuditoria=1
-	    AND E.IdExpediente=@pIdExpediente
-		AND coalesce(ED.CorrelativoVinculado,0)=@pCorrelativoVinculado'
+	    ON EDOD.IdExpedienteDocumentoOrigen = EDO.IdExpedienteDocumentoOrigen AND EDOD.EstadoAuditoria = 1
+	INNER JOIN Tramite.Catalogo CTD ON CTD.IdCatalogo=ED.IdCatalogoTipoDocumento
+	INNER JOIN Tramite.Catalogo CSM ON CSM.IdCatalogo=EDOD.IdCatalogoSituacionMovimientoDestino
+	INNER JOIN Tramite.Catalogo CTM ON CTM.IdCatalogo=EDOD.IdCatalogoTipoMovimientoDestino
+	INNER JOIN Tramite.SerieDocumentalExpediente SD ON SD.IdSerieDocumentalExpediente=E.IdSerieDocumentalExpediente
+	LEFT JOIN General.Empresa EMO ON EMO.IdEmpresa=EDO.IdEmpresaOrigen
+	LEFT JOIN General.Area AO ON AO.IdArea= EDO.IdAreaOrigen
+	LEFT JOIN General.Cargo CO ON CO.IdCargo=EDO.IdCargoOrigen
+	LEFT JOIN General.Empresa EMD ON EMD.IdEmpresa=EDOD.IdEmpresaDestino
+	LEFT JOIN General.Area AD ON AD.IdArea= EDOD.IdAreaDestino
+	LEFT JOIN General.Cargo CD ON CD.IdCargo=EDOD.IdCargoDestino
+	LEFT JOIN General.Persona PD ON PD.IdPersona=EDOD.IdPersonaDestino
+	LEFT JOIN General.Persona PO ON PO.IdPersona=EDO.IdPersonaOrigen
+	LEFT JOIN General.Empresa EMR ON EMR.IdEmpresa=EDOD.IdEmpresaDestinoRecepciona
+	LEFT JOIN General.Area AR ON AR.IdArea= EDOD.IdAreaDestinoRecepciona
+	LEFT JOIN General.Cargo CR ON CR.IdCargo=EDOD.IdCargoDestinoRecepciona
+	LEFT JOIN General.Persona PR ON PR.IdPersona=EDOD.IdPersonaDestinoRecepciona
+	LEFT JOIN General.Empresa EMA ON EMA.IdEmpresa=EDOD.IdEmpresaDestinoAtencion
+	LEFT JOIN General.Area AA ON AA.IdArea= EDOD.IdAreaDestinoAtencion
+	LEFT JOIN General.Cargo CA ON CA.IdCargo=EDOD.IdCargoDestinoAtencion
+	LEFT JOIN General.Persona PA ON PA.IdPersona=EDOD.IdPersonaDestinoAtencion
+	OUTER APPLY(
+        SELECT string_agg(CONCAT(''('',case when CA2.OrdenItem=''22'' then ''2'' else CA2.OrdenItem end,'')''), '', '')within group(order by A2.IdExpedienteDocumentoOrigenDestino) Acciones
+        from  Tramite.ExpedienteDocumentoOrigenDestinoAccion_Historico_' + @vIdPeriodo + N' A2
+        INNER JOIN Tramite.Catalogo CA2 ON CA2.IdCatalogo=A2.IdCatalogoTipoAccion
+        where A2.IdExpedienteDocumentoOrigenDestino=EDOD.IdExpedienteDocumentoOrigenDestino and A2.EstadoAuditoria=1
+    )ACS
+	WHERE E.EstadoAuditoria=1 AND E.IdExpediente=@pIdExpediente AND coalesce(ED.CorrelativoVinculado,0)=@pCorrelativoVinculado'
 
 	EXEC sp_executesql @vSql,
 	    N'@pIdExpediente int, @pCorrelativoVinculado int',
 		@pIdExpediente = @pIdExpediente,
 		@pCorrelativoVinculado = @pCorrelativoVinculado
-
 
 	select
     IdExpediente,
@@ -231,7 +171,6 @@ Declare @vSql nvarchar(max), @vIdPeriodo varchar(4) = convert(varchar, @pIdPerio
 from #tmp001_Expediente
 ORDER BY convert(datetime,FechaDestino +' '+ HoraDestino)
 
-
 END TRY
 BEGIN CATCH
 	DECLARE @ERROR_NUMBER INT
@@ -248,4 +187,5 @@ END
 GO
 
 
--- exec tramite.paListarDocumentoOrigenDestinoHojaRuta_arq 506370, null, null, 0, null, 2025
+exec tramite.paListarDocumentoOrigenDestinoHojaRuta_arq 506370, null, null, 0, null, 2025
+exec tramite.paListarDocumentoOrigenDestinoHojaRuta_arq 506370, null, null, 0, null, 2026

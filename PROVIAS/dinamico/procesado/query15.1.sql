@@ -1,4 +1,5 @@
-create or alter procedure Tramite.paListarExpedientePendienteCourrierJefatura_arq
+-- create or alter procedure Tramite.paListarExpedientePendienteCourrierJefatura_arq
+declare
 	@pIdArea int,
 	@pIdCatalogoSituacionMovimientoDestino INT,
 	@pIdUsuarioAuditoria int,
@@ -7,13 +8,22 @@ create or alter procedure Tramite.paListarExpedientePendienteCourrierJefatura_ar
 	@pNumeroPagina INT,
 	@pDimensionPagina  INT,
 	@pBusquedaGeneral varchar(100)
-AS
-BEGIN
-BEGIN TRY
+-- AS
+-- BEGIN
+-- BEGIN TRY
 SET LANGUAGE SPANISH
 set tran isolation level read uncommitted
 set nocount on
 
+select
+    @pIdArea= 79,
+    @pIdCatalogoSituacionMovimientoDestino= 4,  --0
+    @pIdUsuarioAuditoria= 349,
+    @pCampoOrdenado= null,
+    @pTipoOrdenacion= null,
+    @pNumeroPagina= 1,
+    @pDimensionPagina= 10,
+    @pBusquedaGeneral= null
 
 create table #tmp001_TablaExpediente(IdExpediente int)
 create table #tmp001_expediente_datos(
@@ -296,31 +306,19 @@ create table #tmp001_expediente_datos(
 
 	select count(1) from #tmp001_TablaExpediente
 
-END TRY
-BEGIN CATCH
-	DECLARE @ERROR_NUMBER INT, @ERROR_SEVERITY INT,@ERROR_STATE INT,@ERROR_LINE INT,@ERROR_PROCEDURE VARCHAR(MAX)	,@ERROR_MESSAGE VARCHAR(MAX)
-	SELECT @ERROR_NUMBER=ERROR_NUMBER() , @ERROR_SEVERITY=ERROR_SEVERITY() , @ERROR_STATE=ERROR_STATE(),
-	@ERROR_PROCEDURE='Tramite.paListarExpedientePendienteCourrierJefatura_arq',@ERROR_LINE=ERROR_LINE(),@ERROR_MESSAGE=ERROR_MESSAGE()
-	EXEC Seguridad.paGuardarErroresEnTablaLog @ERROR_NUMBER , @ERROR_SEVERITY , @ERROR_STATE ,  @ERROR_PROCEDURE,@ERROR_LINE,@ERROR_MESSAGE,@pIdUsuarioAuditoria
-END CATCH
-END
-GO
+-- END TRY
+-- BEGIN CATCH
+-- 	DECLARE @ERROR_NUMBER INT, @ERROR_SEVERITY INT,@ERROR_STATE INT,@ERROR_LINE INT,@ERROR_PROCEDURE VARCHAR(MAX)	,@ERROR_MESSAGE VARCHAR(MAX)
+-- 	SELECT @ERROR_NUMBER=ERROR_NUMBER() , @ERROR_SEVERITY=ERROR_SEVERITY() , @ERROR_STATE=ERROR_STATE(),
+-- 	@ERROR_PROCEDURE='Tramite.paListarExpedientePendienteCourrierJefatura_arq',@ERROR_LINE=ERROR_LINE(),@ERROR_MESSAGE=ERROR_MESSAGE()
+-- 	EXEC Seguridad.paGuardarErroresEnTablaLog @ERROR_NUMBER , @ERROR_SEVERITY , @ERROR_STATE ,  @ERROR_PROCEDURE,@ERROR_LINE,@ERROR_MESSAGE,@pIdUsuarioAuditoria
+-- END CATCH
+-- END
+-- GO
 
 
-EXECUTE [Tramite].[paListarExpedientePendienteCourrierJefatura_arq] 79,0,349,null,null,1,10,null
-EXECUTE [Tramite].[paListarExpedientePendienteCourrierJefatura_arq] 79,4,349,null,null,1,20,null
-
-
--- select
---     @pIdArea= 79,
---     @pIdCatalogoSituacionMovimientoDestino= 4,  --0
---     @pIdUsuarioAuditoria= 349,
---     @pCampoOrdenado= null,
---     @pTipoOrdenacion= null,
---     @pNumeroPagina= 1,
---     @pDimensionPagina= 10,
---     @pBusquedaGeneral= null
-
+-- -- EXECUTE [Tramite].[paListarExpedientePendienteCourrierJefatura] 79,0,349,null,null,1,10,null
+-- -- EXECUTE [Tramite].[paListarExpedientePendienteCourrierJefatura_arq] 79,0,349,null,null,1,20,null
 
 
 -- EXECUTE Tramite.paListarExpedientePendienteCourrierJefatura_arq
@@ -332,3 +330,23 @@ EXECUTE [Tramite].[paListarExpedientePendienteCourrierJefatura_arq] 79,4,349,nul
 -- @pNumeroPagina= 1,
 -- @pDimensionPagina= 10,
 -- @pBusquedaGeneral= null
+
+
+
+
+
+-- OUTER APPLY(
+--     SELECT CASE WHEN COUNT(1)>0 THEN 1 ELSE 0 END EsMiAnulado FROM Tramite.Expediente_Historico_' + @vPeriodo + N' E4 WHERE E4.IdExpediente=E.IdExpediente and E4.ExpedienteAnulado=1 and E4.IdAreaCreador=@pIdArea and E4.IdCargoCreador IN(SELECT CA4.IdCargo FROM RecursoHumano.visPersonaJefe CA4) AND E4.EstadoAuditoria=1
+-- )EMIA
+-- OUTER APPLY(
+--     SELECT TOP 1 CASE @pIdCatalogoSituacionMovimientoDestino
+--     WHEN 4 THEN
+--         CASE WHEN COALESCE(EDOD5.FechaDestinoRecepciona, '''') = ''''
+--         THEN CASE WHEN DATEDIFF(DAY, CONVERT(DATE, EDO5.FechaOrigen), GETDATE()) <= 0 THEN 0 ELSE DATEDIFF(DAY, CONVERT(DATE, EDOD5.FechaDestino), GETDATE()) END
+--         ELSE 0 END
+--     WHEN 5 THEN
+--         CASE WHEN COALESCE(EDOD5.FechaDestinoRecepciona, '''') <> '''' THEN DATEDIFF(DAY, CONVERT(DATE, EDOD5.FechaDestinoRecepciona), GETDATE()) ELSE 0 END
+--     ELSE 0 END DiasPendiente
+--     FROM Tramite.ExpedienteDocumento_Historico_' + @vPeriodo + N' ED5 INNER JOIN Tramite.ExpedienteDocumentoOrigen_Historico_' + @vPeriodo + N' EDO5 ON EDO5.IdExpedienteDocumento = ED5.IdExpedienteDocumento INNER JOIN Tramite.ExpedienteDocumentoOrigenDestino_Historico_' + @vPeriodo + N' EDOD5 ON EDOD.IdExpedienteDocumentoOrigen = EDO.IdExpedienteDocumentoOrigen
+--     WHERE ED5.IdExpediente = E.IdExpediente AND ED5.EstadoAuditoria = 1 AND EDO5.EstadoAuditoria = 1 AND EDOD5.EstadoAuditoria = 1 AND EDOD5.IdAreaDestino = @vIdAreaJefe AND EDOD5.IdCatalogoSituacionMovimientoDestino = @pIdCatalogoSituacionMovimientoDestino AND EXISTS (SELECT 1 FROM General.Cargo C5 WHERE C5.IdCargo = EDOD5.IdCargoDestino AND C5.IdCatalogoTipoCargo IN (32, 33, 34));
+-- )FODP

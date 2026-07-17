@@ -1,4 +1,4 @@
-create PROCEDURE [Tramite].[paObtenerExpedienteDocumento_arq]
+create OR ALTER PROCEDURE Tramite.paObtenerExpedienteDocumento_arq
 	@pIdExpedienteDocumento INT,
 	@pIdPeriodo int
 AS
@@ -7,6 +7,11 @@ BEGIN TRY
 SET TRAN ISOLATION LEVEL READ UNCOMMITTED
 SET LANGUAGE SPANISH
 SET NOCOUNT ON
+
+if @pIdPeriodo = year(getdate())begin
+    RAISERROR('El periodo no debe ser el actual o vacio', 10, 1) with nowait;
+    return;
+end;
 
 create table #tmp001_expediete876(
     IdExpedienteDocumento int,
@@ -53,19 +58,18 @@ create table #tmp001_expediete876(
     DireccionNotificacion varchar(100) collate database_default
 )
 
-    DECLARE @vSql nvarchar(max),@vCtaDocumento int,@vExpediente varchar(50)='',@vAnno int = year(getdate())
-    if(@vAnno != @pIdPeriodo)select @vExpediente = concat('_historico_', @pIdPeriodo)
+    DECLARE @vSql nvarchar(max), @vCtaDocumento int, @vIdPeriodo varchar(4) = convert(varchar, @pIdPeriodo)
 
     select @vSql = N'\
-    select  @vCtaDocumento = case when count(1)>0 then 1 else 0 end \
-    from Tramite.ExpedienteDocumento'+ @vExpediente +N' t inner join Tramite.PermisoActualizacionDocumento p \
-    on p.IdArea = t.IdAreaEmisor and p.IdCargo = t.IdCargoEmisor and p.IdPersona = t.IdPersonaEmisor and p.Activo = 1 and p.EstadoAuditoria = 1 \
-    where t.IdExpediente = @pIdExpedienteDocumento \
-    if(@vCtaDocumento = 0) \
-        SELECT @vCtaDocumento=case when count(1) > 0 then 1 else 0 end \
-        FROM Tramite.ExpedienteDocumentoOrigen'+ @vExpediente +N' EDO \
-        INNER JOIN Tramite.ExpedienteDocumentoOrigenDestino'+ @vExpediente +N' EDOD \
-        ON EDOD.IdExpedienteDocumentoOrigen=EDO.IdExpedienteDocumentoOrigen and EDOD.EstadoAuditoria=1 and EDOD.IdCatalogoSituacionMovimientoDestino != 4 \
+    select  @vCtaDocumento = case when count(1)>0 then 1 else 0 end
+    from Tramite.ExpedienteDocumento_historico_'+ @vIdPeriodo +N' t inner join Tramite.PermisoActualizacionDocumento p
+    on p.IdArea = t.IdAreaEmisor and p.IdCargo = t.IdCargoEmisor and p.IdPersona = t.IdPersonaEmisor and p.Activo = 1 and p.EstadoAuditoria = 1
+    where t.IdExpediente = @pIdExpedienteDocumento
+    if(@vCtaDocumento = 0)
+        SELECT @vCtaDocumento=case when count(1) > 0 then 1 else 0 end
+        FROM Tramite.ExpedienteDocumentoOrigen_historico_'+ @vIdPeriodo +N' EDO
+        INNER JOIN Tramite.ExpedienteDocumentoOrigenDestino_historico_'+ @vIdPeriodo +N' EDOD
+        ON EDOD.IdExpedienteDocumentoOrigen=EDO.IdExpedienteDocumentoOrigen and EDOD.EstadoAuditoria=1 and EDOD.IdCatalogoSituacionMovimientoDestino != 4
         where EDO.IdExpedienteDocumento=@pIdExpedienteDocumento and EDO.EstadoAuditoria=1'
 
     EXEC sp_executesql @vSql,
@@ -120,11 +124,11 @@ create table #tmp001_expediete876(
     EXV.CelularNotificacion,
     EXV.TelefonoNotificacion,
     EXV.DireccionNotificacion
-    FROM Tramite.ExpedienteDocumento'+ @vExpediente +N' E
-        INNER JOIN Tramite.Expediente'+ @vExpediente +N' EX on EX.IdExpediente=E.IdExpediente
+    FROM Tramite.ExpedienteDocumento_historico_'+ @vIdPeriodo +N' E
+        INNER JOIN Tramite.Expediente_historico_'+ @vIdPeriodo +N' EX on EX.IdExpediente=E.IdExpediente
         INNER JOIN Tramite.Catalogo C on C.IdCatalogo=E.IdCatalogoTipoDocumento
     	INNER JOIN tmp001_serieDocumental SD ON SD.IdSerieDocumentalExpediente=EX.IdSerieDocumentalExpediente
-        LEFT JOIN  Tramite.Expediente'+ @vExpediente +N' EXV on EXV.IdExpediente=E.IdExpedienteVirtual
+        LEFT JOIN  Tramite.Expediente_historico_'+ @vIdPeriodo +N' EXV on EXV.IdExpediente=E.IdExpedienteVirtual
     WHERE E.IdExpedienteDocumento=@pIdExpedienteDocumento AND E.EstadoAuditoria=1'
 
     EXEC sp_executesql @vSql, N'@pIdExpedienteDocumento int', @pIdExpedienteDocumento = @pIdExpedienteDocumento

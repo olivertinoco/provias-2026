@@ -21,8 +21,14 @@ Declare @sp varchar(1000) =
 -- '[Tramite].[paListarExpedienteMesaParteDespachadosV1]' -- DURO 30 S
 -- '[tramite].[paObtenerEstadosExpedientesEspecialista]' -- DURO 5 S
 --  ///////////////////////////////////////////////////////////////////////////////////////////////////////
+-- 'Tramite.funMostrarAccionesPorDestinoSoloCodigos'
 -- 'Tramite.paListarPendienteFirmaDigitalJefaturaV2'
-'Tramite.funMostrarDesatinatarios'
+-- 'Tramite.paListarExpedienteAcervoDocumentalExportarExcelEspecialista'
+-- 'RecursoHumano.visPersonaJefe'   --- PARA ANALIZAR PUEDO CREAR AQUI UNA VISTA INDEXADA
+-- 'Seguridad.funObtenerUsuario'
+'Tramite.paListarExpedientePendienteJefaturaMisExpedientesFosCad'
+-- 'RecursoHumano.visPersonaJefe'
+-- 'Seguridad.funObtenerRutaFotoPorIdPersona'
 -- 'General.ObtenerNumeroDiasSabadoDomingo'
 -- 'General.SplitFilas'
 -- 'General.fnFullTextBusCarEspecial'

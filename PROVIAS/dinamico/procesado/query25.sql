@@ -1,4 +1,4 @@
-CREATE OR ALTER PROCEDURE Tramite.paListarExpedienteAcervoDocumentalExportarExcelEspecialista_arq
+CREATE OR ALTER PROCEDURE Tramite.paListarExpedienteAcervoDocumentalExportarExcelJefaturaV1_arq
     @pIdAreaEmisor INT,
     @pIdPersona INT,
     @pIdUsuarioAuditoria int,
@@ -23,6 +23,7 @@ create table #tmp001_expedienteDocumento(
     TipoDocumento varchar(400) collate database_default,
     Expediente varchar(29) collate database_default,
     ExpedienteAnulado bit,
+    NombreEmpresa varchar(500) collate database_default,
     NombreArea varchar(500) collate database_default,
     NombreCargo varchar(200) collate database_default,
     NombreCompleto varchar(400) collate database_default,
@@ -59,7 +60,7 @@ create table #tmp001_expedienteDocumento(
     select @vSql = N'\
 	insert into #tmp001_expedienteDocumento SELECT DISTINCT
 	year(ED.NFechaDocumento),CTD.Descripcion,CONCAT(SD.AbreviaturaSerieDocumentalExpediente, RIGHT(1000000+E.NumeroExpediente,6), ''-'', E.IdPeriodo),
-	E.ExpedienteAnulado,A.NombreArea,C.NombreCargo,P.NombreCompleto,ED.NumeroDocumento,ED.NFechaDocumento,ED.AsuntoDocumento,ED.ObservacionesDocumento,ED.Correlativo,DEST.Destinatario,u.Logueo
+	E.ExpedienteAnulado,EM.NombreEmpresa,A.NombreArea,C.NombreCargo,P.NombreCompleto,ED.NumeroDocumento,ED.NFechaDocumento,ED.AsuntoDocumento,ED.ObservacionesDocumento,ED.Correlativo,DEST.Destinatario,u.Logueo
 	FROM Tramite.Expediente'+@vcExpedienteRpta+N' E
 	INNER JOIN Tramite.SerieDocumentalExpediente SD ON SD.IdSerieDocumentalExpediente=E.IdSerieDocumentalExpediente
 	INNER JOIN Tramite.ExpedienteDocumento'+@vcExpedienteRpta+N' ED ON ED.IdExpediente=E.IdExpediente AND ED.EstadoAuditoria=1
@@ -93,6 +94,7 @@ create table #tmp001_expedienteDocumento(
         TipoDocumento [Tipo Documento],
         Expediente,
         CASE WHEN ExpedienteAnulado=0 THEN 'NO' ELSE 'SI' END Anulado,
+        isnull(NombreEmpresa,'EXTERNO') [Razon Social],
         isnull(NombreArea,'') [Nombre Area],
         isnull(NombreCargo,'') [Nombre Cargo],
         isnull(NombreCompleto,'') [Nombre Completo],
@@ -110,7 +112,7 @@ END TRY
 BEGIN CATCH
     DECLARE @ERROR_NUMBER INT, @ERROR_SEVERITY INT,@ERROR_STATE INT,@ERROR_LINE INT,@ERROR_PROCEDURE VARCHAR(MAX) ,@ERROR_MESSAGE VARCHAR(MAX)
     SELECT @ERROR_NUMBER=ERROR_NUMBER() , @ERROR_SEVERITY=ERROR_SEVERITY() , @ERROR_STATE=ERROR_STATE() ,
-    @ERROR_PROCEDURE='Tramite.paListarExpedienteAcervoDocumentalExportarExcelEspecialista_arq',@ERROR_LINE=ERROR_LINE(),@ERROR_MESSAGE=ERROR_MESSAGE()
+    @ERROR_PROCEDURE='Tramite.paListarExpedienteAcervoDocumentalExportarExcelJefaturaV1_arq',@ERROR_LINE=ERROR_LINE(),@ERROR_MESSAGE=ERROR_MESSAGE()
     EXEC Seguridad.paGuardarErroresEnLog @ERROR_NUMBER , @ERROR_SEVERITY , @ERROR_STATE ,  @ERROR_PROCEDURE,@ERROR_LINE,@ERROR_MESSAGE
 END CATCH
 END
@@ -118,16 +120,10 @@ GO
 
 
 
-exec tramite.paListarExpedienteAcervoDocumentalExportarExcelEspecialista_arq
-@pIdAreaEmisor=79,
-@pIdPersona=1059,
-@pIdUsuarioAuditoria=1059,
-@pIdPeriodo=2025,
-@pIdCatalogoTipoDocumento=0,
-@pAsuntoDocumento='',
-@pNumeroDocumento='',
-@pFechaDocumento='01/07/2025 - 08/07/2026'
 
+-- execute Tramite.paListarExpedienteAcervoDocumentalExportarExcelJefaturaV1_arq 30,0,53721,2025,0,'','', '01/07/2025 - 08/07/2026' --PERFIL JEFE
+-- execute [bd_sgd_arq].Tramite.paListarExpedienteAcervoDocumentalExportarExcelJefaturaV1 30,0,53721,2025,0,'','', '01/07/2025 - 08/07/2026' --PERFIL JEFE
+-- return
 
-
--- execute [bd_sgd_arq].[Tramite].[paListarExpedienteAcervoDocumentalExportarExcelEspecialista] 79,1059,1059,2025,0,'','', '01/07/2025 - 08/07/2026' --PERFIL ESPECIALISTA
+execute [Tramite].paListarExpedienteAcervoDocumentalExportarExcelJefaturaV1_arq 79,0,349,2025,0,'','', '01/07/2025 - 08/07/2026' --PERFIL JEFE
+execute [Tramite].paListarExpedienteAcervoDocumentalExportarExcelJefaturaV1_arq 79,0,39212,2026,0,'','', '01/07/2025 - 08/07/2026' --PERFIL SECRETARIA

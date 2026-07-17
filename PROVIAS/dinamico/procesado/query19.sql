@@ -1,4 +1,4 @@
-create PROCEDURE [Tramite].[paObtenerExpedienteDocumentoOrigenDestino_arq]
+create OR ALTER PROCEDURE Tramite.paObtenerExpedienteDocumentoOrigenDestino_arq
     @pIdExpedienteDocumentoOrigenDestino INT,
 	@pIdPeriodo int
 AS
@@ -7,8 +7,12 @@ BEGIN TRY
 set nocount on
 set tran isolation level read uncommitted
 
-declare @vAnno int = year(getdate()), @vExpediente varchar(50)='', @vSql Nvarchar(max)
-if(@pIdPeriodo != @vAnno) select @vExpediente = concat('_historico_',@pIdPeriodo)
+if @pIdPeriodo = year(getdate())begin
+    RAISERROR('El periodo no debe ser el actual o vacio', 10, 1) with nowait;
+    return;
+end;
+
+declare @vIdPeriodo varchar(4)= convert(varchar, @pIdPeriodo), @vSql Nvarchar(max)
 
 create table #tmp001_expediente765(
     NumeroDiasAtencionSolicitado int,
@@ -83,16 +87,16 @@ create table #tmp001_expediente765(
 	E.IdCatalogoTipoTramite,
 	E.NTFechaExpediente,
 	PLZ.plazoInicial
-	FROM Tramite.ExpedienteDocumentoOrigenDestino'+ @vExpediente +N' EDOD
-	INNER JOIN Tramite.ExpedienteDocumentoOrigen'+ @vExpediente +N' EDO ON EDO.IdExpedienteDocumentoOrigen=EDOD.IdExpedienteDocumentoOrigen and EDO.EstadoAuditoria=1
-	INNER JOIN Tramite.ExpedienteDocumento'+ @vExpediente +N' ED ON ED.IdExpedienteDocumento=EDO.IdExpedienteDocumento AND ED.EstadoAuditoria=1
-	INNER JOIN Tramite.Expediente'+ @vExpediente +N' E ON E.IdExpediente=ED.IdExpediente
+	FROM Tramite.ExpedienteDocumentoOrigenDestino_historico_'+ @vIdPeriodo +N' EDOD
+	INNER JOIN Tramite.ExpedienteDocumentoOrigen_historico_'+ @vIdPeriodo +N' EDO ON EDO.IdExpedienteDocumentoOrigen=EDOD.IdExpedienteDocumentoOrigen and EDO.EstadoAuditoria=1
+	INNER JOIN Tramite.ExpedienteDocumento_historico_'+ @vIdPeriodo +N' ED ON ED.IdExpedienteDocumento=EDO.IdExpedienteDocumento AND ED.EstadoAuditoria=1
+	INNER JOIN Tramite.Expediente_historico_'+ @vIdPeriodo +N' E ON E.IdExpediente=ED.IdExpediente
 	INNER JOIN Tramite.SerieDocumentalExpediente SD ON SD.IdSerieDocumentalExpediente=E.IdSerieDocumentalExpediente
 	OUTER APPLY(
         select top 1 EDOD2.NumeroDiasAtencionSolicitado plazoInicial
-        FROM Tramite.ExpedienteDocumentoOrigenDestino'+ @vExpediente +N' EDOD2
-        INNER JOIN Tramite.ExpedienteDocumentoOrigen'+ @vExpediente +N' EDO2 ON EDO2.IdExpedienteDocumentoOrigen=EDOD2.IdExpedienteDocumentoOrigen and EDO2.EstadoAuditoria=1 and EDOD2.EstadoAuditoria=1
-        INNER JOIN Tramite.ExpedienteDocumento'+ @vExpediente +N' ED2 ON ED2.IdExpedienteDocumento=EDO2.IdExpedienteDocumento AND ED2.EstadoAuditoria=1
+        FROM Tramite.ExpedienteDocumentoOrigenDestino_historico_'+ @vIdPeriodo +N' EDOD2
+        INNER JOIN Tramite.ExpedienteDocumentoOrigen_historico_'+ @vIdPeriodo +N' EDO2 ON EDO2.IdExpedienteDocumentoOrigen=EDOD2.IdExpedienteDocumentoOrigen and EDO2.EstadoAuditoria=1 and EDOD2.EstadoAuditoria=1
+        INNER JOIN Tramite.ExpedienteDocumento_historico_'+ @vIdPeriodo +N' ED2 ON ED2.IdExpedienteDocumento=EDO2.IdExpedienteDocumento AND ED2.EstadoAuditoria=1
         where ED2.IdExpediente=E.IdExpediente order by EDOD2.IdExpedienteDocumentoOrigenDestino asc
 	)PLZ
 	WHERE EDOD.IdExpedienteDocumentoOrigenDestino=@pIdExpedienteDocumentoOrigenDestino AND EDOD.EstadoAuditoria=1'
@@ -156,6 +160,9 @@ go
 
 
 EXECUTE Tramite.paObtenerExpedienteDocumentoOrigenDestino_arq 918092, 2026
+EXECUTE Tramite.paObtenerExpedienteDocumentoOrigenDestino_arq 656559, 2023
+EXECUTE Tramite.paObtenerExpedienteDocumentoOrigenDestino_arq 918092, 2023
+
 EXECUTE Tramite.paObtenerExpedienteDocumentoOrigenDestino_arq
-@pIdExpedienteDocumentoOrigenDestino = 7227686, --   656559, -- 918092,
-@pIdPeriodo = 2026 -- 2023
+@pIdExpedienteDocumentoOrigenDestino = 7227686,
+@pIdPeriodo = 2023

@@ -1,4 +1,4 @@
-create PROCEDURE [Tramite].[paListarDemoraAtencionPorExpediente_arq]
+create OR ALTER PROCEDURE Tramite.paListarDemoraAtencionPorExpediente_arq
 	@pIdExpediente int,
 	@pIdUsuarioAuditoria int,
 	@pCampoOrdenado varchar(50),
@@ -12,6 +12,13 @@ BEGIN
 BEGIN TRY
 set nocount on
 set tran isolation level read uncommitted
+
+if @pIdPeriodo = year(getdate())begin
+    RAISERROR('El periodo no debe ser el actual o vacio', 10, 1) with nowait;
+    return;
+end;
+
+    Declare @vIdPeriodo varchar(4) = convert(varchar, @pIdPeriodo)
     Declare @vSql nvarchar(max)
     select @pBusquedaGeneral = isnull(rtrim(ltrim(@pBusquedaGeneral)), '')
 
@@ -39,8 +46,7 @@ set tran isolation level read uncommitted
     select @vSql = N'
     insert into #tmp001_Expediente
 	SELECT e.IdExpediente,
-	CONCAT(SD.AbreviaturaSerieDocumentalExpediente +
-	RIGHT(''0000'' + CONVERT(VARCHAR, E.NumeroExpediente), 5), ''-'', E.IdPeriodo) NombreExpediente,
+	CONCAT(SD.AbreviaturaSerieDocumentalExpediente, RIGHT(1000000 + E.NumeroExpediente, 6), ''-'', E.IdPeriodo) NombreExpediente,
 	ED.NumeroDocumento,
 	ed.NFechaDocumento,
 	ed.IdExpedienteDocumento,
@@ -68,17 +74,17 @@ set tran isolation level read uncommitted
 	,CSD.IdCatalogo IdCatalogoSituacionMovimientoDestino
 	,COALESCE(Seguridad.funObtenerRutaFotoPorIdPersona(EDO.IdPersonaOrigen),''sinfotoH.jpg'') RutaFotoPersona
     ,COALESCE(Seguridad.funObtenerRutaFotoPorIdPersona(EDOD.IdPersonaDestino),''sinfotoH.jpg'') RutaFotoPersonaDestino
-	FROM Tramite.Expediente_Historico_' + cast(@pIdPeriodo as varchar) + N' E
+	FROM Tramite.Expediente_Historico_' + @vIdPeriodo + N' E
 	INNER JOIN Tramite.SerieDocumentalExpediente SD
 	    ON SD.IdSerieDocumentalExpediente = E.IdSerieDocumentalExpediente
 		AND E.ExpedienteAnulado = 0
-	INNER JOIN Tramite.ExpedienteDocumento_Historico_' + cast(@pIdPeriodo as varchar) + N' ED
+	INNER JOIN Tramite.ExpedienteDocumento_Historico_' + @vIdPeriodo + N' ED
 	    ON ED.IdExpediente = E.IdExpediente
 		AND e.EstadoAuditoria = 1
-	INNER JOIN Tramite.ExpedienteDocumentoOrigen_Historico_' + cast(@pIdPeriodo as varchar) + N' EDO
+	INNER JOIN Tramite.ExpedienteDocumentoOrigen_Historico_' + @vIdPeriodo + N' EDO
 	    ON ED.IdExpedienteDocumento = EDO.IdExpedienteDocumento
 		AND ED.EstadoAuditoria = 1
-	INNER JOIN Tramite.ExpedienteDocumentoOrigenDestino_Historico_' + cast(@pIdPeriodo as varchar) + N' EDOD
+	INNER JOIN Tramite.ExpedienteDocumentoOrigenDestino_Historico_' + @vIdPeriodo + N' EDOD
 	    ON EDO.IdExpedienteDocumentoOrigen = EDOD.IdExpedienteDocumentoOrigen
 		AND EDO.EstadoAuditoria = 1
 		AND EDOD.EstadoAuditoria = 1
@@ -120,3 +126,7 @@ BEGIN CATCH
 END CATCH
 END
 GO
+
+
+EXEC Tramite.paListarDemoraAtencionPorExpediente_arq 570251,1059,NULL,NULL,1,10,NULL, 2025
+EXEC Tramite.paListarDemoraAtencionPorExpediente_arq 570251,1059,NULL,NULL,1,10,NULL, 2026

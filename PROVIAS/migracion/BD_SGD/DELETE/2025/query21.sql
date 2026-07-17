@@ -80,6 +80,8 @@
 
 
 
+
+
 -- alter table Tramite.ExpedienteDocumentoOrigenDestinoAccion add constraint fkIdExpedienteDocumentoOrigenDestinoAccion
 -- foreign key (IdExpedienteDocumentoOrigenDestino) references Tramite.ExpedienteDocumentoOrigenDestino(IdExpedienteDocumentoOrigenDestino);
 

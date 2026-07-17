@@ -1,4 +1,4 @@
-create PROCEDURE Tramite.paListarExpedientePendienteJefaturaTodos_arq
+create or alter PROCEDURE Tramite.paListarExpedientePendienteJefaturaTodos_arq
  @pConFiltroFecha bit,
  @pFechaInicio varchar(10),
  @pFechaFin varchar(10),
@@ -35,6 +35,11 @@ BEGIN TRY
 SET TRAN ISOLATION LEVEL READ UNCOMMITTED
 SET NOCOUNT ON
 
+if @pIdPeriodo = year(getdate())begin
+    RAISERROR('El periodo no debe ser el actual o vacio', 10, 1) with nowait;
+    return;
+end;
+
   DECLARE @vIdAreaJefe int=0
   DECLARE @vIdEmpresaJefe int=0
   DECLARE @vIdCargoJefe int=0
@@ -66,25 +71,26 @@ SET NOCOUNT ON
    END
 
    CREATE TABLE #MITABLA(
-    IdExpediente int,
-    ExpedienteConfidencial bit,
-    NTFechaExpediente varchar (10),
-    HoraExpediente varchar (5),
-    IdCatalogoTipoPrioridad int,
-    CatalogoTipoPrioridad varchar (100),
-    CatalogoTipoTramite varchar (100),
-    ColorCatalogoTipoTramite varchar (100),
-    Logueo varchar (100),
-    IdPersonaCreador int,
-    AsuntoExpediente varchar (8000),
-    NumeroFoliosExpediente int,
-    ObservacionesExpediente varchar(4000),
-    Fecha VARCHAR(20),
-    NombreExpediente varchar (100),
-    NombreCompletoCreador varchar (100),
-    NumeroExpediente int,
-    IdExpedienteSeguimiento int,
-    FechaMovimiento datetime);
+        IdExpediente int,
+        ExpedienteConfidencial bit,
+        NTFechaExpediente varchar (10) collate database_default,
+        HoraExpediente varchar (5) collate database_default,
+        IdCatalogoTipoPrioridad int,
+        CatalogoTipoPrioridad varchar (100) collate database_default,
+        CatalogoTipoTramite varchar (100) collate database_default,
+        ColorCatalogoTipoTramite varchar (100) collate database_default,
+        Logueo varchar (100) collate database_default,
+        IdPersonaCreador int,
+        AsuntoExpediente varchar (8000) collate database_default,
+        NumeroFoliosExpediente int,
+        ObservacionesExpediente varchar(4000) collate database_default,
+        Fecha VARCHAR(20) collate database_default,
+        NombreExpediente varchar (100) collate database_default,
+        NombreCompletoCreador varchar (100) collate database_default,
+        NumeroExpediente int,
+        IdExpedienteSeguimiento int,
+        FechaMovimiento datetime
+    );
 
    select @vSql = N'
    insert into #MITABLA
@@ -92,7 +98,7 @@ SET NOCOUNT ON
    COALESCE(CTT.Descripcion,'''') CatalogoTipoTramite,COALESCE(CTT.Detalle,'''') ColorCatalogoTipoTramite,US.Logueo,E.IdPersonaCreador,
    UPPER(E.AsuntoExpediente) AsuntoExpediente,COALESCE(E.NumeroFoliosExpediente,0)NumeroFoliosExpediente,COALESCE(E.ObservacionesExpediente,'''') ObservacionesExpediente,
    CONCAT(E.NTFechaExpediente ,'' '', E.HoraExpediente) Fecha,
-   CONCAT(SD.AbreviaturaSerieDocumentalExpediente +RIGHT(''000000''+CONVERT(VARCHAR,E.NumeroExpediente),6),''-'', E.IdPeriodo) NombreExpediente,
+   CONCAT(SD.AbreviaturaSerieDocumentalExpediente,RIGHT(1000000+E.NumeroExpediente,6),''-'', E.IdPeriodo) NombreExpediente,
    CASE WHEN COALESCE(E.NombreCompletoCreador,'''')<>'''' THEN COALESCE(E.NombreCompletoCreador,'''') ELSE PE.NombreCompleto END NombreCompletoCreador,
    E.NumeroExpediente, COALESCE(ES.IdExpedienteSeguimiento, 0 )IdExpedienteSeguimiento, NULL FechaMovimiento
    FROM Tramite.Expediente_Historico_' + @vIdPeriodo + N' E
@@ -142,7 +148,7 @@ SET NOCOUNT ON
 	CROSS APPLY(
 		select isnull((select STUFF((
 		SELECT ''<div style="margin: 2px;padding: 2px;" class="ui blue label">''+
-		CONCAT(SD1.AbreviaturaSerieDocumentalExpediente,RIGHT(CONCAT(''000000'',E1.NumeroExpediente),6), ''-'', E1.IdPeriodo)+''</div>''
+		CONCAT(SD1.AbreviaturaSerieDocumentalExpediente,RIGHT(1000000 + E1.NumeroExpediente,6), ''-'', E1.IdPeriodo)+''</div>''
 		FROM Tramite.ExpedienteEnlazado_Historico_' + @vIdPeriodo + N' EE
 		INNER JOIN Tramite.Expediente_Historico_' + @vIdPeriodo + N' e1
 		    ON EE.IdExpedienteSecundario=E1.IdExpediente AND E1.EstadoAuditoria=1 AND E1.ExpedienteAnulado=0
@@ -153,7 +159,7 @@ SET NOCOUNT ON
 	CROSS APPLY(
 		select isnull((select STUFF((
 		SELECT ''<div style="margin: 2px;padding: 2px;" class="ui blue label">''+
-		CONCAT(SD1.AbreviaturaSerieDocumentalExpediente,RIGHT(CONCAT(''000000'',E1.NumeroExpediente),6), ''-'', E1.IdPeriodo)+''</div>''
+		CONCAT(SD1.AbreviaturaSerieDocumentalExpediente,RIGHT(1000000+E1.NumeroExpediente,6), ''-'', E1.IdPeriodo)+''</div>''
 		FROM Tramite.ExpedienteEnlazado_Historico_' + @vIdPeriodo + N' EE
 		INNER JOIN Tramite.Expediente_Historico_' + @vIdPeriodo + N' e1
 		    ON EE.IdExpediente=E1.IdExpediente AND E1.EstadoAuditoria=1 AND E1.ExpedienteAnulado=0
@@ -214,6 +220,39 @@ EXEC Tramite.paListarExpedientePendienteJefaturaTodos_arq
 @pIdAreaOrigen=0,
 @pIdAreaDestino=0,
 @pIdPeriodo=2025,
+@pIdCatalogoTipoPrioridad=0,
+@pIdCatalogoTipoTramite=0,
+@pIdCatalogoTipoDocumento=0,
+@pNumeroExpediente='',
+@pNumeroDocumento='',
+@pPersonaDesde='',
+@pPersonaPara='',
+@pIdTipoIngreso=0,
+@pFechaDocumento='',
+@pEmisorExpediente='',
+@pAsuntoExpediente='',
+@pIdUsuarioAuditoria=53721,
+@pCampoOrdenado=NULL,
+@pTipoOrdenacion=NULL,
+@pNumeroPagina=1,
+@pDimensionPagina=10,
+@pBusquedaGeneral='11477',
+@pFlgBusqueda=0
+
+
+EXEC Tramite.paListarExpedientePendienteJefaturaTodos_arq
+@pConFiltroFecha=0,
+@pFechaInicio='21/05/2026',
+@pFechaFin='21/05/2026',
+@pConFiltroFechaMovimiento=1,
+@pFechaInicioMovimiento='21/05/2026',
+@pFechaFinMovimiento='21/05/2026',
+@pIdArea=30,
+@pIdCatalogoSituacionMovimientoDestino=0,
+@pTipoSituacionMovimiento=0,
+@pIdAreaOrigen=0,
+@pIdAreaDestino=0,
+@pIdPeriodo=2026,
 @pIdCatalogoTipoPrioridad=0,
 @pIdCatalogoTipoTramite=0,
 @pIdCatalogoTipoDocumento=0,

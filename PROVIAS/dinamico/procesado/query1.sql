@@ -1,4 +1,4 @@
-create PROCEDURE [Tramite].[paListarExpedientePendienteEspecialistaTodos_arq]
+create OR ALTER PROCEDURE Tramite.paListarExpedientePendienteEspecialistaTodos_arq
 	@pConFiltroFecha bit,
 	@pFechaInicio varchar(10),
 	@pFechaFin varchar(10),
@@ -35,6 +35,12 @@ BEGIN
 BEGIN TRY
 set tran isolation level read uncommitted
 set nocount on
+
+if @pIdPeriodo = year(getdate())begin
+    RAISERROR('El periodo no debe ser el actual o vacio', 10, 1) with nowait;
+    return;
+end;
+
 
 create table #tmp001_expedientePendEsp (
     EsParaAnular bit,
@@ -134,7 +140,7 @@ create table #tmp001_expedientePendEsp (
     end
 	SET LANGUAGE SPANISH
 
-	DECLARE @sql NVARCHAR(MAX) = N'
+	DECLARE @sql NVARCHAR(MAX) = N'\
 	;with tmp001_serieDocumental as(
     select*from(values(1,''E-''),(2,''I-''))sd(IdSerieDocumentalExpediente, AbreviaturaSerieDocumentalExpediente))
 	insert into #MITABLA select top 1000
@@ -190,7 +196,7 @@ create table #tmp001_expedientePendEsp (
         @pBusquedaGeneral = @pBusquedaGeneral
 
     select @sql = null
-    select @sql = N'
+    select @sql = N'\
     ;with tmp001_serieDocumental as(
         select*from(values(1,''E-''),(2,''I-''))sd(IdSerieDocumentalExpediente, AbreviaturaSerieDocumentalExpediente))
     ,tmp001_NombreExpediente(cab1, cab2)as(
@@ -266,8 +272,36 @@ create table #tmp001_expedientePendEsp (
             @pNumeroPagina = @pNumeroPagina,
             @pDimensionPagina = @pDimensionPagina
 
-    select*from #tmp001_expedientePendEsp
-    select count(*) from #MITABLA
+    select
+        EsParaAnular,
+        DiasPendiente,
+        NombrePersonaOrigen,
+        NumeroDocumento,
+        IdExpedienteDocumento,
+        NombreExpedientesEnlazados,
+        EsPrincipalEnlace,
+        CatalogoTipoOrigen,
+        IdExpediente,
+        ExpedienteConfidencial,
+        NTFechaExpediente,
+        HoraExpediente,
+        IdCatalogoTipoPrioridad,
+        CatalogoTipoPrioridad,
+        CatalogoTipoTramite,
+        ColorCatalogoTipoTramite,
+        Logueo,
+        RutaFotoPersona,
+        AsuntoExpediente,
+        NumeroFoliosExpediente,
+        ObservacionesExpediente,
+        Fecha,
+        NombreExpediente,
+        NombreCompletoCreador,
+        NumeroExpediente,
+        IdExpedienteSeguimiento,
+        FechaMovimiento
+    from #tmp001_expedientePendEsp
+    select count(1) from #MITABLA
 
 END TRY
 BEGIN CATCH
@@ -279,35 +313,35 @@ END
 GO
 
 
--- exec Tramite.paListarExpedientePendienteEspecialistaTodos_arq
--- @pConFiltroFecha=0,
--- @pFechaInicio='19/05/2026',
--- @pFechaFin='19/05/2026',
--- @pConFiltroFechaMovimiento=1,
--- @pFechaInicioMovimiento='19/05/2026',
--- @pFechaFinMovimiento='19/05/2026',
--- @pIdPersona=350,
--- @pIdEmpleadoPerfil=2260,
--- @pIdCatalogoSituacionMovimientoDestino=0,
--- @pTipoSituacionMovimiento=0,
--- @pIdAreaOrigen=0,
--- @pIdAreaDestino=0,
--- @pIdPeriodo=2025,
--- @pIdCatalogoTipoPrioridad=0,
--- @pIdCatalogoTipoTramite=0,
--- @pIdCatalogoTipoDocumento=0,
--- @pNumeroExpediente='',
--- @pNumeroDocumento='',
--- @pPersonaDesde='',
--- @pPersonaPara='',
--- @pIdTipoIngreso=0,
--- @pFechaDocumento='',
--- @pEmisorExpediente='',
--- @pAsuntoExpediente='',
--- @pIdUsuarioAuditoria=350,
--- @pCampoOrdenado=NULL,
--- @pTipoOrdenacion=NULL,
--- @pNumeroPagina=1,
--- @pDimensionPagina=10,
--- @pBusquedaGeneral='11477',
--- @pFlgBusqueda=0
+exec Tramite.paListarExpedientePendienteEspecialistaTodos_arq
+@pConFiltroFecha=0,
+@pFechaInicio='19/05/2026',
+@pFechaFin='19/05/2026',
+@pConFiltroFechaMovimiento=1,
+@pFechaInicioMovimiento='19/05/2026',
+@pFechaFinMovimiento='19/05/2026',
+@pIdPersona=350,
+@pIdEmpleadoPerfil=2260,
+@pIdCatalogoSituacionMovimientoDestino=0,
+@pTipoSituacionMovimiento=0,
+@pIdAreaOrigen=0,
+@pIdAreaDestino=0,
+@pIdPeriodo=2025,
+@pIdCatalogoTipoPrioridad=0,
+@pIdCatalogoTipoTramite=0,
+@pIdCatalogoTipoDocumento=0,
+@pNumeroExpediente='',
+@pNumeroDocumento='',
+@pPersonaDesde='',
+@pPersonaPara='',
+@pIdTipoIngreso=0,
+@pFechaDocumento='',
+@pEmisorExpediente='',
+@pAsuntoExpediente='',
+@pIdUsuarioAuditoria=350,
+@pCampoOrdenado=NULL,
+@pTipoOrdenacion=NULL,
+@pNumeroPagina=1,
+@pDimensionPagina=10,
+@pBusquedaGeneral='11477',
+@pFlgBusqueda=0
