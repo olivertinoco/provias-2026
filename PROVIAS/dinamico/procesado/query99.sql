@@ -1,17 +1,32 @@
-set rowcount 10
+set rowcount 0
 
-select @@version
-
-
-Declare @vPeriodo varchar(4), @cta int = 0, @tot int = year(getdate()) - 2022
-while @cta < @tot begin
-    select @vPeriodo = 2022 + @cta
+select*into tramite.NumeracionSeparada from bd_sgd_arq.tramite.NumeracionSeparada
 
 
 
-    select concat('tramite.Expediente_historico_', @vPeriodo)
-    select @cta+=1
-end
+
+
+-- Declare @vPeriodo varchar(4), @cta int = 0, @tot int = year(getdate()) - 2022
+-- while @cta < @tot begin
+--     select @vPeriodo = 2022 + @cta
+
+
+
+--     select concat('tramite.Expediente_historico_', @vPeriodo)
+--     select @cta+=1
+-- end
+
+-- Declare @annio int = 2023
+-- Declare @vPeriodo2 varchar(4), @cta2 int = 0, @tot2 int = year(getdate()) - @annio
+-- while @cta2 < @tot2 begin
+--     select @vPeriodo2 = @annio + @cta2
+
+
+
+--     select concat('NUEVO PERIODO: tramite.Expediente_historico_', @vPeriodo2)
+--     select @cta2+=1
+-- end
+
 
 
 

@@ -26,7 +26,7 @@ Declare @sp varchar(1000) =
 -- 'Tramite.paListarExpedienteAcervoDocumentalExportarExcelEspecialista'
 -- 'RecursoHumano.visPersonaJefe'   --- PARA ANALIZAR PUEDO CREAR AQUI UNA VISTA INDEXADA
 -- 'Seguridad.funObtenerUsuario'
-'Tramite.paListarExpedientePendienteJefaturaMisExpedientesFosCad'
+'Tramite.paListarExpedienteAcervoDocumentalExportarExcelJefaturaV1'
 -- 'RecursoHumano.visPersonaJefe'
 -- 'Seguridad.funObtenerRutaFotoPorIdPersona'
 -- 'General.ObtenerNumeroDiasSabadoDomingo'

@@ -1,4 +1,4 @@
-ALTER PROCEDURE [Tramite].[paListarDocumentoPendienteEspecialistaV1]
+CREATE PROCEDURE [Tramite].[paListarDocumentoPendienteEspecialistaV1]
 	   @pIdExpediente int,
        @pIdEmpresa int,
        @pIdArea int,
@@ -51,7 +51,10 @@ AS
 			 IF @pVerSoloMio=1
 			 BEGIN
 			 SELECT
-					case when ED.FgEnEsperaFirmaDigital=1 and Ver.doc=0 then 0 else @vSiPariticipo end SiPariticipo,
+					--@vSiPariticipo SiPariticipo,
+					case when ED.FgEnEsperaFirmaDigital=1 and Ver.doc=0 then 0
+						 --when ED.FgEnEsperaFirmaDigital=1 and Ver.doc=1 then 1
+					     else @vSiPariticipo end SiPariticipo,
 					Seguridad.funObtenerUsuario(edo.IdUsuarioCreacionAuditoria)Logueo,
 					Tramite.funPaseTieneAdjunto(EDO.IdExpedienteDocumentoOrigen) PaseTieneAdjunto,
 					Tramite.funDocumentoTieneAdjunto(ED.IdExpedienteDocumento) DocumentoTieneAdjunto,
@@ -90,6 +93,7 @@ AS
                     COALESCE(EDOD.HoraDestinoEnvia,'') HoraDestinoEnvia,
 					 COALESCE(EMD.NombreEmpresa,COALESCE(EDOD.DestinatarioDestino,'')) NombreEmpresaDestino,
                     COALESCE(AD.NombreArea,'') NombreAreaDestino,
+                    --COALESCE(CD.NombreCargo,'') NombreCargoDestino,
 					CASE WHEN CTED.IdCatalogo=9 THEN '(LOCADOR)' ELSE COALESCE(CD.NombreCargo,'') END NombreCargoDestino,
 					COALESCE(Seguridad.funObtenerRutaFotoPorIdPersona(EDOD.IdPersonaDestino),'sinfotoH.jpg') RutaFotoPersonaDestino,
                     COALESCE(PD.NombreCompleto,'') NombrePersonaDestino,
@@ -113,6 +117,7 @@ AS
                     COALESCE(ED.AsuntoDocumento,'') AsuntoDocumento,
                     COALESCE(ED.RutaArchivoDocumento,'') RutaArchivoDocumento,
 					isnull(FORMAT(ED.FechaCreacionAuditoria, 'dd/MM/yyyy HH:mm'),'') FechaCreacionAuditoria,
+
                     COALESCE(EDOD.FechaArchivado,'')FechaArchivado,
                     Tramite.funEsExtornable(EDOD.IdExpedienteDocumentoOrigen,EDOD.IdExpedienteDocumentoOrigenDestino) EsExtornable,
                     EDOD.EsInicial,
@@ -147,6 +152,7 @@ AS
                     LEFT JOIN RecursoHumano.Empleado EMPD ON EMPD.IdPersona=EDOD.IdPersonaDestino AND EMPD.EstadoAuditoria=1
 					LEFT JOIN General.Persona PD ON PD.IdPersona=EMPD.IdPersona AND PD.EstadoAuditoria=1
 					LEFT JOIN RecursoHumano.Catalogo CTED ON CTED.IdCatalogo=EMPD.IdCatalogoTipoEmpleado
+
 					LEFT JOIN RecursoHumano.Empleado EMPO ON EMPO.IdPersona=EDO.IdPersonaOrigen AND EMPO.EstadoAuditoria=1
 					LEFT JOIN General.Persona PO ON PO.IdPersona=EMPO.IdPersona AND PO.EstadoAuditoria=1
 					LEFT JOIN RecursoHumano.Catalogo CTEO ON CTEO.IdCatalogo=EMPO.IdCatalogoTipoEmpleado
@@ -170,7 +176,6 @@ AS
 					OFFSET (@pNumeroPagina-1)*@pDimensionPagina ROWS
 					FETCH NEXT @pDimensionPagina ROWS ONLY
 
-
 					SELECT COUNT(*)
 					FROM Tramite.Expediente E WITH(NOLOCK)
                     INNER JOIN Tramite.ExpedienteDocumento ED WITH(NOLOCK) ON ED.IdExpediente=E.IdExpediente
@@ -186,12 +191,15 @@ AS
                     LEFT JOIN General.Empresa EMD ON EMD.IdEmpresa=EDOD.IdEmpresaDestino
                     LEFT JOIN General.Area AD ON AD.IdArea= EDOD.IdAreaDestino
                     LEFT JOIN General.Cargo CD ON CD.IdCargo=EDOD.IdCargoDestino
+
 					LEFT JOIN RecursoHumano.Empleado EMPD ON EMPD.IdPersona=EDOD.IdPersonaDestino AND EMPD.EstadoAuditoria=1
 					LEFT JOIN General.Persona PD ON PD.IdPersona=EMPD.IdPersona AND PD.EstadoAuditoria=1
 					LEFT JOIN RecursoHumano.Catalogo CTED ON CTED.IdCatalogo=EMPD.IdCatalogoTipoEmpleado
+
 					LEFT JOIN RecursoHumano.Empleado EMPO ON EMPO.IdPersona=EDO.IdPersonaOrigen AND EMPO.EstadoAuditoria=1
 					LEFT JOIN General.Persona PO ON PO.IdPersona=EMPO.IdPersona AND PO.EstadoAuditoria=1
 					LEFT JOIN RecursoHumano.Catalogo CTEO ON CTEO.IdCatalogo=EMPO.IdCatalogoTipoEmpleado
+
                     LEFT JOIN General.Empresa EMR ON EMR.IdEmpresa=EDOD.IdEmpresaDestinoRecepciona
                     LEFT JOIN General.Area AR ON AR.IdArea= EDOD.IdAreaDestinoRecepciona
                     LEFT JOIN General.Cargo CR ON CR.IdCargo=EDOD.IdCargoDestinoRecepciona
@@ -212,12 +220,15 @@ AS
 			ELSE
 			BEGIN
 			SELECT
-					case when ED.FgEnEsperaFirmaDigital=1 and Ver.doc=0 then 0 else @vSiPariticipo end SiPariticipo,
+					--@vSiPariticipo SiPariticipo,
+					case when ED.FgEnEsperaFirmaDigital=1 and Ver.doc=0 then 0
+						 --when ED.FgEnEsperaFirmaDigital=1 and Ver.doc=1 then 1
+						 else @vSiPariticipo end SiPariticipo,
 					Seguridad.funObtenerUsuario(edo.IdUsuarioCreacionAuditoria)Logueo,
 					Tramite.funPaseTieneAdjunto(EDO.IdExpedienteDocumentoOrigen) PaseTieneAdjunto,
 					Tramite.funDocumentoTieneAdjunto(ED.IdExpedienteDocumento) DocumentoTieneAdjunto,
 					CONCAT(SD.AbreviaturaSerieDocumentalExpediente +RIGHT('000000'+CONVERT(VARCHAR,E.NumeroExpediente),6), '-', E.IdPeriodo,CASE WHEN COALESCE(ED.CorrelativoVinculado,0)=0 THEN '' ELSE ' V-'+CONVERT(VARCHAR,ED.CorrelativoVinculado) END) NombreExpediente,
-					ED.CorrelativoVinculado,
+					ED.CorrelativoVinculado ,
 					EDO.EsVinculado,
 					E.ExpedienteAnulado,
                     E.IdExpediente,
@@ -235,7 +246,7 @@ AS
                     COALESCE(EDOD.HoraDestinoRecepciona,'')HoraDestinoRecepciona,
 					COALESCE(EMO.NombreEmpresa,'') NombreEmpresaOrigen,
 					COALESCE(AO.NombreArea,'') NombreAreaOrigen,
-                    CASE WHEN CTEO.IdCatalogo=9 THEN '(LOCADOR)' ELSE COALESCE(CO.NombreCargo,'') END NombreCargoOrigen,
+                   CASE WHEN CTEO.IdCatalogo=9 THEN '(LOCADOR)' ELSE COALESCE(CO.NombreCargo,'') END NombreCargoOrigen,
 					CASE WHEN EDO.IdPersonaOrigen=0 THEN EDO.NombreCompletoOrigen ELSE CASE WHEN CTM.IdCatalogo=71 THEN coalesce(EDO.NombreCompletoOrigen,'')  ELSE coalesce(PO.NombreCompleto,'') END END  NombrePersonaOrigen,
 					COALESCE(Seguridad.funObtenerRutaFotoPorIdPersona(EDO.IdPersonaOrigen),'sinfotoH.jpg') RutaFotoPersona,
 					COALESCE(Seguridad.funObtenerRutaFotoPorIdPersona(EDOD.IdPersonaDestino),'sinfotoH.jpg') RutaFotoPersonaDestino,
@@ -249,8 +260,9 @@ AS
                     EDO.HoraOrigen,
                     COALESCE(EDOD.FechaDestinoEnvia,'') FechaDestinoEnvia,
                     COALESCE(EDOD.HoraDestinoEnvia,'') HoraDestinoEnvia,
-					COALESCE(EMD.NombreEmpresa,COALESCE(EDOD.DestinatarioDestino,'')) NombreEmpresaDestino,
+					 COALESCE(EMD.NombreEmpresa,COALESCE(EDOD.DestinatarioDestino,'')) NombreEmpresaDestino,
                     COALESCE(AD.NombreArea,'') NombreAreaDestino,
+                   -- COALESCE(CD.NombreCargo,'') NombreCargoDestino,
 					CASE WHEN CTED.IdCatalogo=9 THEN '(LOCADOR)' ELSE COALESCE(CD.NombreCargo,'') END NombreCargoDestino,
 					COALESCE(Seguridad.funObtenerRutaFotoPorIdPersona(EDOD.IdPersonaDestino),'sinfotoH.jpg') RutaFotoPersonaDestino,
                     COALESCE(PD.NombreCompleto,'') NombrePersonaDestino,
@@ -308,9 +320,11 @@ AS
                     LEFT JOIN RecursoHumano.Empleado EMPD ON EMPD.IdPersona=EDOD.IdPersonaDestino AND EMPD.EstadoAuditoria=1
 					LEFT JOIN General.Persona PD ON PD.IdPersona=EMPD.IdPersona AND PD.EstadoAuditoria=1
 					LEFT JOIN RecursoHumano.Catalogo CTED ON CTED.IdCatalogo=EMPD.IdCatalogoTipoEmpleado
+
 					LEFT JOIN RecursoHumano.Empleado EMPO ON EMPO.IdPersona=EDO.IdPersonaOrigen AND EMPO.EstadoAuditoria=1
 					LEFT JOIN General.Persona PO ON PO.IdPersona=EMPO.IdPersona AND PO.EstadoAuditoria=1
 					LEFT JOIN RecursoHumano.Catalogo CTEO ON CTEO.IdCatalogo=EMPO.IdCatalogoTipoEmpleado
+
                     LEFT JOIN General.Empresa EMR ON EMR.IdEmpresa=EDOD.IdEmpresaDestinoRecepciona
                     LEFT JOIN General.Area AR ON AR.IdArea= EDOD.IdAreaDestinoRecepciona
                     LEFT JOIN General.Cargo CR ON CR.IdCargo=EDOD.IdCargoDestinoRecepciona
@@ -327,7 +341,6 @@ AS
 					OFFSET (@pNumeroPagina-1)*@pDimensionPagina ROWS
 					FETCH NEXT @pDimensionPagina ROWS ONLY
 
-
 					SELECT COUNT(*)
 					FROM Tramite.Expediente E WITH(NOLOCK)
                     INNER JOIN Tramite.ExpedienteDocumento ED WITH(NOLOCK) ON ED.IdExpediente=E.IdExpediente
@@ -341,14 +354,18 @@ AS
                     LEFT JOIN General.Area AO ON AO.IdArea= EDO.IdAreaOrigen
                     LEFT JOIN General.Cargo CO ON CO.IdCargo=EDO.IdCargoOrigen
                     LEFT JOIN General.Empresa EMD ON EMD.IdEmpresa=EDOD.IdEmpresaDestino
+
                     LEFT JOIN General.Area AD ON AD.IdArea= EDOD.IdAreaDestino
                     LEFT JOIN General.Cargo CD ON CD.IdCargo=EDOD.IdCargoDestino
+
                     LEFT JOIN RecursoHumano.Empleado EMPD ON EMPD.IdPersona=EDOD.IdPersonaDestino AND EMPD.EstadoAuditoria=1
 					LEFT JOIN General.Persona PD ON PD.IdPersona=EMPD.IdPersona AND PD.EstadoAuditoria=1
 					LEFT JOIN RecursoHumano.Catalogo CTED ON CTED.IdCatalogo=EMPD.IdCatalogoTipoEmpleado
+
 					LEFT JOIN RecursoHumano.Empleado EMPO ON EMPO.IdPersona=EDO.IdPersonaOrigen AND EMPO.EstadoAuditoria=1
 					LEFT JOIN General.Persona PO ON PO.IdPersona=EMPO.IdPersona AND PO.EstadoAuditoria=1
 					LEFT JOIN RecursoHumano.Catalogo CTEO ON CTEO.IdCatalogo=EMPO.IdCatalogoTipoEmpleado
+
                     LEFT JOIN General.Empresa EMR ON EMR.IdEmpresa=EDOD.IdEmpresaDestinoRecepciona
                     LEFT JOIN General.Area AR ON AR.IdArea= EDOD.IdAreaDestinoRecepciona
                     LEFT JOIN General.Cargo CR ON CR.IdCargo=EDOD.IdCargoDestinoRecepciona
@@ -362,6 +379,8 @@ AS
 					WHERE E.IdExpediente=@pIdExpediente
 					AND ED.CorrelativoVinculado= CASE WHEN @pCorrelativoVinculado>0 THEN @pCorrelativoVinculado ELSE ED.CorrelativoVinculado END
 			 END
+
+
 
 			 END TRY
 	BEGIN CATCH

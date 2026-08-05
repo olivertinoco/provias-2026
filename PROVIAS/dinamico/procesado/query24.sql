@@ -13,10 +13,10 @@ BEGIN TRY
 set nocount on
 set tran isolation level read uncommitted
 
-if @pIdPeriodo = 0 or @pIdPeriodo is null begin
-    RAISERROR('El periodo no debe ser 0 o vacio', 10, 1) with nowait;
+if @pIdPeriodo = year(getdate())begin
+    RAISERROR('El periodo no debe ser el actual o vacio', 10, 1) with nowait;
     return;
-end
+end;
 
 create table #tmp001_expedienteDocumento(
     Periodo int,
@@ -37,11 +37,10 @@ create table #tmp001_expedienteDocumento(
 
 	declare @vFechaInicial varchaR(10)
 	declare @vFechaFinal varchaR(10)
-
 	declare @vSql Nvarchar(max)=''
-	declare @vAnno int = year(getdate())
+
     declare @vcExpedienteRpta Nvarchar(100) = ''
-    select @vcExpedienteRpta = case @vAnno when @pIdPeriodo then '' else concat('_historico_', @pIdPeriodo) end
+    declare @vIdPeriodo varchar(4) = convert(varchar, @pIdPeriodo)
 
 	IF COALESCE(@pFechaDocumento,'')<>''
 	begin
@@ -60,11 +59,11 @@ create table #tmp001_expedienteDocumento(
 	insert into #tmp001_expedienteDocumento SELECT DISTINCT
 	year(ED.NFechaDocumento),CTD.Descripcion,CONCAT(SD.AbreviaturaSerieDocumentalExpediente, RIGHT(1000000+E.NumeroExpediente,6), ''-'', E.IdPeriodo),
 	E.ExpedienteAnulado,A.NombreArea,C.NombreCargo,P.NombreCompleto,ED.NumeroDocumento,ED.NFechaDocumento,ED.AsuntoDocumento,ED.ObservacionesDocumento,ED.Correlativo,DEST.Destinatario,u.Logueo
-	FROM Tramite.Expediente'+@vcExpedienteRpta+N' E
+	FROM Tramite.Expediente_historico_'+@vIdPeriodo+N' E
 	INNER JOIN Tramite.SerieDocumentalExpediente SD ON SD.IdSerieDocumentalExpediente=E.IdSerieDocumentalExpediente
-	INNER JOIN Tramite.ExpedienteDocumento'+@vcExpedienteRpta+N' ED ON ED.IdExpediente=E.IdExpediente AND ED.EstadoAuditoria=1
-	INNER JOIN Tramite.ExpedienteDocumentoOrigen'+@vcExpedienteRpta+N' EDO ON EDO.IdExpedienteDocumento=ED.IdExpedienteDocumento AND EDO.EstadoAuditoria=1
-	INNER JOIN Tramite.ExpedienteDocumentoOrigenDestino'+@vcExpedienteRpta+N' EDOD ON EDOD.IdExpedienteDocumentoOrigen=EDO.IdExpedienteDocumentoOrigen AND EDOD.EsInicial<>0
+	INNER JOIN Tramite.ExpedienteDocumento_historico_'+@vIdPeriodo+N' ED ON ED.IdExpediente=E.IdExpediente AND ED.EstadoAuditoria=1
+	INNER JOIN Tramite.ExpedienteDocumentoOrigen_historico_'+@vIdPeriodo+N' EDO ON EDO.IdExpedienteDocumento=ED.IdExpedienteDocumento AND EDO.EstadoAuditoria=1
+	INNER JOIN Tramite.ExpedienteDocumentoOrigenDestino_historico_'+@vIdPeriodo+N' EDOD ON EDOD.IdExpedienteDocumentoOrigen=EDO.IdExpedienteDocumentoOrigen AND EDOD.EsInicial<>0
 	INNER JOIN Tramite.Catalogo CTD ON CTD.IdCatalogo=ED.IdCatalogoTipoDocumento
 	LEFT JOIN General.Cargo C ON C.IdCargo=ED.IdCargoEmisor
 	LEFT JOIN General.Area A ON A.IdArea=ED.IdAreaEmisor
@@ -74,7 +73,7 @@ create table #tmp001_expedienteDocumento(
 	OUTER APPLY(
         SELECT TOP 1
   		COALESCE(EDOD.DestinatarioDestino,concat(P.NombreCompleto,'' '',isnull(EM.NombreEmpresa,''EXTERNO''),'' '',A.NombreArea,'' '',C.NombreCargo)) Destinatario
-  		FROM Tramite.ExpedienteDocumentoOrigenDestino'+@vcExpedienteRpta+N' EDOD2
+  		FROM Tramite.ExpedienteDocumentoOrigenDestino_historico_'+@vIdPeriodo+N' EDOD2
   		LEFT JOIN General.Cargo C ON C.IdCargo=EDOD2.IdCargoDestino
   		LEFT JOIN General.Area A ON A.IdArea=EDOD2.IdAreaDestino
   		LEFT JOIN General.Empresa EM ON EM.IdEmpresa=EDOD2.IdEmpresaDestino
@@ -84,9 +83,9 @@ create table #tmp001_expedienteDocumento(
 	WHERE EDOD.EstadoAuditoria=1 AND (@pIdCatalogoTipoDocumento=0 or ED.IdCatalogoTipoDocumento = @pIdCatalogoTipoDocumento) AND ED.IdAreaEmisor=@pIdAreaEmisor AND (@pIdPersona=0 OR ED.IdPersonaEmisor=@pIdPersona)
 	AND (@pFechaDocumento='''' OR convert(date, NFechaDocumento) between @vFechaInicial2 and @vFechaFinal2) and year(ED.NFechaDocumento) = @pIdPeriodo'
 
-	exec sp_executesql @vSql, N'@pIdCatalogoTipoDocumento int, @pIdAreaEmisor int, @pIdPersona int, @pFechaDocumento varchar(30), @vFechaInicial2 date, @vFechaFinal2 date, @pIdPeriodo int',
-	@pIdCatalogoTipoDocumento = @pIdCatalogoTipoDocumento, @pIdAreaEmisor = @pIdAreaEmisor, @pIdPersona = @pIdPersona,
-	@pFechaDocumento = @pFechaDocumento, @vFechaInicial2 = @vFechaInicial2, @vFechaFinal2 = @vFechaFinal2, @pIdPeriodo = @pIdPeriodo
+	exec sp_executesql @vSql,
+	N'@pIdCatalogoTipoDocumento int, @pIdAreaEmisor int, @pIdPersona int, @pFechaDocumento varchar(30), @vFechaInicial2 date, @vFechaFinal2 date, @pIdPeriodo int',
+	@pIdCatalogoTipoDocumento, @pIdAreaEmisor, @pIdPersona, @pFechaDocumento, @vFechaInicial2, @vFechaFinal2, @pIdPeriodo
 
 	select
         Periodo,

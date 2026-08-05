@@ -29,10 +29,7 @@ end;
 	)EB1
 	where ED.IdExpedienteDocumento=@pIdExpedienteDocumento'
 
-	exec sp_executesql @vSql,
-	N'@pIdExpedienteDocumento int, @pIdUsuarioAuditoria int',
-	@pIdExpedienteDocumento = @pIdExpedienteDocumento,
-	@pIdUsuarioAuditoria = @pIdUsuarioAuditoria
+	exec sp_executesql @vSql, N'@pIdExpedienteDocumento int, @pIdUsuarioAuditoria int', @pIdExpedienteDocumento, @pIdUsuarioAuditoria
 
 END TRY
 BEGIN CATCH
@@ -48,7 +45,6 @@ BEGIN CATCH
 END CATCH
 END
 GO
-
 
 EXECUTE Tramite.paObtenerConfirmacionExpedienteDocumentoBloqueadoYPersonaVisualiza_arq 311858,389, 2023
 EXECUTE Tramite.paObtenerConfirmacionExpedienteDocumentoBloqueadoYPersonaVisualiza_arq 311858,389, 2026

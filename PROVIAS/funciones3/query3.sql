@@ -17,7 +17,8 @@ DECLARE @vCantidad int=0
 		 Tramite.ExpedienteDocumento ED
 		INNER JOIN Tramite.ExpedienteDocumentoOrigen EDO  ON EDO.IdExpedienteDocumento=ED.IdExpedienteDocumento AND ED.EstadoAuditoria=1
 		INNER JOIN Tramite.ExpedienteDocumentoOrigenDestino EDOD  ON EDOD.IdExpedienteDocumentoOrigen=EDO.IdExpedienteDocumentoOrigen AND EDO.EstadoAuditoria=1
-		WHERE ED.IdExpediente=@pIdExpediente and EDOD.IdCatalogoSituacionMovimientoDestino<>4 and EDOD.EsInicial=1 AND EDO.EsVinculado<>1 and COALESCE(EDOD.FechaDestinoRecepciona,'')<>'' and edo.IdAreaOrigen=@pIdArea and edo.IdCargoOrigen IN(SELECT IdCargo FROM General.Cargo WHERE IdCatalogoTipoCargo in (32,33,34))
+		WHERE ED.IdExpediente=@pIdExpediente and EDOD.IdCatalogoSituacionMovimientoDestino<>4 and EDOD.EsInicial=1 AND EDO.EsVinculado<>1
+		and COALESCE(EDOD.FechaDestinoRecepciona,'')<>'' and edo.IdAreaOrigen=@pIdArea and edo.IdCargoOrigen IN(SELECT IdCargo FROM General.Cargo WHERE IdCatalogoTipoCargo in (32,33,34))
 
 
 	IF	@vCantidad>0
@@ -29,7 +30,8 @@ DECLARE @vCantidad int=0
 		Tramite.ExpedienteDocumento ED
 		INNER JOIN Tramite.ExpedienteDocumentoOrigen EDO  ON EDO.IdExpedienteDocumento=ED.IdExpedienteDocumento AND ED.EstadoAuditoria=1
 		INNER JOIN Tramite.ExpedienteDocumentoOrigenDestino EDOD  ON EDOD.IdExpedienteDocumentoOrigen=EDO.IdExpedienteDocumentoOrigen AND EDO.EstadoAuditoria=1
-		WHERE ED.IdExpediente=@pIdExpediente and EDOD.EsInicial=1 AND EDO.EsVinculado<>1 and COALESCE(EDOD.FechaDestinoRecepciona,'')='' and edo.IdAreaOrigen=@pIdArea and edo.IdCargoOrigen IN(SELECT IdCargo FROM General.Cargo WHERE IdCatalogoTipoCargo in (32,33,34))
+		WHERE ED.IdExpediente=@pIdExpediente and EDOD.EsInicial=1 AND EDO.EsVinculado<>1 and COALESCE(EDOD.FechaDestinoRecepciona,'')=''
+		and edo.IdAreaOrigen=@pIdArea and edo.IdCargoOrigen IN(SELECT IdCargo FROM General.Cargo WHERE IdCatalogoTipoCargo in (32,33,34))
 
 
 	IF	@vCantidad>0
@@ -47,20 +49,22 @@ END
 
 CONSULTA ANTERIOR OPTIMIZADA  = FPAJ
 ============================
-SELECT case when COUNT(CASE WHEN EDOD2.IdCatalogoSituacionMovimientoDestino <> 4 AND COALESCE(EDOD2.FechaDestinoRecepciona, '') <> '' THEN 1 END)>0
-then 1 when COUNT(CASE WHEN COALESCE(EDOD2.FechaDestinoRecepciona, '') = '' THEN 1 END)> 0 then 1 else 0 end
-FROM Tramite.ExpedienteDocumento ED2
-INNER JOIN Tramite.ExpedienteDocumentoOrigen EDO2
-    ON EDO2.IdExpedienteDocumento = ED2.IdExpedienteDocumento
-INNER JOIN Tramite.ExpedienteDocumentoOrigenDestino EDOD2
-    ON EDOD2.IdExpedienteDocumentoOrigen = EDO2.IdExpedienteDocumentoOrigen
-WHERE ED2.IdExpediente   = @pIdExpediente
-  AND ED2.EstadoAuditoria = 1
-  AND EDO2.EstadoAuditoria = 1
-  AND EDOD2.EsInicial     = 1
-  AND EDO2.EsVinculado   != 1
-  AND EDO2.IdAreaOrigen   = @pIdArea
-  AND EXISTS (SELECT 1 FROM General.Cargo C2 WHERE C2.IdCargo = EDO2.IdCargoOrigen AND C2.IdCatalogoTipoCargo IN (32, 33, 34));
+SELECT CASE WHEN EXISTS (
+    SELECT 1 FROM Tramite.ExpedienteDocumento ED2
+    INNER JOIN Tramite.ExpedienteDocumentoOrigen EDO2 ON EDO2.IdExpedienteDocumento = ED2.IdExpedienteDocumento
+    INNER JOIN Tramite.ExpedienteDocumentoOrigenDestino EDOD2 ON EDOD2.IdExpedienteDocumentoOrigen = EDO2.IdExpedienteDocumentoOrigen
+    WHERE ED2.IdExpediente = E.IdExpediente
+        AND ED2.EstadoAuditoria = 1 AND EDO2.EstadoAuditoria = 1 AND EDOD2.EsInicial = 1 AND EDO2.EsVinculado <> 1 AND EDO2.IdAreaOrigen = @pIdArea AND EDOD2.IdCatalogoSituacionMovimientoDestino <> 4 AND COALESCE(EDOD2.FechaDestinoRecepciona, '') <> ''
+        AND EXISTS (SELECT 1 FROM General.Cargo C2 WHERE C2.IdCargo = EDO2.IdCargoOrigen AND C2.IdCatalogoTipoCargo IN (32, 33, 34))
+) THEN 0 WHEN EXISTS (
+    SELECT 1 FROM Tramite.ExpedienteDocumento ED2
+    INNER JOIN Tramite.ExpedienteDocumentoOrigen EDO2 ON EDO2.IdExpedienteDocumento = ED2.IdExpedienteDocumento
+    INNER JOIN Tramite.ExpedienteDocumentoOrigenDestino EDOD2 ON EDOD2.IdExpedienteDocumentoOrigen = EDO2.IdExpedienteDocumentoOrigen
+    WHERE ED2.IdExpediente = E.IdExpediente
+        AND ED2.EstadoAuditoria = 1 AND EDO2.EstadoAuditoria = 1 AND EDOD2.EsInicial = 1 AND EDO2.EsVinculado <> 1 AND EDO2.IdAreaOrigen = @pIdArea AND COALESCE(EDOD2.FechaDestinoRecepciona, '') = ''
+        AND EXISTS (SELECT 1 FROM General.Cargo C2 WHERE C2.IdCargo = EDO2.IdCargoOrigen AND C2.IdCatalogoTipoCargo IN (32, 33, 34))
+) THEN 1 ELSE 0 END EsParaAnular
+
 
 
 
@@ -94,15 +98,21 @@ DECLARE @vCantidad int=0
 	RETURN @vEstado
 END
 
+CONSULTA ANTERIOR OPTIMIZADA  = EMA
+============================
+SELECT CASE WHEN EXISTS (
+    SELECT 1 FROM Tramite.Expediente E
+    WHERE   E.IdExpediente      = @pIdExpediente
+        AND E.ExpedienteAnulado = 1
+        AND E.IdAreaCreador     = @pIdArea
+        AND E.EstadoAuditoria   = 1
+        AND EXISTS (SELECT 1 FROM RecursoHumano.visPersonaJefe CA WHERE CA.IdCargo = E.IdCargoCreador)
+) THEN 1 ELSE 0 END EsMiAnulado
 
 
-SELECT CASE WHEN COUNT(1)>0 THEN 1 ELSE 0 END
-FROM Tramite.Expediente E
-WHERE E.IdExpediente=@pIdExpediente and  E.ExpedienteAnulado=1 and E.IdAreaCreador=@pIdArea
-and E.IdCargoCreador IN(SELECT IdCargo FROM RecursoHumano.visPersonaJefe CA) AND E.EstadoAuditoria=1
-
-
-
+-- =======================================
+-- FALTA ESTE ULTIMO NO ESTA BIEN LOGRADO:
+-- =======================================
 
 CREATE function [Tramite].[funObtenerDiasPendiente] = FODP
 (@pIdExpediente INT,
@@ -116,11 +126,14 @@ BEGIN
 	IF @pIdCatalogoSituacionMovimientoDestino=4
 	BEGIN
 		SELECT
-		top 1 @vDias=CASE WHEN  COALESCE(EDOD.FechaDestinoRecepciona,'')='' THEN CASE WHEN DATEDIFF(DAY,CONVERT(DATE, EDO.FechaOrigen),GETDATE())<=0 then 0 ELSE DATEDIFF(DAY,CONVERT(DATE, EDOD.FechaDestino),GETDATE()) END ELSE 0 END
-		FROM
-		Tramite.ExpedienteDocumento ED
+		top 1 @vDias=
+		CASE WHEN  COALESCE(EDOD.FechaDestinoRecepciona,'')='' THEN
+		    CASE WHEN DATEDIFF(DAY,CONVERT(DATE, EDO.FechaOrigen),GETDATE())<=0 then 0 ELSE DATEDIFF(DAY,CONVERT(DATE, EDOD.FechaDestino),GETDATE()) END
+		ELSE 0 END
+		FROM Tramite.ExpedienteDocumento ED
 		INNER JOIN Tramite.ExpedienteDocumentoOrigen EDO  ON ED.IdExpedienteDocumento=EDO.IdExpedienteDocumento AND ED.EstadoAuditoria=1
-		INNER JOIN Tramite.ExpedienteDocumentoOrigenDestino EDOD  ON EDO.IdExpedienteDocumentoOrigen=EDOD.IdExpedienteDocumentoOrigen AND EDO.EstadoAuditoria=1 AND EDOD.EstadoAuditoria=1
+		INNER JOIN Tramite.ExpedienteDocumentoOrigenDestino EDOD  ON EDO.IdExpedienteDocumentoOrigen=EDOD.IdExpedienteDocumentoOrigen
+		AND EDO.EstadoAuditoria=1 AND EDOD.EstadoAuditoria=1
 		WHERE  EDOD.IdAreaDestino=@pIdArea AND
 		EDOD.IdCatalogoSituacionMovimientoDestino  =@pIdCatalogoSituacionMovimientoDestino
 		AND Ed.IdExpediente=@pIdExpediente AND EDOD.IdCargoDestino IN (SELECT IdCargo FROM General.Cargo WHERE IdCatalogoTipoCargo in (32,33,34))
@@ -129,10 +142,10 @@ BEGIN
 	BEGIN
 		SELECT
 		top 1 @vDias=CASE WHEN COALESCE(EDOD.FechaDestinoRecepciona,'')<>'' THEN DATEDIFF(DAY,CONVERT(DATE, EDOD.FechaDestinoRecepciona),GETDATE()) ELSE 0 end
-		FROM
-		Tramite.ExpedienteDocumento ED
+		FROM Tramite.ExpedienteDocumento ED
 		INNER JOIN Tramite.ExpedienteDocumentoOrigen EDO  ON ED.IdExpedienteDocumento=EDO.IdExpedienteDocumento AND ED.EstadoAuditoria=1
-		INNER JOIN Tramite.ExpedienteDocumentoOrigenDestino EDOD  ON EDO.IdExpedienteDocumentoOrigen=EDOD.IdExpedienteDocumentoOrigen AND EDO.EstadoAuditoria=1 AND EDOD.EstadoAuditoria=1
+		INNER JOIN Tramite.ExpedienteDocumentoOrigenDestino EDOD  ON EDO.IdExpedienteDocumentoOrigen=EDOD.IdExpedienteDocumentoOrigen AND EDO.EstadoAuditoria=1
+		AND EDOD.EstadoAuditoria=1
 		WHERE  EDOD.IdAreaDestino=@pIdArea AND
 		EDOD.IdCatalogoSituacionMovimientoDestino  =@pIdCatalogoSituacionMovimientoDestino
 		AND Ed.IdExpediente=@pIdExpediente AND EDOD.IdCargoDestino IN (SELECT IdCargo FROM General.Cargo WHERE IdCatalogoTipoCargo in (32,33,34))
@@ -164,3 +177,20 @@ AND EDOD5.EstadoAuditoria = 1
 AND EDOD5.IdAreaDestino   = @pIdArea
 AND EDOD5.IdCatalogoSituacionMovimientoDestino = @pIdCatalogoSituacionMovimientoDestino
 AND EXISTS (SELECT 1 FROM General.Cargo C5 WHERE C5.IdCargo = EDOD5.IdCargoDestino AND C5.IdCatalogoTipoCargo IN (32, 33, 34));
+
+
+OTRA FORMA CON MEJOR PERFORMANCE:
+
+-- 'exp' = origen externo que aporta IdExpediente / IdArea.
+-- Si esos valores vienen del outer, reemplaza @pIdExpediente / @pIdArea por exp.IdExpediente / exp.IdArea.
+
+OUTER APPLY (
+    SELECT TOP 1 CASE @pIdCatalogoSituacionMovimientoDestino WHEN 4 THEN CASE WHEN COALESCE(EDOD3.FechaDestinoRecepciona, '') = ''
+    THEN CASE WHEN DATEDIFF(DAY, CONVERT(DATE, EDO3.FechaOrigen), GETDATE()) <= 0 THEN 0 ELSE DATEDIFF(DAY, CONVERT(DATE, EDOD3.FechaDestino), GETDATE()) END ELSE 0 END
+    WHEN 5 THEN CASE WHEN COALESCE(EDOD3.FechaDestinoRecepciona, '') <> '' THEN DATEDIFF(DAY, CONVERT(DATE, EDOD3.FechaDestinoRecepciona), GETDATE()) ELSE 0 END ELSE 0 END DiasPendiente
+    FROM Tramite.ExpedienteDocumento ED3
+    INNER JOIN Tramite.ExpedienteDocumentoOrigen EDO3 ON EDO3.IdExpedienteDocumento = ED3.IdExpedienteDocumento
+    INNER JOIN Tramite.ExpedienteDocumentoOrigenDestino EDOD3 ON EDOD3.IdExpedienteDocumentoOrigen = EDO3.IdExpedienteDocumentoOrigen
+    WHERE ED3.IdExpediente = E.IdExpediente AND ED3.EstadoAuditoria = 1 AND EDO3.EstadoAuditoria = 1 AND EDOD3.EstadoAuditoria = 1 AND EDOD3.IdAreaDestino = @pIdArea AND EDOD3.IdCatalogoSituacionMovimientoDestino = @pIdCatalogoSituacionMovimientoDestino
+    AND EXISTS (SELECT 1 FROM General.Cargo C3 WHERE C3.IdCargo = EDOD3.IdCargoDestino AND C3.IdCatalogoTipoCargo IN (32, 33, 34))
+)FODP

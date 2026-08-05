@@ -6,7 +6,7 @@ ON Tramite.ExpedienteDocumentoFirmante_historico_2025
 INCLUDE
     (IdArea, IdCargo, IdCatalogoTipoFirmante, IdEmpleadoPerfilFirmante,
      PosicionX, PosicionY, IdExpedienteDocumentoFirmante)
-WITH (ONLINE = ON, FILLFACTOR = 90);
+WITH (ONLINE = ON, FILLFACTOR = 90, DATA_COMPRESSION = PAGE);
 
 
 CREATE NONCLUSTERED INDEX IX_ED_PendienteFirma_Filtrado
@@ -20,12 +20,13 @@ WHERE EstadoAuditoria = 1
   AND FgEnEsperaFirmaDigital = 1
   AND FlagParaDespacho = 1
   AND FgEsObligatorioFirmaDigital = 1
-WITH (ONLINE = ON, FILLFACTOR = 90);
+WITH (ONLINE = ON, FILLFACTOR = 90, DATA_COMPRESSION = PAGE);
+
 
 CREATE NONCLUSTERED INDEX IX_Expediente_IdExp_Estado_Anulado
 ON Tramite.Expediente_historico_2025 (IdExpediente, EstadoAuditoria, ExpedienteAnulado)
 INCLUDE (NumeroExpediente, IdPeriodo, IdSerieDocumentalExpediente)
-WITH (ONLINE = ON, FILLFACTOR = 90);
+WITH (ONLINE = ON, FILLFACTOR = 90, DATA_COMPRESSION = PAGE);
 
 
 -- NOTA: PARA HISTORICOS 2024
@@ -36,7 +37,7 @@ ON Tramite.ExpedienteDocumentoFirmante_historico_2024
 INCLUDE
     (IdArea, IdCargo, IdCatalogoTipoFirmante, IdEmpleadoPerfilFirmante,
      PosicionX, PosicionY, IdExpedienteDocumentoFirmante)
-WITH (ONLINE = ON, FILLFACTOR = 90);
+WITH (ONLINE = ON, FILLFACTOR = 90, DATA_COMPRESSION = PAGE);
 
 
 CREATE NONCLUSTERED INDEX IX_ED_PendienteFirma_Filtrado
@@ -50,12 +51,13 @@ WHERE EstadoAuditoria = 1
   AND FgEnEsperaFirmaDigital = 1
   AND FlagParaDespacho = 1
   AND FgEsObligatorioFirmaDigital = 1
-WITH (ONLINE = ON, FILLFACTOR = 90);
+WITH (ONLINE = ON, FILLFACTOR = 90, DATA_COMPRESSION = PAGE);
+
 
 CREATE NONCLUSTERED INDEX IX_Expediente_IdExp_Estado_Anulado
 ON Tramite.Expediente_historico_2024 (IdExpediente, EstadoAuditoria, ExpedienteAnulado)
 INCLUDE (NumeroExpediente, IdPeriodo, IdSerieDocumentalExpediente)
-WITH (ONLINE = ON, FILLFACTOR = 90);
+WITH (ONLINE = ON, FILLFACTOR = 90, DATA_COMPRESSION = PAGE);
 
 
 -- NOTA: PARA HISTORICOS 2023
@@ -66,7 +68,7 @@ ON Tramite.ExpedienteDocumentoFirmante_historico_2023
 INCLUDE
     (IdArea, IdCargo, IdCatalogoTipoFirmante, IdEmpleadoPerfilFirmante,
      PosicionX, PosicionY, IdExpedienteDocumentoFirmante)
-WITH (ONLINE = ON, FILLFACTOR = 90);
+WITH (ONLINE = ON, FILLFACTOR = 90, DATA_COMPRESSION = PAGE);
 
 
 CREATE NONCLUSTERED INDEX IX_ED_PendienteFirma_Filtrado
@@ -80,12 +82,13 @@ WHERE EstadoAuditoria = 1
   AND FgEnEsperaFirmaDigital = 1
   AND FlagParaDespacho = 1
   AND FgEsObligatorioFirmaDigital = 1
-WITH (ONLINE = ON, FILLFACTOR = 90);
+WITH (ONLINE = ON, FILLFACTOR = 90, DATA_COMPRESSION = PAGE);
+
 
 CREATE NONCLUSTERED INDEX IX_Expediente_IdExp_Estado_Anulado
 ON Tramite.Expediente_historico_2023 (IdExpediente, EstadoAuditoria, ExpedienteAnulado)
 INCLUDE (NumeroExpediente, IdPeriodo, IdSerieDocumentalExpediente)
-WITH (ONLINE = ON, FILLFACTOR = 90);
+WITH (ONLINE = ON, FILLFACTOR = 90, DATA_COMPRESSION = PAGE);
 
 
 -- NOTA: PARA HISTORICOS 2022
@@ -96,7 +99,7 @@ ON Tramite.ExpedienteDocumentoFirmante_historico_2022
 INCLUDE
     (IdArea, IdCargo, IdCatalogoTipoFirmante, IdEmpleadoPerfilFirmante,
      PosicionX, PosicionY, IdExpedienteDocumentoFirmante)
-WITH (ONLINE = ON, FILLFACTOR = 90);
+WITH (ONLINE = ON, FILLFACTOR = 90, DATA_COMPRESSION = PAGE);
 
 
 CREATE NONCLUSTERED INDEX IX_ED_PendienteFirma_Filtrado
@@ -110,9 +113,10 @@ WHERE EstadoAuditoria = 1
   AND FgEnEsperaFirmaDigital = 1
   AND FlagParaDespacho = 1
   AND FgEsObligatorioFirmaDigital = 1
-WITH (ONLINE = ON, FILLFACTOR = 90);
+WITH (ONLINE = ON, FILLFACTOR = 90, DATA_COMPRESSION = PAGE);
+
 
 CREATE NONCLUSTERED INDEX IX_Expediente_IdExp_Estado_Anulado
 ON Tramite.Expediente_historico_2022 (IdExpediente, EstadoAuditoria, ExpedienteAnulado)
 INCLUDE (NumeroExpediente, IdPeriodo, IdSerieDocumentalExpediente)
-WITH (ONLINE = ON, FILLFACTOR = 90);
+WITH (ONLINE = ON, FILLFACTOR = 90, DATA_COMPRESSION = PAGE);

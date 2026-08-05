@@ -1,5 +1,4 @@
--- CREATE OR ALTER PROCEDURE Tramite.paListarPendienteFirmaDigitalEspecialistaV1_arq
-declare
+CREATE OR ALTER PROCEDURE Tramite.paListarPendienteFirmaDigitalEspecialistaV1_arq
 	@pIdArea int,
 	@pIdCargo int,
 	@pIdPersona int,
@@ -9,25 +8,12 @@ declare
 	@pNumeroPagina INT,
 	@pDimensionPagina  INT,
 	@pBusquedaGeneral varchar(20)
--- AS
--- BEGIN
--- BEGIN TRY
+AS
+BEGIN
+BEGIN TRY
 SET LANGUAGE SPANISH
 SET NOCOUNT ON
 SET TRAN ISOLATION LEVEL READ UNCOMMITTED
-
-select
-@pIdArea= 79,
-@pIdCargo= 272,
-@pIdPersona= 1059,
-@pIdUsuarioAuditoria= 1059,
-@pCampoOrdenado= null,
-@pTipoOrdenacion= null,
-@pNumeroPagina= 1,
-@pDimensionPagina= 10,
-@pBusquedaGeneral= NULL
-
-
 
 create table #tmp001_expedienteFirmadoEsp(
     IdExpediente int,
@@ -120,18 +106,31 @@ end
 
 	select count(1) TotalRegistros from #tmp001_expedienteFirmadoEsp
 
--- END TRY
--- BEGIN CATCH
--- 	DECLARE @ERROR_NUMBER INT, @ERROR_SEVERITY INT,@ERROR_STATE INT,@ERROR_LINE INT,@ERROR_PROCEDURE VARCHAR(MAX)	,@ERROR_MESSAGE VARCHAR(MAX)
--- 	SELECT @ERROR_NUMBER=ERROR_NUMBER() , @ERROR_SEVERITY=ERROR_SEVERITY() , @ERROR_STATE=ERROR_STATE() ,
--- 	@ERROR_PROCEDURE='Tramite.paListarPendienteFirmaDigitalEspecialistaV1_arq',@ERROR_LINE=ERROR_LINE(),@ERROR_MESSAGE=ERROR_MESSAGE()
--- 	EXEC Seguridad.paGuardarErroresEnTablaLog @ERROR_NUMBER , @ERROR_SEVERITY , @ERROR_STATE ,  @ERROR_PROCEDURE,@ERROR_LINE,@ERROR_MESSAGE ,@pIdUsuarioAuditoria
--- END CATCH
--- END
--- GO
+END TRY
+BEGIN CATCH
+	DECLARE @ERROR_NUMBER INT, @ERROR_SEVERITY INT,@ERROR_STATE INT,@ERROR_LINE INT,@ERROR_PROCEDURE VARCHAR(MAX)	,@ERROR_MESSAGE VARCHAR(MAX)
+	SELECT @ERROR_NUMBER=ERROR_NUMBER() , @ERROR_SEVERITY=ERROR_SEVERITY() , @ERROR_STATE=ERROR_STATE() ,
+	@ERROR_PROCEDURE='Tramite.paListarPendienteFirmaDigitalEspecialistaV1_arq',@ERROR_LINE=ERROR_LINE(),@ERROR_MESSAGE=ERROR_MESSAGE()
+	EXEC Seguridad.paGuardarErroresEnTablaLog @ERROR_NUMBER , @ERROR_SEVERITY , @ERROR_STATE ,  @ERROR_PROCEDURE,@ERROR_LINE,@ERROR_MESSAGE ,@pIdUsuarioAuditoria
+END CATCH
+END
+GO
 
 
--- exec Tramite.paListarPendienteFirmaDigitalEspecialistaV1_arq
+exec Tramite.paListarPendienteFirmaDigitalEspecialistaV1_arq
+@pIdArea= 79,
+@pIdCargo= 272,
+@pIdPersona= 1059,
+@pIdUsuarioAuditoria= 1059,
+@pCampoOrdenado= null,
+@pTipoOrdenacion= null,
+@pNumeroPagina= 1,
+@pDimensionPagina= 10,
+@pBusquedaGeneral= NULL
+
+
+
+-- exec bd_sgd_arq.Tramite.paListarPendienteFirmaDigitalEspecialistaV1
 -- @pIdArea= 79,
 -- @pIdCargo= 272,
 -- @pIdPersona= 1059,
@@ -144,7 +143,7 @@ end
 
 
 
--- exec bd_sgd_arq.Tramite.paListarPendienteFirmaDigitalEspecialistaV1
+-- select
 -- @pIdArea= 79,
 -- @pIdCargo= 272,
 -- @pIdPersona= 1059,

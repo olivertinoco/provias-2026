@@ -14,7 +14,6 @@ SET LANGUAGE SPANISH
 set tran isolation level read uncommitted
 set nocount on
 
-
 create table #tmp001_TablaExpediente(IdExpediente int)
 create table #tmp001_expediente_datos(
     EsParaAnular bit,
@@ -41,6 +40,10 @@ create table #tmp001_expediente_datos(
     NumeroExpediente int,
     IdPeriodo int,
     NombreCompletoCreador varchar(400) collate database_default
+)
+create table #tmp002_expediente_datos(
+    IdExpediente int,
+    DiasPendiente int
 )
 
     Declare @vPeriodo varchar(4)=null, @cta int = 0, @tot int = year(getdate()) - 2022
@@ -79,9 +82,8 @@ create table #tmp001_expediente_datos(
 
     		select @Consulta= null
     		select @Consulta= N'\
-    		insert into #tmp001_expediente_datos select*from(select Tramite.funParaAnularJefatura(E.IdExpediente,@pIdArea,@vIdCargoJefe) EsParaAnular,
-            Tramite.funEsMiAnuladoJefatura(E.IdExpediente,@pIdArea,@vIdCargoJefe) EsMiAnulado,E.ExpedienteAnulado,E.MotivoExpedienteAnulado,E.NFechaAnulacionExpediente,E.HoraAnulacionExpediente,
-            Tramite.funObtenerDiasPendiente(E.IdExpediente,@vIdAreaJefe,@pIdCatalogoSituacionMovimientoDestino) DiasPendiente,E.IdExpediente,E.ExpedienteConfidencial,E.NTFechaExpediente,
+    		insert into #tmp001_expediente_datos select*from(select FPAJ.EsParaAnular,EMA.EsMiAnulado,
+            E.ExpedienteAnulado,E.MotivoExpedienteAnulado,E.NFechaAnulacionExpediente,E.HoraAnulacionExpediente, null DiasPendiente,E.IdExpediente,E.ExpedienteConfidencial,E.NTFechaExpediente,
             E.HoraExpediente,E.IdCatalogoTipoPrioridad,CTP.Descripcion CatalogoTipoPrioridad,CTT.Descripcion CatalogoTipoTramite,US.Logueo,
             Seguridad.funObtenerRutaFotoPorIdPersona(E.IdPersonaCreador)RutaFotoPersona,E.AsuntoExpediente,E.NumeroFoliosExpediente,
             E.ObservacionesExpediente,null fecha, SD.AbreviaturaSerieDocumentalExpediente,E.NumeroExpediente,E.IdPeriodo,
@@ -91,15 +93,47 @@ create table #tmp001_expediente_datos(
     		INNER JOIN Tramite.SerieDocumentalExpediente SD ON SD.IdSerieDocumentalExpediente=E.IdSerieDocumentalExpediente
             INNER JOIN Tramite.Catalogo CTP ON CTP.IdCatalogo=E.IdCatalogoTipoPrioridad
     		LEFT JOIN General.Persona PE ON PE.IdPersona=E.IdPersonaCreador LEFT JOIN Tramite.Catalogo CTT ON CTT.IdCatalogo=E.IdCatalogoTipoTramite
+            OUTER APPLY(
+                SELECT CASE WHEN EXISTS (
+                    SELECT 1 FROM Tramite.Expediente_Historico_' + @vPeriodo + N' E5
+                    WHERE E5.IdExpediente = E.IdExpediente AND E5.ExpedienteAnulado = 1 AND E5.IdAreaCreador = @pIdArea AND E5.EstadoAuditoria = 1
+                    AND EXISTS (SELECT 1 FROM RecursoHumano.visPersonaJefe CA5 WHERE CA5.IdCargo = E5.IdCargoCreador)
+                ) THEN 1 ELSE 0 END EsMiAnulado
+            )EMA
+            OUTER APPLY(
+                SELECT CASE WHEN EXISTS (
+                    SELECT 1 FROM Tramite.ExpedienteDocumento_Historico_' + @vPeriodo + N' ED2
+                    INNER JOIN Tramite.ExpedienteDocumentoOrigen_Historico_' + @vPeriodo + N' EDO2 ON EDO2.IdExpedienteDocumento = ED2.IdExpedienteDocumento
+                    INNER JOIN Tramite.ExpedienteDocumentoOrigenDestino_Historico_' + @vPeriodo + N' EDOD2 ON EDOD2.IdExpedienteDocumentoOrigen = EDO2.IdExpedienteDocumentoOrigen
+                    WHERE ED2.IdExpediente = E.IdExpediente AND ED2.EstadoAuditoria = 1 AND EDO2.EstadoAuditoria = 1 AND EDOD2.EsInicial = 1 AND EDO2.EsVinculado <> 1 AND EDO2.IdAreaOrigen = @pIdArea AND EDOD2.IdCatalogoSituacionMovimientoDestino <> 4 AND COALESCE(EDOD2.FechaDestinoRecepciona, '''') <> ''''
+                    AND EXISTS (SELECT 1 FROM General.Cargo C2 WHERE C2.IdCargo = EDO2.IdCargoOrigen AND C2.IdCatalogoTipoCargo IN (32, 33, 34))
+                ) THEN 0 WHEN EXISTS (
+                    SELECT 1 FROM Tramite.ExpedienteDocumento_Historico_' + @vPeriodo + N' ED2
+                    INNER JOIN Tramite.ExpedienteDocumentoOrigen_Historico_' + @vPeriodo + N' EDO2 ON EDO2.IdExpedienteDocumento = ED2.IdExpedienteDocumento
+                    INNER JOIN Tramite.ExpedienteDocumentoOrigenDestino_Historico_' + @vPeriodo + N' EDOD2 ON EDOD2.IdExpedienteDocumentoOrigen = EDO2.IdExpedienteDocumentoOrigen
+                    WHERE ED2.IdExpediente = E.IdExpediente AND ED2.EstadoAuditoria = 1 AND EDO2.EstadoAuditoria = 1 AND EDOD2.EsInicial = 1 AND EDO2.EsVinculado <> 1 AND EDO2.IdAreaOrigen = @pIdArea AND COALESCE(EDOD2.FechaDestinoRecepciona, '''') = ''''
+                    AND EXISTS (SELECT 1 FROM General.Cargo C2 WHERE C2.IdCargo = EDO2.IdCargoOrigen AND C2.IdCatalogoTipoCargo IN (32, 33, 34))
+                ) THEN 1 ELSE 0 END EsParaAnular
+            )FPAJ
     		WHERE E.EstadoAuditoria=1)X where 1=1 '
     		+@Filtros
 
-    		EXECUTE sp_executesql @Consulta,
-    		   N'@vIdAreaJefe int, @pIdArea int, @vIdCargoJefe int, @pIdCatalogoSituacionMovimientoDestino int',
-    		    @vIdAreaJefe = @vIdAreaJefe,
-    			@pIdArea = @pIdArea,
-    			@vIdCargoJefe = @vIdCargoJefe,
-    			@pIdCatalogoSituacionMovimientoDestino = @pIdCatalogoSituacionMovimientoDestino
+    		EXEC sp_executesql @Consulta, N'@vIdAreaJefe int, @pIdArea int', @vIdAreaJefe, @pIdArea
+
+            select @Consulta= null
+            select @Consulta= N'\
+            insert into #tmp002_expediente_datos select E.IdExpediente, isnull(case @pIdCatalogoSituacionMovimientoDestino when 4 then
+            case when FODP.FechaDestinoRecepciona is null then CASE WHEN DATEDIFF(DAY,CONVERT(DATE, FODP.FechaOrigen),GETDATE())<=0 then 0 ELSE DATEDIFF(DAY,CONVERT(DATE, FODP.FechaDestino),GETDATE()) END else 0 end
+            when 5 then CASE WHEN FODP.FechaDestinoRecepciona is not null THEN DATEDIFF(DAY,CONVERT(DATE, FODP.FechaDestinoRecepciona),GETDATE()) ELSE 0 end else 0 end, 0)
+            from #tmp001_expediente_datos E
+            OUTER APPLY (
+                SELECT TOP 1 EDOD9.FechaDestinoRecepciona, EDOD9.FechaDestino, EDO9.FechaOrigen
+                FROM Tramite.ExpedienteDocumento_Historico_' + @vPeriodo + N' ED9 INNER JOIN Tramite.ExpedienteDocumentoOrigen_Historico_' + @vPeriodo + N' EDO9 ON ED9.IdExpedienteDocumento=EDO9.IdExpedienteDocumento AND ED9.EstadoAuditoria=1
+               	INNER JOIN Tramite.ExpedienteDocumentoOrigenDestino_Historico_' + @vPeriodo + N' EDOD9 ON EDO9.IdExpedienteDocumentoOrigen=EDOD9.IdExpedienteDocumentoOrigen AND EDO9.EstadoAuditoria=1 AND EDOD9.EstadoAuditoria=1
+               	WHERE  EDOD9.IdAreaDestino=@pIdArea AND EDOD9.IdCatalogoSituacionMovimientoDestino=@pIdCatalogoSituacionMovimientoDestino AND ED9.IdExpediente= E.IdExpediente AND EXISTS (SELECT 1 FROM General.Cargo C9 WHERE C9.IdCargo = EDOD9.IdCargoDestino AND C9.IdCatalogoTipoCargo in (32,33,34))
+            )FODP'
+
+            EXEC sp_executesql @Consulta, N'@pIdArea int, @pIdCatalogoSituacionMovimientoDestino int', @pIdArea, @pIdCatalogoSituacionMovimientoDestino
 
             select @cta+=1
         end
@@ -238,11 +272,8 @@ create table #tmp001_expediente_datos(
 
     		select @Consulta= null
     		select @Consulta= N'\
-    		insert into #tmp001_expediente_datos select*from(select
-            Tramite.funParaAnularJefatura(E.IdExpediente,@pIdArea,@vIdCargoJefe) EsParaAnular,
-            Tramite.funEsMiAnuladoJefatura(E.IdExpediente,@pIdArea,@vIdCargoJefe) EsMiAnulado,
-            E.ExpedienteAnulado,E.MotivoExpedienteAnulado,E.NFechaAnulacionExpediente,E.HoraAnulacionExpediente,
-            Tramite.funObtenerDiasPendiente(E.IdExpediente,@vIdAreaJefe,@pIdCatalogoSituacionMovimientoDestino) DiasPendiente,
+    		insert into #tmp001_expediente_datos select*from(select FPAJ.EsParaAnular,EMA.EsMiAnulado,
+            E.ExpedienteAnulado,E.MotivoExpedienteAnulado,E.NFechaAnulacionExpediente,E.HoraAnulacionExpediente,null DiasPendiente,
     		E.IdExpediente,E.ExpedienteConfidencial,E.NTFechaExpediente,E.HoraExpediente,E.IdCatalogoTipoPrioridad,CTP.Descripcion CatalogoTipoPrioridad,CTT.Descripcion CatalogoTipoTramite,US.Logueo,
     		Seguridad.funObtenerRutaFotoPorIdPersona(E.IdPersonaCreador)RutaFotoPersona,E.AsuntoExpediente,E.NumeroFoliosExpediente,E.ObservacionesExpediente,null fecha,
     		SD.AbreviaturaSerieDocumentalExpediente,E.NumeroExpediente,E.IdPeriodo,CASE WHEN isnull(E.IdPersonaCreador,0)=0 THEN E.NombreCompletoCreador ELSE PE.NombreCompleto END NombreCompletoCreador
@@ -252,15 +283,47 @@ create table #tmp001_expediente_datos(
             INNER JOIN Tramite.Catalogo CTP ON CTP.IdCatalogo=E.IdCatalogoTipoPrioridad
     		LEFT JOIN General.Persona PE ON PE.IdPersona=E.IdPersonaCreador
             LEFT JOIN Tramite.Catalogo CTT ON CTT.IdCatalogo=E.IdCatalogoTipoTramite
+            OUTER APPLY(
+                SELECT CASE WHEN EXISTS (
+                    SELECT 1 FROM Tramite.Expediente_Historico_' + @vPeriodo + N' E5
+                    WHERE E5.IdExpediente = E.IdExpediente AND E5.ExpedienteAnulado = 1 AND E5.IdAreaCreador = @pIdArea AND E5.EstadoAuditoria = 1
+                    AND EXISTS (SELECT 1 FROM RecursoHumano.visPersonaJefe CA5 WHERE CA5.IdCargo = E5.IdCargoCreador)
+                ) THEN 1 ELSE 0 END EsMiAnulado
+            )EMA
+            OUTER APPLY(
+                SELECT CASE WHEN EXISTS (
+                    SELECT 1 FROM Tramite.ExpedienteDocumento_Historico_' + @vPeriodo + N' ED2
+                    INNER JOIN Tramite.ExpedienteDocumentoOrigen_Historico_' + @vPeriodo + N' EDO2 ON EDO2.IdExpedienteDocumento = ED2.IdExpedienteDocumento
+                    INNER JOIN Tramite.ExpedienteDocumentoOrigenDestino_Historico_' + @vPeriodo + N' EDOD2 ON EDOD2.IdExpedienteDocumentoOrigen = EDO2.IdExpedienteDocumentoOrigen
+                    WHERE ED2.IdExpediente = E.IdExpediente AND ED2.EstadoAuditoria = 1 AND EDO2.EstadoAuditoria = 1 AND EDOD2.EsInicial = 1 AND EDO2.EsVinculado <> 1 AND EDO2.IdAreaOrigen = @pIdArea AND EDOD2.IdCatalogoSituacionMovimientoDestino <> 4 AND COALESCE(EDOD2.FechaDestinoRecepciona, '''') <> ''''
+                    AND EXISTS (SELECT 1 FROM General.Cargo C2 WHERE C2.IdCargo = EDO2.IdCargoOrigen AND C2.IdCatalogoTipoCargo IN (32, 33, 34))
+                ) THEN 0 WHEN EXISTS (
+                    SELECT 1 FROM Tramite.ExpedienteDocumento_Historico_' + @vPeriodo + N' ED2
+                    INNER JOIN Tramite.ExpedienteDocumentoOrigen_Historico_' + @vPeriodo + N' EDO2 ON EDO2.IdExpedienteDocumento = ED2.IdExpedienteDocumento
+                    INNER JOIN Tramite.ExpedienteDocumentoOrigenDestino_Historico_' + @vPeriodo + N' EDOD2 ON EDOD2.IdExpedienteDocumentoOrigen = EDO2.IdExpedienteDocumentoOrigen
+                    WHERE ED2.IdExpediente = E.IdExpediente AND ED2.EstadoAuditoria = 1 AND EDO2.EstadoAuditoria = 1 AND EDOD2.EsInicial = 1 AND EDO2.EsVinculado <> 1 AND EDO2.IdAreaOrigen = @pIdArea AND COALESCE(EDOD2.FechaDestinoRecepciona, '''') = ''''
+                    AND EXISTS (SELECT 1 FROM General.Cargo C2 WHERE C2.IdCargo = EDO2.IdCargoOrigen AND C2.IdCatalogoTipoCargo IN (32, 33, 34))
+                ) THEN 1 ELSE 0 END EsParaAnular
+            )FPAJ
     		WHERE E.EstadoAuditoria=1)X where X.EsMiAnulado=X.ExpedienteAnulado '
     		+@Filtros
 
-    		EXECUTE sp_executesql @Consulta,
-    		   N'@vIdAreaJefe int, @pIdArea int, @vIdCargoJefe int, @pIdCatalogoSituacionMovimientoDestino int',
-    		    @vIdAreaJefe = @vIdAreaJefe,
-    			@pIdArea = @pIdArea,
-    			@vIdCargoJefe = @vIdCargoJefe,
-    			@pIdCatalogoSituacionMovimientoDestino = @pIdCatalogoSituacionMovimientoDestino
+    		EXEC sp_executesql @Consulta, N'@pIdArea int', @pIdArea
+
+            select @Consulta= null
+            select @Consulta= N'\
+            insert into #tmp002_expediente_datos select E.IdExpediente, isnull(case @pIdCatalogoSituacionMovimientoDestino when 4 then
+            case when FODP.FechaDestinoRecepciona is null then CASE WHEN DATEDIFF(DAY,CONVERT(DATE, FODP.FechaOrigen),GETDATE())<=0 then 0 ELSE DATEDIFF(DAY,CONVERT(DATE, FODP.FechaDestino),GETDATE()) END else 0 end
+            when 5 then CASE WHEN FODP.FechaDestinoRecepciona is not null THEN DATEDIFF(DAY,CONVERT(DATE, FODP.FechaDestinoRecepciona),GETDATE()) ELSE 0 end else 0 end, 0)
+            from #tmp001_expediente_datos E
+            OUTER APPLY (
+                SELECT TOP 1 EDOD9.FechaDestinoRecepciona, EDOD9.FechaDestino, EDO9.FechaOrigen
+                FROM Tramite.ExpedienteDocumento_Historico_' + @vPeriodo + N' ED9 INNER JOIN Tramite.ExpedienteDocumentoOrigen_Historico_' + @vPeriodo + N' EDO9 ON ED9.IdExpedienteDocumento=EDO9.IdExpedienteDocumento AND ED9.EstadoAuditoria=1
+               	INNER JOIN Tramite.ExpedienteDocumentoOrigenDestino_Historico_' + @vPeriodo + N' EDOD9 ON EDO9.IdExpedienteDocumentoOrigen=EDOD9.IdExpedienteDocumentoOrigen AND EDO9.EstadoAuditoria=1 AND EDOD9.EstadoAuditoria=1
+               	WHERE  EDOD9.IdAreaDestino=@pIdArea AND EDOD9.IdCatalogoSituacionMovimientoDestino=@pIdCatalogoSituacionMovimientoDestino AND ED9.IdExpediente= E.IdExpediente AND EXISTS (SELECT 1 FROM General.Cargo C9 WHERE C9.IdCargo = EDOD9.IdCargoDestino AND C9.IdCatalogoTipoCargo in (32,33,34))
+            )FODP'
+
+            EXEC sp_executesql @Consulta, N'@pIdArea int, @pIdCatalogoSituacionMovimientoDestino int', @pIdArea, @pIdCatalogoSituacionMovimientoDestino
 
             select @cta+=1
         end
@@ -268,30 +331,31 @@ create table #tmp001_expediente_datos(
 	END
 
    	select
-   	    EsParaAnular,
-   	    EsMiAnulado,
-   	    ExpedienteAnulado,
+   	    t.EsParaAnular,
+   	    t.EsMiAnulado,
+   	    t.ExpedienteAnulado,
    	    isnull(MotivoExpedienteAnulado,'')MotivoExpedienteAnulado,
    	    isnull(NFechaAnulacionExpediente,'')NFechaAnulacionExpediente,
    	    isnull(HoraAnulacionExpediente,'')HoraAnulacionExpediente,
-   	    DiasPendiente,
-   	    IdExpediente,
-   	    ExpedienteConfidencial,
-   	    NTFechaExpediente,
-   	    HoraExpediente,
-   	    IdCatalogoTipoPrioridad,
-   	    isnull(CatalogoTipoPrioridad,'')CatalogoTipoPrioridad,
-   	    isnull(CatalogoTipoTramite,'')CatalogoTipoTramite,
-   	    Logueo,
-   	    isnull(RutaFotoPersona,'sinfotoH.jpg') RutaFotoPersona,
-   	    upper(AsuntoExpediente) AsuntoExpediente,
-   	    isnull(NumeroFoliosExpediente, 0)NumeroFoliosExpediente,
-   	    isnull(ObservacionesExpediente,'')ObservacionesExpediente,
-   	    convert(datetime, NTFechaExpediente +' '+ HoraExpediente)fecha,
-   	    concat(AbreviaturaSerieDocumentalExpediente, right(1000000 + NumeroExpediente,6), '-', IdPeriodo)NombreExpediente,
-   	    isnull(NombreCompletoCreador,'')NombreCompletoCreador
-   	from #tmp001_expediente_datos
-   	order by case when @pIdCatalogoSituacionMovimientoDestino != 0 then DiasPendiente end desc, fecha desc
+   	    tt.DiasPendiente,
+   	    t.IdExpediente,
+   	    t.ExpedienteConfidencial,
+   	    t.NTFechaExpediente,
+   	    t.HoraExpediente,
+   	    t.IdCatalogoTipoPrioridad,
+   	    isnull(t.CatalogoTipoPrioridad,'')CatalogoTipoPrioridad,
+   	    isnull(t.CatalogoTipoTramite,'')CatalogoTipoTramite,
+   	    t.Logueo,
+   	    isnull(t.RutaFotoPersona,'sinfotoH.jpg') RutaFotoPersona,
+   	    upper(t.AsuntoExpediente) AsuntoExpediente,
+   	    isnull(t.NumeroFoliosExpediente, 0)NumeroFoliosExpediente,
+   	    isnull(t.ObservacionesExpediente,'')ObservacionesExpediente,
+   	    convert(datetime, t.NTFechaExpediente +' '+ t.HoraExpediente)fecha,
+   	    concat(t.AbreviaturaSerieDocumentalExpediente, right(1000000 + t.NumeroExpediente,6), '-', t.IdPeriodo)NombreExpediente,
+   	    isnull(t.NombreCompletoCreador,'')NombreCompletoCreador
+   	from #tmp001_expediente_datos t cross apply(select distinct IdExpediente, DiasPendiente from #tmp002_expediente_datos)tt
+    where t.IdExpediente = tt.IdExpediente
+   	order by case when @pIdCatalogoSituacionMovimientoDestino != 0 then tt.DiasPendiente end desc, t.fecha desc
    	offset (@pNumeroPagina-1)*@pDimensionPagina rows fetch next @pDimensionPagina rows only
 
 	select count(1) from #tmp001_TablaExpediente
@@ -307,20 +371,10 @@ END
 GO
 
 
-EXECUTE [Tramite].[paListarExpedientePendienteCourrierJefatura_arq] 79,0,349,null,null,1,10,null
-EXECUTE [Tramite].[paListarExpedientePendienteCourrierJefatura_arq] 79,4,349,null,null,1,20,null
+EXECUTE [BD_SGD_ARQ].[Tramite].[paListarExpedientePendienteCourrierJefatura] 79,4,349,null,null,1,10,null
 
 
--- select
---     @pIdArea= 79,
---     @pIdCatalogoSituacionMovimientoDestino= 4,  --0
---     @pIdUsuarioAuditoria= 349,
---     @pCampoOrdenado= null,
---     @pTipoOrdenacion= null,
---     @pNumeroPagina= 1,
---     @pDimensionPagina= 10,
---     @pBusquedaGeneral= null
-
+EXECUTE [Tramite].[paListarExpedientePendienteCourrierJefatura_arq] 79,4,349,null,null,1,10,null
 
 
 -- EXECUTE Tramite.paListarExpedientePendienteCourrierJefatura_arq
@@ -332,3 +386,15 @@ EXECUTE [Tramite].[paListarExpedientePendienteCourrierJefatura_arq] 79,4,349,nul
 -- @pNumeroPagina= 1,
 -- @pDimensionPagina= 10,
 -- @pBusquedaGeneral= null
+
+
+-- select
+--     @pIdArea= 79,
+--     @pIdCatalogoSituacionMovimientoDestino= 0,
+--     -- @pIdCatalogoSituacionMovimientoDestino= 4,
+--     @pIdUsuarioAuditoria= 349,
+--     @pCampoOrdenado= null,
+--     @pTipoOrdenacion= null,
+--     @pNumeroPagina= 1,
+--     @pDimensionPagina= 10,
+--     @pBusquedaGeneral= null
