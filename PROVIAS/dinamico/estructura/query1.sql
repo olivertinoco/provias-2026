@@ -108,8 +108,7 @@ BEGIN TRY
 		E.NumeroExpediente,
 		COALESCE(ES.IdExpedienteSeguimiento,0)IdExpedienteSeguimiento,
 		NULL FechaMovimiento
-	FROM
-	Tramite.Expediente E WITH (NOLOCK)
+	FROM Tramite.Expediente E WITH (NOLOCK)
 	INNER JOIN Seguridad.Usuario US ON US.IdUsuario=E.IdUsuarioCreacionAuditoria AND E.EstadoAuditoria=1  AND COALESCE(E.ExpedienteAnulado,0)=0
 	INNER JOIN Tramite.SerieDocumentalExpediente SD WITH (NOLOCK) ON SD.IdSerieDocumentalExpediente=E.IdSerieDocumentalExpediente
 	INNER JOIN Tramite.Catalogo CTP ON CTP.IdCatalogo=E.IdCatalogoTipoPrioridad
@@ -126,7 +125,7 @@ BEGIN TRY
 		'' NombrePersonaOrigen,
 		'' NumeroDocumento,
 		0 IdExpedienteDocumento,
-		CASE WHEN ENP.ExEnlazadoPri<>'' THEN replace(replace(ENP.ExEnlazadoPri,'&lt;','<'),'&gt;','>') else replace(replace(ENS.ExEnlazadoSec,'&lt;','<'),'&gt;','>') END NombreExpedientesEnlazados, --Tramite.funObtenerExpedientesEnlazados(E.IdExpediente) NombreExpedientesEnlazados,
+		CASE WHEN ENP.ExEnlazadoPri<>'' THEN replace(replace(ENP.ExEnlazadoPri,'&lt;','<'),'&gt;','>') else replace(replace(ENS.ExEnlazadoSec,'&lt;','<'),'&gt;','>') END NombreExpedientesEnlazados,
 		CONVERT(BIT,CASE WHEN EE.cantEnlaces>0 THEN 1 ELSE 0 END) EsPrincipalEnlace,
 		OID.CatalogoTipoOrigen,
 		E.IdExpediente,
@@ -161,9 +160,9 @@ BEGIN TRY
 		CONCAT(SD1.AbreviaturaSerieDocumentalExpediente,RIGHT(CONCAT('000000',E1.NumeroExpediente),6), '-', E1.IdPeriodo)
 		+'</div> '
 		FROM Tramite.ExpedienteEnlazado EE  WITH (NOLOCK)
-		INNER JOIN Tramite.Expediente e1  WITH (NOLOCK) ON EE.IdExpedienteSecundario=E1.IdExpediente AND E1.EstadoAuditoria=1 AND E1.ExpedienteAnulado=0
+		INNER JOIN Tramite.Expediente e1  WITH (NOLOCK) ON EE.IdExpedienteSecundario=E1.IdExpediente AND E1.EstadoAuditoria=1 AND E1.ExpedienteAnulado=0 AND E1.IdPeriodo = @pIdPeriodo
 		INNER JOIN Tramite.SerieDocumentalExpediente SD1 ON SD1.IdSerieDocumentalExpediente=E1.IdSerieDocumentalExpediente	 and EE.EstadoAuditoria=1
-		where EE.IdExpediente=E.IdExpediente
+		where EE.IdExpediente=E.IdExpediente and EE.IdPeriodo = @pIdPeriodo
 		FOR XML PATH('')), 1, 0, '')),'') ExEnlazadoPri
 	) ENP
 	CROSS APPLY(
@@ -172,24 +171,24 @@ BEGIN TRY
 		CONCAT(SD1.AbreviaturaSerieDocumentalExpediente,RIGHT(CONCAT('000000',E1.NumeroExpediente),6), '-', E1.IdPeriodo)
 		+'</div> '
 		FROM Tramite.ExpedienteEnlazado EE  WITH (NOLOCK)
-		INNER JOIN Tramite.Expediente e1 WITH (NOLOCK) ON EE.IdExpediente=E1.IdExpediente AND E1.EstadoAuditoria=1 AND E1.ExpedienteAnulado=0
+		INNER JOIN Tramite.Expediente e1 WITH (NOLOCK) ON EE.IdExpediente=E1.IdExpediente AND E1.EstadoAuditoria=1 AND E1.ExpedienteAnulado=0 AND and E1.IdPeriodo = @pIdPeriodo
 		INNER JOIN Tramite.SerieDocumentalExpediente SD1 ON SD1.IdSerieDocumentalExpediente=E1.IdSerieDocumentalExpediente and EE.EstadoAuditoria=1
-		WHERE EE.IdExpedienteSecundario=E.IdExpediente
+		WHERE EE.IdExpedienteSecundario=E.IdExpediente and EE.IdPeriodo = @pIdPeriodo
 		FOR XML PATH('')), 1, 0, '')),'') ExEnlazadoSec
 	) ENS
 	CROSS APPLY(
 		SELECT count(ee.Idexpediente) cantEnlaces
 		FROM Tramite.ExpedienteEnlazado EE  WITH (NOLOCK)
-		INNER JOIN Tramite.Expediente ex WITH (NOLOCK) ON EE.IdExpedienteSecundario=Ex.IdExpediente AND Ex.EstadoAuditoria=1 AND Ex.ExpedienteAnulado=0
+		INNER JOIN Tramite.Expediente ex WITH (NOLOCK) ON EE.IdExpedienteSecundario=Ex.IdExpediente AND Ex.EstadoAuditoria=1 AND Ex.ExpedienteAnulado=0 AND Ex.IdPeriodo = @pIdPeriodo
 		INNER JOIN Tramite.SerieDocumentalExpediente SD1 ON SD1.IdSerieDocumentalExpediente=Ex.IdSerieDocumentalExpediente	 and EE.EstadoAuditoria=1
-		where EE.IdExpediente=E.IdExpediente
+		where EE.IdExpediente=E.IdExpediente and EE.IdPeriodo = @pIdPeriodo
 	) EE
 	CROSS APPLY(
 		select top 1 CONCAT(coalesce(c.Descripcion,''),' ',EX.NumeroExpedienteExterno) CatalogoTipoOrigen
 		from Tramite.ExpedienteDocumento ed1  WITH (NOLOCK)
-		INNER JOIN Tramite.Expediente EX  WITH (NOLOCK) ON EX.IdExpediente=Ed1.IdExpediente
+		INNER JOIN Tramite.Expediente EX  WITH (NOLOCK) ON EX.IdExpediente=Ed1.IdExpediente and EX.IdPeriodo = @pIdPeriodo
 		INNER JOIN Tramite.Catalogo c on c.IdCatalogo=ed1.IdCatalogoTipoOrigen
-		where ed1.EstadoAuditoria=1 and ed1.IdExpediente=E.IdExpediente
+		where ed1.EstadoAuditoria=1 and ed1.IdExpediente=E.IdExpediente and ed1.IdPeriodo = @pIdPeriodo
 		order by ed1.IdExpedienteDocumento
 	) OID
 	ORDER BY IdExpediente DESC
