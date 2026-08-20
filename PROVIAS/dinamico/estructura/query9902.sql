@@ -1,13 +1,16 @@
 alter table Tramite.ExpedienteDevuelto add IdPeriodo int;
 alter table Tramite.ExpedienteEnlazado add IdPeriodo int;
 alter table Tramite.ExpedienteSeguimiento add IdPeriodo int;
+
 alter table Tramite.ExpedienteDocumento add IdPeriodo int;
 alter table Tramite.ExpedienteDocumentoFirmante add IdPeriodo int;
 alter table Tramite.ExpedienteDocumentoAdjunto add IdPeriodo int;
 alter table Tramite.ExpedienteDocumentoAdjuntoFirmante add IdPeriodo int;
 alter table Tramite.ExpedienteDocumentoAdjuntoTemporal add IdPeriodo int;
+
 alter table Tramite.ExpedienteDocumentoOrigen add IdPeriodo int;
 alter table Tramite.ExpedienteDocumentoOrigenAdjunto add IdPeriodo int;
+
 alter table Tramite.ExpedienteDocumentoOrigenDestino add IdPeriodo int;
 alter table Tramite.ExpedienteDocumentoOrigenDestinoAccion add IdPeriodo int;
 alter table Tramite.ExpedienteDocumentoOrigenDestinoTemporal add IdPeriodo int;

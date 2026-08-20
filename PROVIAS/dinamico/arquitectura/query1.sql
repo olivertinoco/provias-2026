@@ -79,3 +79,81 @@ ORDER BY FechaHora_UTC DESC;
 ALTER EVENT SESSION [Auditoria_SPs_BD_SGD] ON SERVER STATE = STOP;
 GO
 DROP EVENT SESSION [Auditoria_SPs_BD_SGD] ON SERVER;
+
+
+
+
+
+
+-- CREATE NONCLUSTERED INDEX [_dta_index_
+-- SalesOrderDetail_5_807673925__K3_1_4_5]
+-- ON [dbo].[SalesOrderDetail]
+-- (
+-- [CarrierTrackingNumber] ASC
+-- )
+-- INCLUDE ([SalesOrderID],
+-- [OrderQty],
+-- [ProductID]) WITH (SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF,
+-- ONLINE = OFF)
+-- ON [PRIMARY]
+--
+
+
+-- SELECT a.index_id, name, avg_fragmentation_in_percent,
+-- fragment_count,
+-- avg_fragment_size_in_pages
+-- FROM sys.dm_db_index_physical_stats (DB_ID('AdventureWorks2019'),OBJECT_ID('Sales.SalesOrderDetail'), NULL, NULL, NULL) AS a
+-- JOIN sys.indexes AS b ON a.object_id = b.object_id AND a.index_id = b.index_id
+
+-- >10 index reorganize
+-- >30 index rebuild
+
+-- verificar los indices no usados
+-- ================================
+-- sys.dm_db_index_usage_stats
+
+
+-- SELECT DB_NAME(database_id) AS database_name,
+-- OBJECT_NAME(s.object_id) AS object_name, i.name, s.*
+-- FROM sys.dm_db_index_usage_stats s
+-- JOIN sys.indexes i ON s.object_id = i.object_id AND s.index_id = i.index_id AND OBJECT_ID('dbo.SalesOrderDetail') = s.object_id
+
+
+-- CREAR UNA BASE DE DATOS PARA OPTIMIZARLA
+-- ========================================
+
+-- CREATE DATABASE Test
+-- ON PRIMARY (NAME = Test_data,
+-- FILENAME = 'C:\DATA\Test_data.mdf', SIZE=500MB)
+-- LOG ON (NAME = Test_log, Filename='C:\DATA\Test_log.ldf',
+-- SIZE=500MB)
+-- GO
+-- ALTER DATABASE Test ADD FILEGROUP Test_fg CONTAINS MEMORY_
+-- OPTIMIZED_DATA
+-- GO
+-- ALTER DATABASE Test ADD FILE (NAME = Test_fg, FILENAME = N'C:\
+-- DATA\Test_fg')
+-- TO FILEGROUP Test_fg
+-- GO
+
+
+-- CREATE TABLE <tbl_prueba>(
+--     ....  NOT NULL PRIMARY KEY NONCLUSTERED HASH WITH(BUCKET_COUNT = 100000),
+-- ) WITH (MEMORY_OPTIMIZED = ON)
+
+
+
+
+-- CREATE TABLE TransactionHistoryArchive (
+-- TransactionID int NOT NULL,
+-- ProductID int NOT NULL,
+-- ReferenceOrderID int NOT NULL,
+-- ReferenceOrderLineID int NOT NULL,
+-- TransactionDate datetime NOT NULL,
+-- TransactionType nchar(1) NOT NULL,
+-- Quantity int NOT NULL,
+-- ActualCost money NOT NULL,
+-- ModifiedDate datetime NOT NULL,
+-- CONSTRAINT PK_TransactionID_ProductID PRIMARY KEY NONCLUSTERED
+-- HASH (TransactionID, ProductID) WITH (BUCKET_COUNT = 100000)
+-- ) WITH (MEMORY_OPTIMIZED = ON)
